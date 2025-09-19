@@ -1,140 +1,218 @@
 ---
 mode: 'agent'
-model: Claude Sonnet 4
+model: 'claude-3-5-sonnet-20241022'
 tools: ['githubRepo', 'codebase']
-description: 'Generate instruction files for a CQRS application architecture in an Academic Management System.'
+description: 'Generate comprehensive instruction files for a CQRS-based Academic Management System with clear architectural patterns and implementation guidelines.'
 ---
-# Instructions Generation Prompt
+# Academic Management System - Instruction Generation Prompt
 
-## Objective
-Generate a cohesive, complete set of instruction documents for implementing a CQRS-based Academic Management System (Academics, Departments, Roles, etc.) grounded in Object Role Modeling (ORM) principles. Use the ORM white paper for modeling guidance: https://orm.net/pdf/ORMwhitePaper.pdf
+## AI Generation Directives
 
-## Your Task
-Produce the following instruction files exactly once, and nothing else. Each file must be complete, self-contained, and follow the Output Formatting and Response Rules below.
+### Your Task
+You are to generate 15 comprehensive instruction files that will guide developers in implementing a CQRS-based Academic Management System. Each file must be complete, actionable, and production-ready.
 
-## Deliverables (Exact Output Files)
-1. .github/instructions/generated/project.instructions.md
-2. .github/instructions/generated/sdlc.instructions.md
-3. .github/instructions/generated/git-hygiene.instructions.md
-4. .github/instructions/generated/cqrs-guidelines.instructions.md
-5. .github/instructions/generated/architecture.instructions.md
-6. .github/instructions/generated/azure-provisioning.instructions.md
-7. .github/instructions/generated/secrets-and-config.instructions.md
-8. .github/instructions/generated/testing-strategy.instructions.md
-9. .github/instructions/generated/documentation-standards.instructions.md
-10. .github/instructions/generated/observability.instructions.md
-11. .github/instructions/generated/security-and-compliance.instructions.md
-12. .github/instructions/generated/operations-and-deployment.instructions.md
-13. .github/instructions/generated/ai-generated-code-policy.instructions.md
-14. .github/instructions/generated/data-and-migrations.instructions.md
-15. .github/instructions/generated/glossary.instructions.md
+### Generation Parameters
+- **Output Format**: Markdown files with specific naming convention
+- **Location**: `.github/instructions/generated/` directory
+- **Style**: Technical documentation with concrete examples
+- **Tone**: Professional, prescriptive, and authoritative
 
-## Global Principles
-- Treat all compiler/analyzer warnings as errors; no merge until resolved.
-- Enforce formatting & linting (define tools, consistent style).
-- Human review required for all AI-generated code (branch isolation).
-- Deterministic, reproducible builds (pin versions).
-- Infrastructure as Code only (no ad-hoc portal changes).
-- Security & compliance embedded (shift-left scanning).
-- Explicit ownership and change governance for instruction files.
+### Files to Generate
 
-## Project Instructions
-- Define purpose, scope, and high-level architecture of the Academic Management System.
-- Directory Structure: src/, tests/, docs/, infra/, scripts/, .github/.
-- Tech Stack: .NET 7, C#, Azure SQL, Azure Functions, GitHub Actions, OpenTelemetry.
-- Branching Strategy: GitFlow or trunk-based (justify choice).
-- CI/CD: Linting, build, test, security scans, deploy to dev/test/stage/prod.
-- Code Reviews: At least one approval; checklist includes coding standards, tests, security.
+Create these exact files with the specified focus:
 
-## CQRS Requirements
-- Commands: imperative, change state; idempotent where applicable.
-- Queries: side-effect free, support pagination/filtering/sorting.
-- Handlers: one per command/query; enforce business invariants in domain layer.
-- Separate read models from write models.
-- Eventual consistency patterns: latency expectations, retry/backoff.
-- Guidance on when to introduce domain events vs. keep transactional.
+1. **project-overview.instructions.md**
+   - Describe the Academic Management System domain
+   - Define core entities: Employee (Academic/Administrative), Department, Role, Assignment
+   - State key business invariants
+   - Provide high-level architecture overview
 
-## Architecture Documentation
-- Provide C4 diagrams (Mermaid): Context, Container, Component, Deployment.
-- Include sequence diagrams for: CreateEmployee, AssignRole, QueryDepartmentRoster.
-- Document boundaries, aggregates, invariants.
+2. **sdlc-process.instructions.md**
+   - Define development workflow from requirement to deployment
+   - Specify code review requirements
+   - Include Definition of Done criteria
+   - Mandate TDD approach with coverage requirements
 
-## Azure Provisioning
-- Default Region: WestUS2 (justify or document any override).
-- Resource group naming convention.
-- Resources: App runtime (App Service or Functions), Database (Azure SQL or Cosmos DB—justify), Storage, Key Vault, Monitor (Logs, Metrics, App Insights), CI/CD (GitHub Actions).
-- Tagging: env, owner, cost-center, data-classification.
-- Blueprint for dev/test/stage/prod with isolation policy.
+3. **git-workflow.instructions.md**
+   - Specify branch naming: feature/*, bugfix/*, hotfix/*
+   - Define commit message format
+   - Include PR template requirements
+   - Specify merge strategy (squash for features)
 
-## Secrets & Configuration
-- All secrets in Key Vault; reference in pipelines.
-- Configuration precedence: environment → Key Vault → defaults.
-- Rotation policy & auditing.
+4. **cqrs-implementation.instructions.md**
+   - Provide command pattern with validation example
+   - Include query pattern with pagination
+   - Show MediatR handler implementation
+   - Include idempotency implementation pattern
 
-## Testing Strategy
-- Unit coverage: ≥ 80% line / ≥ 70% branch.
-- Integration: API contract, status codes, schema validation.
-- Contract tests (if external consumers).
-- E2E for critical user journeys.
-- Post-deploy smoke tests.
-- Performance: baseline latencies, throughput, error budget.
-- Mutation testing target: ≥ 60% survived reduction.
-- Enforce coverage gates in CI.
+5. **architecture-design.instructions.md**
+   - Generate C4 diagrams using Mermaid
+   - Define project structure with justification
+   - Specify aggregate boundaries
+   - Include architectural decision records template
 
-## Observability
-- Structured JSON logging, correlation IDs.
-- OpenTelemetry traces for command and query handlers.
-- Metrics: command latency, handler failures, DB query timings, queue lag (if messaging).
-- Alerts: error rate > threshold, p95 latency breaches, failed deployments.
+6. **azure-infrastructure.instructions.md**
+   - Define resource naming convention: aca-{env}-{resource}-{instance}
+   - List all required Azure resources with SKUs
+   - Include Bicep template structure
+   - Specify network security requirements
 
-## Security & Compliance
-- Threat modeling (STRIDE) per release.
-- RBAC mapping: roles vs. domain permissions.
-- Input validation + centralized exception mapping (RFC 9457 problem+json).
-- Dependency, SAST, secret, license scanning each pipeline run.
+7. **configuration-management.instructions.md**
+   - Define configuration hierarchy
+   - Show Key Vault integration pattern
+   - Include environment-specific settings approach
+   - Provide secrets rotation guidelines
 
-## Operations & Deployment
-- Blue-green or canary optional; define rollback strategy.
-- Migration strategy: forward-only with pre-flight validation.
-- Backup policy with documented RPO/RTO targets.
+8. **testing-requirements.instructions.md**
+   - Define testing pyramid with coverage targets
+   - Provide unit test example with xUnit
+   - Include integration test with TestServer
+   - Show E2E test structure
 
-## AI-Generated Code Policy
-- PRs must include provenance tag.
-- Explicit reviewer approval checklist for AI-generated changes.
+9. **documentation-guidelines.instructions.md**
+   - Specify README structure
+   - Define API documentation requirements
+   - Include code commenting standards
+   - Provide ADR template
 
-## Data & Migrations
-- Naming conventions, migration ordering, seeding strategy.
-- Handling breaking read model changes (versioned projections).
+10. **monitoring-observability.instructions.md**
+    - Define structured logging pattern with Serilog
+    - Include OpenTelemetry implementation
+    - Specify metrics and alerts
+    - Show correlation ID propagation
 
-## Documentation Standards
-- README includes: purpose, architecture snapshot, setup, troubleshooting.
-- Mermaid diagrams auto-regeneration script (describe exact command).
-- Change log follows “Keep a Changelog”.
+11. **security-compliance.instructions.md**
+    - Define authentication with Azure AD
+    - Include authorization patterns
+    - Specify data encryption requirements
+    - Provide security scanning pipeline
 
-## Acceptance Criteria Template
-Given ...
-When ...
-Then ...
+12. **deployment-operations.instructions.md**
+    - Define CI/CD pipeline stages
+    - Include blue-green deployment pattern
+    - Specify rollback procedures
+    - Provide health check implementation
 
-## Git Hygiene Instructions
-- Commit messages: conventional commits (feat, fix, docs, style, refactor, test, chore), optional scope, concise description.
-- Branch names: lowercase, hyphens, clear purpose (e.g., feature/user-authentication, bugfix/login-error).
-- PRs: detailed description, rationale, issue links.
-- Reviews: at least one approval before merge.
-- Use “Squash and Merge”.
-- Resolve conflicts promptly; communicate as needed.
-- Delete branches after merge.
-- Workflow implementations must be shown to work before merging to main.
+13. **ai-code-governance.instructions.md**
+    - Define AI-generated code review process
+    - Include provenance tracking requirements
+    - Specify human validation checkpoints
+    - Provide acceptance criteria
 
-## Glossary
-- Define: Aggregate, Command, Query, Read Model, Projection, Invariant, Idempotency, etc.
+14. **database-migrations.instructions.md**
+    - Define forward-only migration strategy
+    - Include EF Core migration patterns
+    - Specify seed data approach
+    - Provide rollback mitigation
 
-## Output Formatting and Response Rules
-- Generate all files exactly once, in the order listed under Deliverables; no extraneous commentary.
-- Each file starts with Title, Purpose, Scope.
-- Each file ends with a Compliance Checklist.
-- No placeholder text; include concrete examples for at least one Employee command & query.
-- Use Mermaid code blocks for diagrams.
-- Ensure consistency with Global Principles across all files.
+15. **domain-glossary.instructions.md**
+    - Define all domain terms
+    - Include CQRS terminology
+    - Specify technical acronyms
+    - Provide context examples
 
+### Content Requirements for Each File
 
+When generating each file, ensure you:
+
+1. **Start with this structure**:
+   ```markdown
+   # [Clear Title]
+   
+   ## Purpose
+   [One paragraph explaining why this document exists]
+   
+   ## Scope
+   This document covers:
+   - [Specific item 1]
+   - [Specific item 2]
+   
+   This document does not cover:
+   - [Out of scope item 1]
+   - [Out of scope item 2]
+   
+   ## Prerequisites
+   - [Required knowledge/tools]
+   ```
+
+2. **Include these sections**:
+   - Requirements (numbered list)
+   - Implementation Guidelines (with code examples)
+   - Examples (at least one complete scenario)
+   - Validation Checklist
+   - References to other instruction files
+
+3. **For code examples**:
+   - Use the Employee/Department/Role entities
+   - Show the complete implementation
+   - Include error handling
+   - Add unit test example
+   - Use these specifics:
+     - Employee properties: Id, Name, Email, EmployeeNumber, DepartmentId
+     - Department properties: Id, Name, Code, HeadEmployeeId
+     - Role properties: Id, Name, Permissions[], Level
+
+4. **Technical specifications to embed**:
+   - .NET 8.0 LTS with C# 12
+   - Azure SQL Database
+   - ASP.NET Core minimal APIs
+   - MediatR for CQRS
+   - FluentValidation for validation
+   - Serilog for logging
+   - xUnit for testing
+   - Bicep for IaC
+
+5. **Quality standards to enforce**:
+   - `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`
+   - `<AnalysisMode>All</AnalysisMode>`
+   - Nullable reference types enabled
+   - 85% unit test coverage minimum
+   - All public APIs must have integration tests
+
+6. **Performance requirements to specify**:
+   - Query response: p99 < 100ms
+   - Command response: p99 < 200ms
+   - Database timeout: 5 seconds
+   - HTTP timeout: 30 seconds
+
+### Example Scenario to Use Consistently
+
+Use this scenario across all relevant files:
+```csharp
+// Command Example
+public class AssignEmployeeToDepartmentCommand : IRequest<Guid>
+{
+    public Guid EmployeeId { get; set; }
+    public Guid DepartmentId { get; set; }
+}
+
+// Query Example  
+public class GetDepartmentRosterQuery : IRequest<DepartmentRosterDto>
+{
+    public Guid DepartmentId { get; set; }
+    public int PageSize { get; set; } = 50;
+    public int PageNumber { get; set; } = 1;
+}
+```
+
+### Validation Requirements
+
+Each generated file must:
+- Be immediately actionable by developers
+- Contain zero placeholders or TODOs
+- Include at least one complete code example
+- Cross-reference at least two other instruction files
+- End with a validation checklist of 5-10 items
+- Be between 500-2000 lines
+
+### Output Instructions
+
+1. Generate all 15 files in sequence
+2. Maintain consistent terminology throughout
+3. Ensure each file stands alone but references others
+4. Include file path comment at the start of each file
+5. Do not include any commentary between files
+6. Do not ask for clarification - make reasonable decisions
+7. Complete all files even if response length is long
+
+Begin generation now.
