@@ -1,6 +1,6 @@
 ---
 mode: 'agent'
-model: 'claude-3-5-sonnet-20241022'
+model: 'claude-sonnet-4'
 tools: ['githubRepo', 'codebase']
 description: 'Generate comprehensive instruction files for a CQRS-based Academic Management System with clear architectural patterns and implementation guidelines.'
 ---
@@ -9,7 +9,7 @@ description: 'Generate comprehensive instruction files for a CQRS-based Academic
 ## AI Generation Directives
 
 ### Your Task
-You are to generate 15 comprehensive instruction files that will guide developers in implementing a CQRS-based Academic Management System. Each file must be complete, actionable, and production-ready.
+You are to generate comprehensive instruction files that will guide developers in implementing a CQRS-based Academic Management System. Each file must be complete, actionable, and production-ready.
 
 ### Generation Parameters
 - **Output Format**: Markdown files with specific naming convention
@@ -23,7 +23,7 @@ Create these exact files with the specified focus:
 
 1. **project-overview.instructions.md**
    - Describe the Academic Management System domain
-   - Define core entities: Employee (Academic/Administrative), Department, Role, Assignment
+   - Define core entities and relationships
    - State key business invariants
    - Provide high-level architecture overview
 
@@ -143,14 +143,10 @@ When generating each file, ensure you:
    - References to other instruction files
 
 3. **For code examples**:
-   - Use the Employee/Department/Role entities
+   - Use the Academia entities
    - Show the complete implementation
    - Include error handling
    - Add unit test example
-   - Use these specifics:
-     - Employee properties: Id, Name, Email, EmployeeNumber, DepartmentId
-     - Department properties: Id, Name, Code, HeadEmployeeId
-     - Role properties: Id, Name, Permissions[], Level
 
 4. **Technical specifications to embed**:
    - .NET 8.0 LTS with C# 12
@@ -175,26 +171,6 @@ When generating each file, ensure you:
    - Database timeout: 5 seconds
    - HTTP timeout: 30 seconds
 
-### Example Scenario to Use Consistently
-
-Use this scenario across all relevant files:
-```csharp
-// Command Example
-public class AssignEmployeeToDepartmentCommand : IRequest<Guid>
-{
-    public Guid EmployeeId { get; set; }
-    public Guid DepartmentId { get; set; }
-}
-
-// Query Example  
-public class GetDepartmentRosterQuery : IRequest<DepartmentRosterDto>
-{
-    public Guid DepartmentId { get; set; }
-    public int PageSize { get; set; } = 50;
-    public int PageNumber { get; set; } = 1;
-}
-```
-
 ### Validation Requirements
 
 Each generated file must:
@@ -207,7 +183,7 @@ Each generated file must:
 
 ### Output Instructions
 
-1. Generate all 15 files in sequence
+1. Generate all files in sequence
 2. Maintain consistent terminology throughout
 3. Ensure each file stands alone but references others
 4. Include file path comment at the start of each file
