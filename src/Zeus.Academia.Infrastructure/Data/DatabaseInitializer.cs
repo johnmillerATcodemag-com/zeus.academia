@@ -71,7 +71,7 @@ public class DatabaseInitializer
         {
             _logger.LogInformation("Testing database connection...");
             var canConnect = await _context.Database.CanConnectAsync();
-            
+
             if (canConnect)
             {
                 _logger.LogInformation("Database connection successful.");
@@ -80,7 +80,7 @@ public class DatabaseInitializer
             {
                 _logger.LogWarning("Database connection failed.");
             }
-            
+
             return canConnect;
         }
         catch (Exception ex)
@@ -98,16 +98,16 @@ public class DatabaseInitializer
         try
         {
             _logger.LogInformation("Checking for pending migrations...");
-            
+
             var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
             var pendingMigrationsList = pendingMigrations.ToList();
-            
+
             if (pendingMigrationsList.Any())
             {
-                _logger.LogInformation("Found {Count} pending migrations: {Migrations}", 
-                    pendingMigrationsList.Count, 
+                _logger.LogInformation("Found {Count} pending migrations: {Migrations}",
+                    pendingMigrationsList.Count,
                     string.Join(", ", pendingMigrationsList));
-                
+
                 _logger.LogInformation("Applying migrations...");
                 await _context.Database.MigrateAsync();
                 _logger.LogInformation("Migrations applied successfully.");
@@ -150,13 +150,13 @@ public class DatabaseInitializer
         try
         {
             var canConnect = await _context.Database.CanConnectAsync();
-            
+
             // Check if using a relational database provider
             var isRelational = _context.Database.IsRelational();
-            
+
             List<string> appliedMigrations = new();
             List<string> pendingMigrations = new();
-            
+
             if (isRelational)
             {
                 appliedMigrations = (await _context.Database.GetAppliedMigrationsAsync()).ToList();
@@ -186,7 +186,7 @@ public class DatabaseInitializer
         try
         {
             // Try to access a table to verify schema exists
-            return await _context.Database.CanConnectAsync() && 
+            return await _context.Database.CanConnectAsync() &&
                    await _context.AccessLevels.AnyAsync().ConfigureAwait(false);
         }
         catch
@@ -218,7 +218,7 @@ public class DatabaseInitializer
             };
 
             await Task.WhenAll(tableChecks);
-            
+
             _logger.LogInformation("Database schema validation completed successfully.");
             return true;
         }
@@ -238,10 +238,10 @@ public class DatabaseInitializer
         try
         {
             _logger.LogWarning("Resetting database - all data will be lost!");
-            
+
             await _context.Database.EnsureDeletedAsync();
             await _context.Database.EnsureCreatedAsync();
-            
+
             _logger.LogInformation("Database reset completed.");
         }
         catch (Exception ex)
@@ -284,9 +284,9 @@ public static class DatabaseInitializerExtensions
     {
         using var scope = host.Services.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
-        
+
         await initializer.InitializeAsync(applyMigrations, seedData);
-        
+
         return host;
     }
 }

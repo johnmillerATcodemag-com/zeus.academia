@@ -36,13 +36,13 @@ public class DatabaseMigrationTests : IDisposable
 
         // Create context and initializer
         _context = new AcademiaDbContext(options, configuration);
-        
+
         // Create logger
         var serviceProvider = new ServiceCollection()
             .AddLogging(builder => builder.AddConsole())
             .BuildServiceProvider();
         _logger = serviceProvider.GetRequiredService<ILogger<DatabaseInitializer>>();
-        
+
         _initializer = new DatabaseInitializer(_context, _logger);
     }
 
@@ -173,7 +173,7 @@ public class DatabaseMigrationTests : IDisposable
         // Act - Run seeder twice
         await DatabaseSeeder.SeedAsync(_context);
         var firstCount = await _context.AccessLevels.CountAsync();
-        
+
         await DatabaseSeeder.SeedAsync(_context);
         var secondCount = await _context.AccessLevels.CountAsync();
 
@@ -261,19 +261,19 @@ public class DatabaseMigrationTests : IDisposable
 
         // Assert
         var buildings = await _context.Buildings.ToListAsync();
-        
+
         foreach (var building in buildings)
         {
             Assert.NotNull(building.Code);
             Assert.NotNull(building.Name);
             Assert.True(building.IsActive);
             Assert.True(building.IsAccessible);
-            
+
             if (building.NumberOfFloors.HasValue)
             {
                 Assert.True(building.NumberOfFloors.Value > 0);
             }
-            
+
             if (building.TotalAreaSqFt.HasValue)
             {
                 Assert.True(building.TotalAreaSqFt.Value > 0);

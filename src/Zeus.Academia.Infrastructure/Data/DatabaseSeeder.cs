@@ -400,7 +400,7 @@ public static class DatabaseSeeder
                 CreditHours = 3,
                 Level = "Undergraduate",
                 IsActive = true,
-                DepartmentName = "COMP-SCI", 
+                DepartmentName = "COMP-SCI",
                 Prerequisites = "CS101",
                 TypicalSemester = "Spring",
                 MaxEnrollment = 100,

@@ -17,7 +17,7 @@ public class AcademiaDbContextFactory : IDesignTimeDbContextFactory<AcademiaDbCo
         // Use a default connection string for design-time operations
         // This will be overridden at runtime by the actual configuration
         var connectionString = "Server=(localdb)\\mssqllocaldb;Database=ZeusAcademiaDb;Trusted_Connection=true;MultipleActiveResultSets=true;TrustServerCertificate=true";
-        
+
         optionsBuilder.UseSqlServer(connectionString, options =>
         {
             options.MigrationsAssembly("Zeus.Academia.Infrastructure");
