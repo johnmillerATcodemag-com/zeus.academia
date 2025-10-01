@@ -226,12 +226,12 @@ public class AcademiaDbContextFactoryTests
         // Act
         using var context1 = _factory.CreateDbContext(args);
         using var context2 = _factory.CreateDbContext(args);
-        
+
         // Modify one context's change tracker
         context1.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
         // Assert
-        Assert.NotEqual(context1.ChangeTracker.QueryTrackingBehavior, 
+        Assert.NotEqual(context1.ChangeTracker.QueryTrackingBehavior,
                        context2.ChangeTracker.QueryTrackingBehavior);
     }
 

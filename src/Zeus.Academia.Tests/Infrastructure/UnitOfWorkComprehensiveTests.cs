@@ -118,7 +118,7 @@ public class UnitOfWorkComprehensiveTests : IDisposable
     public void Constructor_WithNullContext_Should_Throw_ArgumentNullException()
     {
         // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
+        Assert.Throws<ArgumentNullException>(() =>
             new UnitOfWork(null!, _serviceProvider, _testLogger));
     }
 
@@ -126,7 +126,7 @@ public class UnitOfWorkComprehensiveTests : IDisposable
     public void Constructor_WithNullServiceProvider_Should_Throw_ArgumentNullException()
     {
         // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
+        Assert.Throws<ArgumentNullException>(() =>
             new UnitOfWork(_context, null!, _testLogger));
     }
 
@@ -134,7 +134,7 @@ public class UnitOfWorkComprehensiveTests : IDisposable
     public void Constructor_WithNullLogger_Should_Throw_ArgumentNullException()
     {
         // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() => 
+        Assert.Throws<ArgumentNullException>(() =>
             new UnitOfWork(_context, _serviceProvider, null!));
     }
 
@@ -259,7 +259,7 @@ public class UnitOfWorkComprehensiveTests : IDisposable
         // Add and save initially
         await unitOfWork.Repository<AccessLevel>().AddAsync(accessLevel);
         await unitOfWork.SaveChangesAsync("initialuser");
-        
+
         var originalCreatedBy = accessLevel.CreatedBy;
         var originalCreatedDate = accessLevel.CreatedDate;
 

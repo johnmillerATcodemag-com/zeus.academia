@@ -18,7 +18,7 @@ public class BasicCoverageImprovementTests
         var options = new DbContextOptionsBuilder<AcademiaDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        
+
         var configuration = new ConfigurationBuilder().Build();
         return new AcademiaDbContext(options, configuration);
     }
@@ -147,10 +147,10 @@ public class BasicCoverageImprovementTests
         var repository = new Repository<Department>(context, logger);
 
         var departments = Enumerable.Range(1, 10)
-            .Select(i => new Department 
-            { 
-                Name = $"DEPT{i:D2}", 
-                FullName = $"Department {i}" 
+            .Select(i => new Department
+            {
+                Name = $"DEPT{i:D2}",
+                FullName = $"Department {i}"
             }).ToArray();
 
         context.Departments.AddRange(departments);
@@ -368,7 +368,7 @@ public class BasicCoverageImprovementTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        
+
         var university = new University { Code = "TEST", Name = "Test University" };
         context.Universities.Add(university);
         await context.SaveChangesAsync();
@@ -387,7 +387,7 @@ public class BasicCoverageImprovementTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        
+
         var entities = new object[]
         {
             new University { Code = "UJ", Name = "University of Johannesburg" },

@@ -85,17 +85,17 @@ public class HighImpactCoverageTests : IDisposable
     public async Task GetChairsAsync_Should_Return_All_Chairs()
     {
         // Arrange
-        var professor1 = new Professor 
-        { 
+        var professor1 = new Professor
+        {
             EmpNr = 1,
-            Name = "Dr. Smith", 
+            Name = "Dr. Smith",
             DepartmentName = "Computer Science",
             RankCode = "PROF"
         };
-        var professor2 = new Professor 
-        { 
+        var professor2 = new Professor
+        {
             EmpNr = 2,
-            Name = "Dr. Johnson", 
+            Name = "Dr. Johnson",
             DepartmentName = "Mathematics",
             RankCode = "PROF"
         };
@@ -103,17 +103,17 @@ public class HighImpactCoverageTests : IDisposable
         _context.Professors.AddRange(professor1, professor2);
         await _context.SaveChangesAsync();
 
-        var chair1 = new Chair 
-        { 
-            Name = "Computer Science Chair", 
+        var chair1 = new Chair
+        {
+            Name = "Computer Science Chair",
             Description = "Chair of CS Department",
             DepartmentName = "Computer Science",
             AcademicEmpNr = 1, // References professor1
             IsActive = true
         };
-        var chair2 = new Chair 
-        { 
-            Name = "Mathematics Chair", 
+        var chair2 = new Chair
+        {
+            Name = "Mathematics Chair",
             Description = "Chair of Math Department",
             DepartmentName = "Mathematics",
             AcademicEmpNr = 2, // References professor2
@@ -137,9 +137,9 @@ public class HighImpactCoverageTests : IDisposable
     public async Task GetTeachingProfessorsAsync_Should_Return_All_TeachingProfs()
     {
         // Arrange
-        var teachingProf1 = new TeachingProf 
-        { 
-            EmpNr = 1, 
+        var teachingProf1 = new TeachingProf
+        {
+            EmpNr = 1,
             Name = "Prof. Teaching Alpha",
             DepartmentName = "Computer Science",
             RankCode = "PROF",
@@ -147,9 +147,9 @@ public class HighImpactCoverageTests : IDisposable
             TeachingPercentage = 70,
             ResearchPercentage = 30
         };
-        var teachingProf2 = new TeachingProf 
-        { 
-            EmpNr = 2, 
+        var teachingProf2 = new TeachingProf
+        {
+            EmpNr = 2,
             Name = "Prof. Teaching Beta",
             DepartmentName = "Mathematics",
             RankCode = "ASST",
@@ -175,18 +175,18 @@ public class HighImpactCoverageTests : IDisposable
     public async Task GetProfessorsAsync_Should_Return_All_Professors()
     {
         // Arrange
-        var professor1 = new Professor 
-        { 
-            EmpNr = 1, 
+        var professor1 = new Professor
+        {
+            EmpNr = 1,
             Name = "Prof. Alpha",
             DepartmentName = "Computer Science",
             RankCode = "PROF",
             HasTenure = true,
             ResearchArea = "Machine Learning"
         };
-        var professor2 = new Professor 
-        { 
-            EmpNr = 2, 
+        var professor2 = new Professor
+        {
+            EmpNr = 2,
             Name = "Prof. Beta",
             DepartmentName = "Mathematics",
             RankCode = "ASST",
@@ -211,9 +211,9 @@ public class HighImpactCoverageTests : IDisposable
     public async Task IsEmployeeNumberAvailableAsync_Should_Check_Availability_Correctly()
     {
         // Arrange
-        var existingAcademic = new Professor 
-        { 
-            EmpNr = 12345, 
+        var existingAcademic = new Professor
+        {
+            EmpNr = 12345,
             Name = "Existing Professor",
             DepartmentName = "Computer Science"
         };
@@ -240,15 +240,15 @@ public class HighImpactCoverageTests : IDisposable
     public async Task DepartmentRepository_GetByUniversityAsync_Should_Return_University_Departments()
     {
         // Arrange
-        var department1 = new Department 
-        { 
-            Name = "Computer Science", 
+        var department1 = new Department
+        {
+            Name = "Computer Science",
             FullName = "Department of Computer Science"
         };
-        
-        var department2 = new Department 
-        { 
-            Name = "Mathematics", 
+
+        var department2 = new Department
+        {
+            Name = "Mathematics",
             FullName = "Department of Mathematics"
         };
 
@@ -296,10 +296,10 @@ public class HighImpactCoverageTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
             () => _academicRepository.IsEmployeeNumberAvailableAsync(null!));
-        
+
         await Assert.ThrowsAsync<ArgumentException>(
             () => _academicRepository.IsEmployeeNumberAvailableAsync(""));
-        
+
         await Assert.ThrowsAsync<ArgumentException>(
             () => _academicRepository.IsEmployeeNumberAvailableAsync("   "));
     }

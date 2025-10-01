@@ -17,7 +17,7 @@ public class EntityModelTests
         var options = new DbContextOptionsBuilder<AcademiaDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        
+
         var configuration = new ConfigurationBuilder().Build();
         return new AcademiaDbContext(options, configuration);
     }
@@ -42,7 +42,7 @@ public class EntityModelTests
         // Arrange
         var entity = new University { Code = "TEST", Name = "Test University" };
         var originalModifiedDate = entity.ModifiedDate;
-        
+
         // Simulate time passing
         Thread.Sleep(1);
 

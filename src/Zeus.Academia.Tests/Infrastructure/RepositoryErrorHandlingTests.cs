@@ -18,7 +18,7 @@ public class RepositoryErrorHandlingTests
         var options = new DbContextOptionsBuilder<AcademiaDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        
+
         var configuration = new ConfigurationBuilder().Build();
         return new AcademiaDbContext(options, configuration);
     }
@@ -285,9 +285,9 @@ public class RepositoryErrorHandlingTests
         var repository = new Repository<University>(context, logger);
 
         // Add test data
-        await repository.AddAsync(new University 
-        { 
-            Code = "COMPLEX", 
+        await repository.AddAsync(new University
+        {
+            Code = "COMPLEX",
             Name = "Complex Test University",
             Country = "USA",
             EstablishedYear = 2000
@@ -295,9 +295,9 @@ public class RepositoryErrorHandlingTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.FindAsync(u => 
-            u.Name.Contains("Complex") && 
-            u.Country == "USA" && 
+        var result = await repository.FindAsync(u =>
+            u.Name.Contains("Complex") &&
+            u.Country == "USA" &&
             u.EstablishedYear > 1999);
 
         // Assert
@@ -312,9 +312,9 @@ public class RepositoryErrorHandlingTests
         var logger = CreateTestLogger<Repository<University>>();
         var repository = new Repository<University>(context, logger);
 
-        var unicode_university = new University 
-        { 
-            Code = "UNI", 
+        var unicode_university = new University
+        {
+            Code = "UNI",
             Name = "大学" // Chinese characters
         };
 

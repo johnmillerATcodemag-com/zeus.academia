@@ -26,10 +26,10 @@ public class DatabaseInitializerComprehensiveTests : IDisposable
 
         var configuration = new ConfigurationBuilder().Build();
         _context = new AcademiaDbContext(options, configuration);
-        
+
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _logger = loggerFactory.CreateLogger<DatabaseInitializer>();
-        
+
         _initializer = new DatabaseInitializer(_context, _logger);
     }
 
@@ -108,12 +108,12 @@ public class DatabaseInitializerComprehensiveTests : IDisposable
 
         // Act & Assert - Should not throw
         await _initializer.SeedReferenceDataAsync();
-        
+
         // Verify some data was seeded
         var universities = await _context.Universities.CountAsync();
         var accessLevels = await _context.AccessLevels.CountAsync();
         var departments = await _context.Departments.CountAsync();
-        
+
         Assert.True(universities > 0);
         Assert.True(accessLevels > 0);
         Assert.True(departments > 0);
@@ -204,7 +204,7 @@ public class DatabaseInitializerComprehensiveTests : IDisposable
         services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
         services.AddSingleton<IConfiguration>(configuration);
-        services.AddDbContext<AcademiaDbContext>(options => 
+        services.AddDbContext<AcademiaDbContext>(options =>
             options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
 
         // Act
@@ -222,7 +222,7 @@ public class DatabaseInitializerComprehensiveTests : IDisposable
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddDbContext<AcademiaDbContext>(options => 
+        services.AddDbContext<AcademiaDbContext>(options =>
             options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         services.AddDatabaseInitializer();
 

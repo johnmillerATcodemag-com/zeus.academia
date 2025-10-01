@@ -52,7 +52,7 @@ public class DataServiceCoverageTests : IDisposable
         Assert.True(result); // Should return true for successful initialization
     }
 
-    [Fact] 
+    [Fact]
     public async Task DatabaseInitializer_CanConnectAsync_Should_Test_Database_Connection()
     {
         // Arrange
@@ -139,9 +139,9 @@ public class DataServiceCoverageTests : IDisposable
     public async Task DatabaseSeeder_SeedDepartmentsAsync_Should_Create_Academic_Departments()
     {
         // Arrange - Add a university first
-        var university = new University 
-        { 
-            Code = "TST", 
+        var university = new University
+        {
+            Code = "TST",
             Name = "Test University",
             Location = "Test City",
             CreatedBy = "TestSeeder",
@@ -189,9 +189,9 @@ public class DataServiceCoverageTests : IDisposable
     {
         // Arrange
         var repository = new SubjectRepository(_context, new TestLogger<SubjectRepository>());
-        var subject = new Subject 
-        { 
-            Code = "CS101", 
+        var subject = new Subject
+        {
+            Code = "CS101",
             Title = "Introduction to Computer Science",
             CreditHours = 3,
             CreatedBy = "TestUser",
@@ -213,18 +213,18 @@ public class DataServiceCoverageTests : IDisposable
     {
         // Arrange
         var repository = new SubjectRepository(_context, new TestLogger<SubjectRepository>());
-        var department = new Department 
-        { 
+        var department = new Department
+        {
             Name = "Computer Science",
             FullName = "Department of Computer Science",
             CreatedBy = "TestUser",
             ModifiedBy = "TestUser"
         };
         _context.Departments.Add(department);
-        
-        var subject = new Subject 
-        { 
-            Code = "CS201", 
+
+        var subject = new Subject
+        {
+            Code = "CS201",
             Title = "Data Structures",
             CreditHours = 4,
             DepartmentName = "Computer Science",
@@ -247,9 +247,9 @@ public class DataServiceCoverageTests : IDisposable
     {
         // Arrange
         var repository = new SubjectRepository(_context, new TestLogger<SubjectRepository>());
-        var existingSubject = new Subject 
-        { 
-            Code = "MATH101", 
+        var existingSubject = new Subject
+        {
+            Code = "MATH101",
             Title = "Calculus I",
             CreditHours = 3,
             CreatedBy = "TestUser",
@@ -272,9 +272,9 @@ public class DataServiceCoverageTests : IDisposable
     {
         // Arrange
         var repository = new DepartmentRepository(_context, new TestLogger<DepartmentRepository>());
-        var department = new Department 
-        { 
-            Name = "Engineering", 
+        var department = new Department
+        {
+            Name = "Engineering",
             FullName = "School of Engineering",
             CreatedBy = "TestUser",
             ModifiedBy = "TestUser"

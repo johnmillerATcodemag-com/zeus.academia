@@ -18,7 +18,7 @@ public class RepositoryMethodCoverageTests
         var options = new DbContextOptionsBuilder<AcademiaDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        
+
         var configuration = new ConfigurationBuilder().Build();
         return new AcademiaDbContext(options, configuration);
     }
@@ -154,7 +154,7 @@ public class RepositoryMethodCoverageTests
         // Add supporting data
         context.Departments.Add(new Department { Name = "CS", FullName = "Computer Science" });
         context.Ranks.Add(new Rank { Code = "PROF", Title = "Professor" });
-        
+
         var professor = new Professor { EmpNr = 1, Name = "Prof Test", DepartmentName = "CS", RankCode = "PROF" };
         context.Professors.Add(professor);
         await context.SaveChangesAsync();
@@ -211,7 +211,7 @@ public class RepositoryMethodCoverageTests
 
         var professor = new Professor { EmpNr = 100, Name = "Chair Person", DepartmentName = "CS", RankCode = "PROF" };
         var department = new Department { Name = "CS", FullName = "Computer Science", HeadEmpNr = 100 };
-        
+
         context.Professors.Add(professor);
         context.Departments.Add(department);
         await context.SaveChangesAsync();
@@ -512,10 +512,10 @@ public class RepositoryMethodCoverageTests
         var repository = new Repository<Professor>(context, logger);
 
         var professors = Enumerable.Range(1, 10)
-            .Select(i => new Professor 
-            { 
-                EmpNr = i, 
-                Name = $"Professor {i}", 
+            .Select(i => new Professor
+            {
+                EmpNr = i,
+                Name = $"Professor {i}",
                 DepartmentName = i <= 5 ? "CS" : "MATH",
                 RankCode = "PROF"
             }).ToArray();
