@@ -11,7 +11,7 @@ public class TeacherRating : BaseEntity
     /// Gets or sets the unique identifier for the rating.
     /// </summary>
     [Key]
-    public int Id { get; set; }
+    public new int Id { get; set; }
 
     /// <summary>
     /// Gets or sets the academic's employee number who received the rating.
@@ -74,7 +74,7 @@ public class StudentEnrollment : BaseEntity
     /// Gets or sets the unique identifier for the enrollment.
     /// </summary>
     [Key]
-    public int Id { get; set; }
+    public new int Id { get; set; }
 
     /// <summary>
     /// Gets or sets the student's employee number.

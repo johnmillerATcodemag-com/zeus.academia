@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Zeus.Academia.Infrastructure.Data;
-using Zeus.Academia.Infrastructure.Data.Repositories;
+using Zeus.Academia.Infrastructure.Repositories;
 using Zeus.Academia.Infrastructure.Entities;
 
 namespace Zeus.Academia.Tests.Infrastructure;
@@ -23,8 +23,8 @@ public class HighImpactCoverageTests : IDisposable
     public HighImpactCoverageTests()
     {
         _context = CreateInMemoryContext();
-        var academicLogger = new TestLogger<Repository<Academic>>();
-        var departmentLogger = new TestLogger<Repository<Department>>();
+        var academicLogger = new TestLogger<AcademicRepository>();
+        var departmentLogger = new TestLogger<DepartmentRepository>();
         _academicRepository = new AcademicRepository(_context, academicLogger);
         _departmentRepository = new DepartmentRepository(_context, departmentLogger);
     }
@@ -56,7 +56,7 @@ public class HighImpactCoverageTests : IDisposable
     {
         public List<LogEntry> LogEntries { get; } = new();
 
-        public IDisposable? BeginScope<TState>(TState state) => null;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)

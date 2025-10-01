@@ -16,8 +16,8 @@ public class DatabaseInitializer
 
     public DatabaseInitializer(AcademiaDbContext context, ILogger<DatabaseInitializer> logger)
     {
-        _context = context;
-        _logger = logger;
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -97,6 +97,13 @@ public class DatabaseInitializer
     {
         try
         {
+            // Skip migrations for in-memory database
+            if (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+            {
+                _logger.LogInformation("Skipping migrations for in-memory database provider.");
+                return;
+            }
+
             _logger.LogInformation("Checking for pending migrations...");
 
             var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
@@ -185,9 +192,15 @@ public class DatabaseInitializer
     {
         try
         {
-            // Try to access a table to verify schema exists
-            return await _context.Database.CanConnectAsync() &&
-                   await _context.AccessLevels.AnyAsync().ConfigureAwait(false);
+            // For in-memory databases, they exist once the context is used
+            if (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+            {
+                await _context.Database.EnsureCreatedAsync();
+                return true;
+            }
+
+            // For real databases, check if we can connect and if the database exists
+            return await _context.Database.CanConnectAsync();
         }
         catch
         {

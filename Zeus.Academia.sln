@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zeus.Academia.Infrastructur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zeus.Academia.Tests", "src\Zeus.Academia.Tests\Zeus.Academia.Tests.csproj", "{C8E2A1F0-BFD8-487A-95A4-6F6E28826781}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zeus.Academia.CoverageTests", "src\Zeus.Academia.CoverageTests\Zeus.Academia.CoverageTests.csproj", "{BB15A69D-EE3B-4F79-A163-278F4C301554}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,18 @@ Global
 		{C8E2A1F0-BFD8-487A-95A4-6F6E28826781}.Release|x64.Build.0 = Release|Any CPU
 		{C8E2A1F0-BFD8-487A-95A4-6F6E28826781}.Release|x86.ActiveCfg = Release|Any CPU
 		{C8E2A1F0-BFD8-487A-95A4-6F6E28826781}.Release|x86.Build.0 = Release|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Debug|x64.Build.0 = Debug|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Debug|x86.Build.0 = Debug|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Release|x64.ActiveCfg = Release|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Release|x64.Build.0 = Release|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Release|x86.ActiveCfg = Release|Any CPU
+		{BB15A69D-EE3B-4F79-A163-278F4C301554}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,5 +79,6 @@ Global
 		{F97A19A0-2A5D-4C85-9A93-01D2486C9B68} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B4C63F22-97E8-4F4F-BDFC-C16EF323F652} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{C8E2A1F0-BFD8-487A-95A4-6F6E28826781} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{BB15A69D-EE3B-4F79-A163-278F4C301554} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

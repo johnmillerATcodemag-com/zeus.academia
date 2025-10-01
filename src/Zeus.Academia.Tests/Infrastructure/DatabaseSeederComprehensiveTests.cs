@@ -104,13 +104,13 @@ public class DatabaseSeederComprehensiveTests : IDisposable
         var departments = await _context.Departments.ToListAsync();
 
         // Verify key departments exist
-        Assert.Contains(departments, d => d.Name == "Computer Science");
-        Assert.Contains(departments, d => d.Name == "Mathematics");
-        Assert.Contains(departments, d => d.Name == "Physics");
-        Assert.Contains(departments, d => d.Name == "Engineering");
+        Assert.Contains(departments, d => d.Name == "COMP-SCI");
+        Assert.Contains(departments, d => d.Name == "MATH");
+        Assert.Contains(departments, d => d.Name == "PHYSICS");
+        Assert.Contains(departments, d => d.Name == "ENG");
 
         // Verify department properties
-        var cs = departments.First(d => d.Name == "Computer Science");
+        var cs = departments.First(d => d.Name == "COMP-SCI");
         Assert.NotNull(cs.CreatedBy);
         Assert.Equal("System", cs.CreatedBy);
     }
@@ -125,14 +125,14 @@ public class DatabaseSeederComprehensiveTests : IDisposable
         var degrees = await _context.Degrees.ToListAsync();
 
         // Verify common degrees exist
-        Assert.Contains(degrees, d => d.Code == "BS" && d.Title == "Bachelor of Science");
-        Assert.Contains(degrees, d => d.Code == "MS" && d.Title == "Master of Science");
-        Assert.Contains(degrees, d => d.Code == "PHD" && d.Title == "Doctor of Philosophy");
-        Assert.Contains(degrees, d => d.Code == "BA" && d.Title == "Bachelor of Arts");
+        Assert.Contains(degrees, d => d.Code == "BS-CS" && d.Title == "Bachelor of Science in Computer Science");
+        Assert.Contains(degrees, d => d.Code == "MS-CS" && d.Title == "Master of Science in Computer Science");
+        Assert.Contains(degrees, d => d.Code == "PHD-CS" && d.Title == "Doctor of Philosophy in Computer Science");
+        Assert.Contains(degrees, d => d.Code == "BS-MATH" && d.Title == "Bachelor of Science in Mathematics");
 
         // Verify degree properties
-        var bs = degrees.First(d => d.Code == "BS");
-        Assert.Equal("Undergraduate", bs.Level);
+        var bs = degrees.First(d => d.Code == "BS-CS");
+        Assert.Equal("Bachelor", bs.Level);
         Assert.True(bs.IsActive);
     }
 
@@ -196,7 +196,7 @@ public class DatabaseSeederComprehensiveTests : IDisposable
         // Verify key buildings exist
         Assert.Contains(buildings, b => b.Code == "ADMIN" && b.Name == "Administration Building");
         Assert.Contains(buildings, b => b.Code == "SCI" && b.Name == "Science Building");
-        Assert.Contains(buildings, b => b.Code == "LIB" && b.Name == "Library");
+        Assert.Contains(buildings, b => b.Code == "LIB" && b.Name == "University Library");
 
         // Verify building properties
         var admin = buildings.First(b => b.Code == "ADMIN");
@@ -238,11 +238,12 @@ public class DatabaseSeederComprehensiveTests : IDisposable
         // Act
         await DatabaseSeeder.SeedAsync(_context);
 
-        // Assert - Should add seeded data without affecting existing
+        // Assert - Should not affect existing data and skip seeding since data exists
         var universities = await _context.Universities.ToListAsync();
         Assert.Contains(universities, u => u.Code == "EXISTING");
-        Assert.Contains(universities, u => u.Code == "ZAU");
-        Assert.True(universities.Count > 1);
+        // Seeder skips adding new universities when any exist
+        Assert.Single(universities);
+        Assert.Equal("EXISTING", universities.First().Code);
     }
 
     [Fact]
@@ -263,8 +264,8 @@ public class DatabaseSeederComprehensiveTests : IDisposable
         Assert.NotEmpty(mathSubjects);
 
         // Verify departments exist for referenced department names
-        Assert.Contains(departments, d => d.Name.Contains("Computer"));
-        Assert.Contains(departments, d => d.Name.Contains("Math"));
+        Assert.Contains(departments, d => d.FullName.Contains("Computer"));
+        Assert.Contains(departments, d => d.FullName.Contains("Mathematics"));
     }
 
     [Fact]

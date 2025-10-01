@@ -47,7 +47,7 @@ public class CommitteeMember : BaseEntity
     /// Gets or sets the unique identifier for the committee membership.
     /// </summary>
     [Key]
-    public int Id { get; set; }
+    public new int Id { get; set; }
 
     /// <summary>
     /// Gets or sets the committee name.

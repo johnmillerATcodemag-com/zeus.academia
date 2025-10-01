@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Zeus.Academia.Infrastructure.Data;
-using Zeus.Academia.Infrastructure.Data.Repositories;
+using Zeus.Academia.Infrastructure.Repositories;
 using Zeus.Academia.Infrastructure.Entities;
 using Xunit;
 
@@ -39,7 +39,7 @@ public class RepositoryErrorHandlingTests
         var repository = new Repository<University>(context, logger);
 
         // Act
-        var result = await repository.GetByIdAsync("NONEXISTENT");
+        var result = await repository.GetByIdAsync("NONEXIST");
 
         // Assert
         Assert.Null(result);
@@ -116,7 +116,7 @@ public class RepositoryErrorHandlingTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await repository.GetPagedAsync(skip: 0, take: 1);
+        var result = await repository.GetPagedAsync(1, 1);
 
         // Assert
         Assert.Single(result);
@@ -270,7 +270,7 @@ public class RepositoryErrorHandlingTests
         var repository = new Repository<University>(context, logger);
 
         // Act
-        var result = await repository.GetPagedAsync(skip: 1000, take: 10);
+        var result = await repository.GetPagedAsync(1000, 10);
 
         // Assert
         Assert.Empty(result);

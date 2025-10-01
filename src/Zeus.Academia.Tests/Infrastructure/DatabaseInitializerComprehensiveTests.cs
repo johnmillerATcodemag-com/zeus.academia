@@ -222,18 +222,13 @@ public class DatabaseInitializerComprehensiveTests : IDisposable
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddDbContext<AcademiaDbContext>(options =>
             options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         services.AddDatabaseInitializer();
 
-        var host = services.BuildServiceProvider()
-            .CreateScope().ServiceProvider
-            .GetRequiredService<IServiceScopeFactory>()
-            .CreateScope().ServiceProvider
-            .GetRequiredService<IHost>();
-
-        // Mock IHost for testing
-        var mockHost = new MockHost(services.BuildServiceProvider());
+        var serviceProvider = services.BuildServiceProvider();
+        var mockHost = new MockHost(serviceProvider);
 
         // Act & Assert - Should not throw
         var result = await mockHost.InitializeDatabaseAsync(applyMigrations: false, seedData: false);

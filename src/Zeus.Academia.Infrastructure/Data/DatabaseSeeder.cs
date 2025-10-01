@@ -30,6 +30,12 @@ public static class DatabaseSeeder
             await SeedUniversitiesAsync(context);
         }
 
+        // Seed Departments
+        if (!await context.Departments.AnyAsync())
+        {
+            await SeedDepartmentsAsync(context);
+        }
+
         // Seed Degrees
         if (!await context.Degrees.AnyAsync())
         {
@@ -506,5 +512,70 @@ public static class DatabaseSeeder
         };
 
         await context.Buildings.AddRangeAsync(buildings);
+    }
+
+    private static async Task SeedDepartmentsAsync(AcademiaDbContext context)
+    {
+        var departments = new[]
+        {
+            new Department
+            {
+                Name = "COMP-SCI",
+                FullName = "Department of Computer Science",
+                Description = "Computer Science and Software Engineering programs",
+                Budget = 2500000m,
+                EstablishedDate = new DateTime(1985, 9, 1),
+                IsActive = true,
+                Location = "Science Building, 3rd Floor",
+                PhoneNumber = "555-0101",
+                Email = "cs@university.edu",
+                CreatedBy = "System",
+                ModifiedBy = "System"
+            },
+            new Department
+            {
+                Name = "MATH",
+                FullName = "Department of Mathematics",
+                Description = "Pure and Applied Mathematics programs",
+                Budget = 1800000m,
+                EstablishedDate = new DateTime(1965, 9, 1),
+                IsActive = true,
+                Location = "Math Building, 2nd Floor",
+                PhoneNumber = "555-0102",
+                Email = "math@university.edu",
+                CreatedBy = "System",
+                ModifiedBy = "System"
+            },
+            new Department
+            {
+                Name = "PHYSICS",
+                FullName = "Department of Physics",
+                Description = "Physics and Astronomy programs",
+                Budget = 2100000m,
+                EstablishedDate = new DateTime(1960, 9, 1),
+                IsActive = true,
+                Location = "Physics Building, 1st Floor",
+                PhoneNumber = "555-0103",
+                Email = "physics@university.edu",
+                CreatedBy = "System",
+                ModifiedBy = "System"
+            },
+            new Department
+            {
+                Name = "ENG",
+                FullName = "College of Engineering",
+                Description = "Various Engineering disciplines",
+                Budget = 3200000m,
+                EstablishedDate = new DateTime(1970, 9, 1),
+                IsActive = true,
+                Location = "Engineering Complex",
+                PhoneNumber = "555-0104",
+                Email = "engineering@university.edu",
+                CreatedBy = "System",
+                ModifiedBy = "System"
+            }
+        };
+
+        await context.Departments.AddRangeAsync(departments);
     }
 }

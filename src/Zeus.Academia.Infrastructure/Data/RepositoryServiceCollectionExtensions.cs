@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Zeus.Academia.Infrastructure.Data.Repositories;
+using Zeus.Academia.Infrastructure.Repositories;
+using Zeus.Academia.Infrastructure.Repositories.Interfaces;
 
 namespace Zeus.Academia.Infrastructure.Data;
 
