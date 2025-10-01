@@ -24,6 +24,21 @@ public interface IUnitOfWork : IDisposable
     ISubjectRepository Subjects { get; }
 
     /// <summary>
+    /// Gets the User repository for identity management.
+    /// </summary>
+    IUserRepository Users { get; }
+
+    /// <summary>
+    /// Gets the Role repository for role management.
+    /// </summary>
+    IRoleRepository Roles { get; }
+
+    /// <summary>
+    /// Gets the Refresh Token repository for token management.
+    /// </summary>
+    IRefreshTokenRepository RefreshTokens { get; }
+
+    /// <summary>
     /// Saves all changes made in this unit of work to the database asynchronously.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>

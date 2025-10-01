@@ -102,6 +102,11 @@ public class AcademiaUser : BaseEntity
     public virtual ICollection<AcademiaUserRole> UserRoles { get; set; } = new List<AcademiaUserRole>();
 
     /// <summary>
+    /// Navigation property to the refresh tokens for this user.
+    /// </summary>
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+    /// <summary>
     /// Gets the computed full name of the user.
     /// </summary>
     public string FullName => !string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)

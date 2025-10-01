@@ -1,17 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using Zeus.Academia.Infrastructure.Entities;
 
 namespace Zeus.Academia.Infrastructure.Identity;
 
 /// <summary>
 /// Entity representing a refresh token for JWT authentication
 /// </summary>
-public class RefreshToken
+public class RefreshToken : BaseEntity
 {
-    /// <summary>
-    /// Unique identifier for the refresh token
-    /// </summary>
-    [Key]
-    public int Id { get; set; }
 
     /// <summary>
     /// The refresh token value
@@ -74,6 +70,17 @@ public class RefreshToken
     /// </summary>
     [StringLength(50)]
     public string? RevokedByIp { get; set; }
+
+    /// <summary>
+    /// Device identifier for the token (optional)
+    /// </summary>
+    [StringLength(100)]
+    public string? DeviceId { get; set; }
+
+    /// <summary>
+    /// When the token was last used (optional)
+    /// </summary>
+    public DateTime? LastUsedDate { get; set; }
 
     /// <summary>
     /// Check if the refresh token is currently active

@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Infrastructure.Identity;
 using Zeus.Academia.Infrastructure.Services;
+using Zeus.Academia.Infrastructure.Repositories;
+using Zeus.Academia.Infrastructure.Repositories.Interfaces;
 
 namespace Zeus.Academia.Infrastructure.Extensions;
 
@@ -126,6 +128,11 @@ public static class ServiceCollectionExtensions
         // Register User Management services (Task 4)
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IEmailService, EmailService>();
+
+        // Register Identity Repositories (Task 5)
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         // Note: Authentication and Authorization services will be configured in the API project
     }

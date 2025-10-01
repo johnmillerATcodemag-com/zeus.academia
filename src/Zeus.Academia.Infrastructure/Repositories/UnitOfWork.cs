@@ -23,6 +23,9 @@ public class UnitOfWork : Repositories.Interfaces.IUnitOfWork
     private IAcademicRepository? _academicRepository;
     private IDepartmentRepository? _departmentRepository;
     private ISubjectRepository? _subjectRepository;
+    private IUserRepository? _userRepository;
+    private IRoleRepository? _roleRepository;
+    private IRefreshTokenRepository? _refreshTokenRepository;
 
     // Generic repository cache
     private readonly Dictionary<Type, object> _repositories = new();
@@ -35,18 +38,27 @@ public class UnitOfWork : Repositories.Interfaces.IUnitOfWork
     /// <param name="academicRepository">The academic repository</param>
     /// <param name="departmentRepository">The department repository</param>
     /// <param name="subjectRepository">The subject repository</param>
+    /// <param name="userRepository">The user repository</param>
+    /// <param name="roleRepository">The role repository</param>
+    /// <param name="refreshTokenRepository">The refresh token repository</param>
     public UnitOfWork(
         AcademiaDbContext context,
         ILogger<UnitOfWork> logger,
         IAcademicRepository academicRepository,
         IDepartmentRepository departmentRepository,
-        ISubjectRepository subjectRepository)
+        ISubjectRepository subjectRepository,
+        IUserRepository userRepository,
+        IRoleRepository roleRepository,
+        IRefreshTokenRepository refreshTokenRepository)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _academicRepository = academicRepository ?? throw new ArgumentNullException(nameof(academicRepository));
         _departmentRepository = departmentRepository ?? throw new ArgumentNullException(nameof(departmentRepository));
         _subjectRepository = subjectRepository ?? throw new ArgumentNullException(nameof(subjectRepository));
+        _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+        _roleRepository = roleRepository ?? throw new ArgumentNullException(nameof(roleRepository));
+        _refreshTokenRepository = refreshTokenRepository ?? throw new ArgumentNullException(nameof(refreshTokenRepository));
     }
 
     /// <inheritdoc/>
@@ -79,6 +91,39 @@ public class UnitOfWork : Repositories.Interfaces.IUnitOfWork
             if (_disposed)
                 throw new ObjectDisposedException(nameof(UnitOfWork));
             return _subjectRepository!;
+        }
+    }
+
+    /// <inheritdoc/>
+    public IUserRepository Users
+    {
+        get
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(UnitOfWork));
+            return _userRepository!;
+        }
+    }
+
+    /// <inheritdoc/>
+    public IRoleRepository Roles
+    {
+        get
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(UnitOfWork));
+            return _roleRepository!;
+        }
+    }
+
+    /// <inheritdoc/>
+    public IRefreshTokenRepository RefreshTokens
+    {
+        get
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(UnitOfWork));
+            return _refreshTokenRepository!;
         }
     }
 
