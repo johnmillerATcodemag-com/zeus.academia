@@ -111,27 +111,27 @@ public class AcademiaDbContext : DbContext
             .HasOne(t => t.Department)
             .WithMany(d => d.Teachers)
             .HasForeignKey(t => t.DepartmentName)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Configure TeachingProf relationships
         modelBuilder.Entity<TeachingProf>()
             .HasOne(tp => tp.Department)
             .WithMany(d => d.TeachingProfs)
             .HasForeignKey(tp => tp.DepartmentName)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<TeachingProf>()
             .HasOne(tp => tp.Rank)
             .WithMany(r => r.TeachingProfs)
             .HasForeignKey(tp => tp.RankCode)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         // Configure Student relationships
         modelBuilder.Entity<Student>()
             .HasOne(s => s.Department)
             .WithMany(d => d.Students)
             .HasForeignKey(s => s.DepartmentName)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<Student>()
             .HasOne(s => s.Degree)
