@@ -225,6 +225,75 @@ public class AcademiaDbContext : DbContext
         modelBuilder.Entity<StudentEnrollment>()
             .HasIndex(se => new { se.StudentEmpNr, se.SubjectCode, se.Semester, se.AcademicYear });
 
+        // Enhanced indexes for Task 3: Academic Structure Entities
+        modelBuilder.Entity<Department>()
+            .HasIndex(d => d.Name)
+            .IsUnique();
+
+        modelBuilder.Entity<Department>()
+            .HasIndex(d => d.IsActive);
+
+        modelBuilder.Entity<Department>()
+            .HasIndex(d => d.EstablishedDate);
+
+        modelBuilder.Entity<Subject>()
+            .HasIndex(s => s.Title);
+
+        modelBuilder.Entity<Subject>()
+            .HasIndex(s => s.Level);
+
+        modelBuilder.Entity<Subject>()
+            .HasIndex(s => s.IsActive);
+
+        modelBuilder.Entity<Subject>()
+            .HasIndex(s => new { s.DepartmentName, s.Level });
+
+        modelBuilder.Entity<Degree>()
+            .HasIndex(d => d.Level);
+
+        modelBuilder.Entity<Degree>()
+            .HasIndex(d => d.IsActive);
+
+        modelBuilder.Entity<Degree>()
+            .HasIndex(d => new { d.Level, d.PrimaryDepartment });
+
+        modelBuilder.Entity<University>()
+            .HasIndex(u => u.Name);
+
+        modelBuilder.Entity<University>()
+            .HasIndex(u => u.Country);
+
+        modelBuilder.Entity<University>()
+            .HasIndex(u => u.IsActive);
+
+        modelBuilder.Entity<University>()
+            .HasIndex(u => new { u.Country, u.StateProvince, u.City });
+
+        modelBuilder.Entity<Rank>()
+            .HasIndex(r => r.Level);
+
+        modelBuilder.Entity<Rank>()
+            .HasIndex(r => r.Category);
+
+        modelBuilder.Entity<Rank>()
+            .HasIndex(r => r.IsActive);
+
+        modelBuilder.Entity<Rank>()
+            .HasIndex(r => new { r.Category, r.Level });
+
+        // Enhanced constraints for Task 3: Academic Structure Entities
+        modelBuilder.Entity<Rank>()
+            .ToTable(t => t.HasCheckConstraint("CK_Rank_SalaryRange", "MinSalary <= MaxSalary OR MinSalary IS NULL OR MaxSalary IS NULL"));
+
+        modelBuilder.Entity<Degree>()
+            .ToTable(t => t.HasCheckConstraint("CK_Degree_MinimumGPA", "MinimumGPA >= 1.0 AND MinimumGPA <= 4.0 OR MinimumGPA IS NULL"));
+
+        modelBuilder.Entity<Subject>()
+            .ToTable(t => t.HasCheckConstraint("CK_Subject_CreditHours", "CreditHours >= 1 AND CreditHours <= 12 OR CreditHours IS NULL"));
+
+        modelBuilder.Entity<University>()
+            .ToTable(t => t.HasCheckConstraint("CK_University_StudentEnrollment", "StudentEnrollment >= 0 OR StudentEnrollment IS NULL"));
+
         // Apply all entity configurations from the current assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AcademiaDbContext).Assembly);
     }
