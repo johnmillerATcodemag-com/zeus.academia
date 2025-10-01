@@ -38,6 +38,12 @@ public class AcademiaDbContext : DbContext
     public DbSet<Teaching> Teachings { get; set; } = null!;
     public DbSet<CommitteeMember> CommitteeMembers { get; set; } = null!;
     public DbSet<TeacherRating> TeacherRatings { get; set; } = null!;
+
+    // Infrastructure Entities (Task 4)
+    public DbSet<Building> Buildings { get; set; } = null!;
+    public DbSet<Room> Rooms { get; set; } = null!;
+    public DbSet<Extension> Extensions { get; set; } = null!;
+    public DbSet<AccessLevel> AccessLevels { get; set; } = null!;
     public DbSet<StudentEnrollment> StudentEnrollments { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -293,6 +299,84 @@ public class AcademiaDbContext : DbContext
 
         modelBuilder.Entity<University>()
             .ToTable(t => t.HasCheckConstraint("CK_University_StudentEnrollment", "StudentEnrollment >= 0 OR StudentEnrollment IS NULL"));
+
+        // ========== Task 4: Infrastructure Entity Configurations ==========
+
+        // Configure Room composite key and relationships
+        modelBuilder.Entity<Room>()
+            .HasKey(r => new { r.Number, r.BuildingCode });
+
+        modelBuilder.Entity<Room>()
+            .HasOne(r => r.Building)
+            .WithMany(b => b.Rooms)
+            .HasForeignKey(r => r.BuildingCode)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure Extension relationships
+        modelBuilder.Entity<Extension>()
+            .HasOne(e => e.ResponsibleEmployee)
+            .WithMany()
+            .HasForeignKey(e => e.ResponsibleEmployeeNr)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure Infrastructure entity indexes for performance
+        modelBuilder.Entity<Building>()
+            .HasIndex(b => b.Name);
+
+        modelBuilder.Entity<Building>()
+            .HasIndex(b => b.BuildingType);
+
+        modelBuilder.Entity<Building>()
+            .HasIndex(b => b.IsActive);
+
+        modelBuilder.Entity<Room>()
+            .HasIndex(r => r.Type);
+
+        modelBuilder.Entity<Room>()
+            .HasIndex(r => r.IsActive);
+
+        modelBuilder.Entity<Room>()
+            .HasIndex(r => r.FloorNumber);
+
+        modelBuilder.Entity<Room>()
+            .HasIndex(r => new { r.BuildingCode, r.Type });
+
+        modelBuilder.Entity<Extension>()
+            .HasIndex(e => e.Type);
+
+        modelBuilder.Entity<Extension>()
+            .HasIndex(e => e.Department);
+
+        modelBuilder.Entity<Extension>()
+            .HasIndex(e => e.IsActive);
+
+        modelBuilder.Entity<AccessLevel>()
+            .HasIndex(a => a.Category);
+
+        modelBuilder.Entity<AccessLevel>()
+            .HasIndex(a => a.Level);
+
+        modelBuilder.Entity<AccessLevel>()
+            .HasIndex(a => a.IsActive);
+
+        modelBuilder.Entity<AccessLevel>()
+            .HasIndex(a => new { a.Category, a.Level });
+
+        // Configure Infrastructure entity constraints
+        modelBuilder.Entity<Room>()
+            .ToTable(t => t.HasCheckConstraint("CK_Room_Capacity", "Capacity >= 1 OR Capacity IS NULL"));
+
+        modelBuilder.Entity<Building>()
+            .ToTable(t => t.HasCheckConstraint("CK_Building_Floors", "NumberOfFloors >= 1 OR NumberOfFloors IS NULL"));
+
+        modelBuilder.Entity<Building>()
+            .ToTable(t => t.HasCheckConstraint("CK_Building_Area", "TotalAreaSqFt >= 0 OR TotalAreaSqFt IS NULL"));
+
+        modelBuilder.Entity<AccessLevel>()
+            .ToTable(t => t.HasCheckConstraint("CK_AccessLevel_Level", "Level >= 1 AND Level <= 100 OR Level IS NULL"));
+
+        modelBuilder.Entity<AccessLevel>()
+            .ToTable(t => t.HasCheckConstraint("CK_AccessLevel_Sessions", "MaxConcurrentSessions >= 1 OR MaxConcurrentSessions IS NULL"));
 
         // Apply all entity configurations from the current assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AcademiaDbContext).Assembly);

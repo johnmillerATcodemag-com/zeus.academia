@@ -680,4 +680,365 @@ public class EntityValidationTests
             Assert.Equal(status, university.AccreditationStatus);
         }
     }
+
+    // ========== Task 4: Infrastructure Entity Tests ==========
+
+    [Fact]
+    public void Building_Should_Have_All_Required_Properties()
+    {
+        // Arrange & Act
+        var building = new Building
+        {
+            Code = "ENGR1",
+            Name = "Engineering Building",
+            Description = "Main engineering facility with laboratories and classrooms",
+            Address = "123 University Drive, Campus City, State 12345",
+            NumberOfFloors = 5,
+            ConstructionYear = 1985,
+            TotalAreaSqFt = 75000.50m,
+            IsActive = true,
+            HasElevator = true,
+            IsAccessible = true,
+            BuildingType = "Academic",
+            PhoneNumber = "+1-555-123-4567",
+            BuildingManager = "John Smith",
+            EmergencyContact = "Campus Security: +1-555-911-0000",
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Assert
+        Assert.Equal("ENGR1", building.Code);
+        Assert.Equal("Engineering Building", building.Name);
+        Assert.Equal("Main engineering facility with laboratories and classrooms", building.Description);
+        Assert.Equal("123 University Drive, Campus City, State 12345", building.Address);
+        Assert.Equal(5, building.NumberOfFloors);
+        Assert.Equal(1985, building.ConstructionYear);
+        Assert.Equal(75000.50m, building.TotalAreaSqFt);
+        Assert.True(building.IsActive);
+        Assert.True(building.HasElevator);
+        Assert.True(building.IsAccessible);
+        Assert.Equal("Academic", building.BuildingType);
+        Assert.Equal("+1-555-123-4567", building.PhoneNumber);
+        Assert.Equal("John Smith", building.BuildingManager);
+        Assert.Equal("Campus Security: +1-555-911-0000", building.EmergencyContact);
+        Assert.NotNull(building.Rooms);
+    }
+
+    [Fact]
+    public void Room_Should_Have_Composite_Key_Properties()
+    {
+        // Arrange & Act
+        var room = new Room
+        {
+            Number = "205A",
+            BuildingCode = "ENGR1",
+            Name = "Computer Programming Laboratory",
+            Type = "Laboratory",
+            Capacity = 30,
+            FloorNumber = 2,
+            AreaSqFt = 800.75m,
+            IsActive = true,
+            HasAVEquipment = true,
+            HasComputerAccess = true,
+            HasProjector = true,
+            HasWhiteboard = true,
+            IsAccessible = true,
+            SpecialEquipment = "30 desktop computers, network switches, development software",
+            MaintenanceNotes = "Quarterly deep cleaning required",
+            LastMaintenanceDate = new DateTime(2025, 9, 15),
+            BookingNotes = "Priority booking for CS courses",
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Assert
+        Assert.Equal("205A", room.Number);
+        Assert.Equal("ENGR1", room.BuildingCode);
+        Assert.Equal("Computer Programming Laboratory", room.Name);
+        Assert.Equal("Laboratory", room.Type);
+        Assert.Equal(30, room.Capacity);
+        Assert.Equal(2, room.FloorNumber);
+        Assert.Equal(800.75m, room.AreaSqFt);
+        Assert.True(room.IsActive);
+        Assert.True(room.HasAVEquipment);
+        Assert.True(room.HasComputerAccess);
+        Assert.True(room.HasProjector);
+        Assert.True(room.HasWhiteboard);
+        Assert.True(room.IsAccessible);
+        Assert.Equal("30 desktop computers, network switches, development software", room.SpecialEquipment);
+        Assert.Equal("Quarterly deep cleaning required", room.MaintenanceNotes);
+        Assert.Equal(new DateTime(2025, 9, 15), room.LastMaintenanceDate);
+        Assert.Equal("Priority booking for CS courses", room.BookingNotes);
+    }
+
+    [Fact]
+    public void Extension_Should_Have_All_Communication_Properties()
+    {
+        // Arrange & Act
+        var extension = new Extension
+        {
+            Number = "5501",
+            Description = "Computer Science Department Main Office",
+            Department = "Computer Science",
+            Location = "ENGR1-101",
+            Type = "Department",
+            IsActive = true,
+            HasVoicemail = true,
+            AllowsForwarding = true,
+            Priority = 2,
+            PrimaryContact = "Jane Department Head",
+            ResponsibleEmployeeNr = 12345,
+            SpecialInstructions = "Forward to mobile during office hours",
+            OperatingHours = "Monday-Friday 8:00 AM - 5:00 PM",
+            InstallationDate = new DateTime(2020, 8, 15),
+            LastServiceDate = new DateTime(2025, 6, 1),
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Assert
+        Assert.Equal("5501", extension.Number);
+        Assert.Equal("Computer Science Department Main Office", extension.Description);
+        Assert.Equal("Computer Science", extension.Department);
+        Assert.Equal("ENGR1-101", extension.Location);
+        Assert.Equal("Department", extension.Type);
+        Assert.True(extension.IsActive);
+        Assert.True(extension.HasVoicemail);
+        Assert.True(extension.AllowsForwarding);
+        Assert.Equal(2, extension.Priority);
+        Assert.Equal("Jane Department Head", extension.PrimaryContact);
+        Assert.Equal(12345, extension.ResponsibleEmployeeNr);
+        Assert.Equal("Forward to mobile during office hours", extension.SpecialInstructions);
+        Assert.Equal("Monday-Friday 8:00 AM - 5:00 PM", extension.OperatingHours);
+        Assert.Equal(new DateTime(2020, 8, 15), extension.InstallationDate);
+        Assert.Equal(new DateTime(2025, 6, 1), extension.LastServiceDate);
+    }
+
+    [Fact]
+    public void AccessLevel_Should_Have_All_Permission_Properties()
+    {
+        // Arrange & Act
+        var accessLevel = new AccessLevel
+        {
+            Code = "FACULT1",
+            Name = "Faculty Level 1",
+            Description = "Standard faculty access with course and grade management",
+            Level = 10,
+            IsActive = true,
+            CanRead = true,
+            CanCreate = true,
+            CanUpdate = true,
+            CanDelete = false,
+            CanExecute = false,
+            CanModifySystem = false,
+            CanAccessFinancial = false,
+            CanAccessStudentRecords = true,
+            CanAccessFacultyRecords = false,
+            CanGenerateReports = true,
+            Category = "Faculty",
+            MaxConcurrentSessions = 3,
+            SessionTimeoutMinutes = 120,
+            RequiresTwoFactor = false,
+            RequiresPasswordChange = true,
+            PasswordChangeFrequencyDays = 90,
+            SpecialPermissions = "Can modify grades for assigned courses only",
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Assert
+        Assert.Equal("FACULT1", accessLevel.Code);
+        Assert.Equal("Faculty Level 1", accessLevel.Name);
+        Assert.Equal("Standard faculty access with course and grade management", accessLevel.Description);
+        Assert.Equal(10, accessLevel.Level);
+        Assert.True(accessLevel.IsActive);
+        Assert.True(accessLevel.CanRead);
+        Assert.True(accessLevel.CanCreate);
+        Assert.True(accessLevel.CanUpdate);
+        Assert.False(accessLevel.CanDelete);
+        Assert.False(accessLevel.CanExecute);
+        Assert.False(accessLevel.CanModifySystem);
+        Assert.False(accessLevel.CanAccessFinancial);
+        Assert.True(accessLevel.CanAccessStudentRecords);
+        Assert.False(accessLevel.CanAccessFacultyRecords);
+        Assert.True(accessLevel.CanGenerateReports);
+        Assert.Equal("Faculty", accessLevel.Category);
+        Assert.Equal(3, accessLevel.MaxConcurrentSessions);
+        Assert.Equal(120, accessLevel.SessionTimeoutMinutes);
+        Assert.False(accessLevel.RequiresTwoFactor);
+        Assert.True(accessLevel.RequiresPasswordChange);
+        Assert.Equal(90, accessLevel.PasswordChangeFrequencyDays);
+        Assert.Equal("Can modify grades for assigned courses only", accessLevel.SpecialPermissions);
+    }
+
+    [Fact]
+    public void Building_Type_Should_Accept_Valid_Values()
+    {
+        // Test valid building types
+        var validTypes = new[] { "Academic", "Administrative", "Residential", "Athletic", "Library", "Dining", "Parking", "Maintenance", "Other" };
+
+        foreach (var type in validTypes)
+        {
+            var building = new Building
+            {
+                Code = "TEST",
+                Name = "Test Building Structure",
+                BuildingType = type,
+                CreatedBy = "Test",
+                ModifiedBy = "Test"
+            };
+
+            Assert.Equal(type, building.BuildingType);
+        }
+    }
+
+    [Fact]
+    public void Room_Type_Should_Accept_Valid_Values()
+    {
+        // Test valid room types
+        var validTypes = new[] { "Classroom", "Laboratory", "Office", "Conference", "Auditorium", "Library", "Study", "Administrative", "Storage", "Restroom", "Other" };
+
+        foreach (var type in validTypes)
+        {
+            var room = new Room
+            {
+                Number = "TEST",
+                BuildingCode = "TEST",
+                Type = type,
+                CreatedBy = "Test",
+                ModifiedBy = "Test"
+            };
+
+            Assert.Equal(type, room.Type);
+        }
+    }
+
+    [Fact]
+    public void Extension_Type_Should_Accept_Valid_Values()
+    {
+        // Test valid extension types
+        var validTypes = new[] { "Office", "Department", "Emergency", "Maintenance", "Security", "Reception", "Conference", "Other" };
+
+        foreach (var type in validTypes)
+        {
+            var extension = new Extension
+            {
+                Number = "1234",
+                Type = type,
+                CreatedBy = "Test",
+                ModifiedBy = "Test"
+            };
+
+            Assert.Equal(type, extension.Type);
+        }
+    }
+
+    [Fact]
+    public void AccessLevel_Category_Should_Accept_Valid_Values()
+    {
+        // Test valid access level categories
+        var validCategories = new[] { "System", "Academic", "Administrative", "Student", "Faculty", "Staff", "Guest", "Service" };
+
+        foreach (var category in validCategories)
+        {
+            var accessLevel = new AccessLevel
+            {
+                Code = "TEST",
+                Name = "Test Access Level",
+                Category = category,
+                CreatedBy = "Test",
+                ModifiedBy = "Test"
+            };
+
+            Assert.Equal(category, accessLevel.Category);
+        }
+    }
+
+    [Fact]
+    public void Room_Should_Support_Equipment_Tracking()
+    {
+        // Arrange & Act
+        var room = new Room
+        {
+            Number = "LAB1",
+            BuildingCode = "SCI",
+            Type = "Laboratory",
+            HasAVEquipment = true,
+            HasComputerAccess = true,
+            HasProjector = true,
+            HasWhiteboard = false,
+            IsAccessible = true,
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Assert
+        Assert.True(room.HasAVEquipment);
+        Assert.True(room.HasComputerAccess);
+        Assert.True(room.HasProjector);
+        Assert.False(room.HasWhiteboard);
+        Assert.True(room.IsAccessible);
+    }
+
+    [Fact]
+    public void AccessLevel_Permission_Hierarchy_Should_Be_Logical()
+    {
+        // Arrange & Act - Create admin access level
+        var adminAccess = new AccessLevel
+        {
+            Code = "ADMIN",
+            Name = "System Administrator",
+            Category = "System",
+            Level = 1,
+            CanRead = true,
+            CanCreate = true,
+            CanUpdate = true,
+            CanDelete = true,
+            CanExecute = true,
+            CanModifySystem = true,
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Arrange & Act - Create student access level
+        var studentAccess = new AccessLevel
+        {
+            Code = "STUD",
+            Name = "Student",
+            Category = "Student",
+            Level = 50,
+            CanRead = true,
+            CanCreate = false,
+            CanUpdate = false,
+            CanDelete = false,
+            CanExecute = false,
+            CanModifySystem = false,
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Assert - Admin should have higher privileges than student
+        Assert.True(adminAccess.Level < studentAccess.Level); // Lower level number = higher access
+        Assert.True(adminAccess.CanDelete && !studentAccess.CanDelete);
+        Assert.True(adminAccess.CanModifySystem && !studentAccess.CanModifySystem);
+    }
+
+    [Fact]
+    public void Building_Construction_Year_Should_Be_Reasonable()
+    {
+        // Arrange & Act
+        var building = new Building
+        {
+            Code = "HIST",
+            Name = "Historic Building",
+            ConstructionYear = 1890,
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        // Assert
+        Assert.True(building.ConstructionYear >= 1800);
+        Assert.True(building.ConstructionYear <= DateTime.Now.Year);
+    }
 }
