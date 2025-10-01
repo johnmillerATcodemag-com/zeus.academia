@@ -47,8 +47,10 @@ public class AcademiaDbContext : DbContext
     public DbSet<AccessLevel> AccessLevels { get; set; } = null!;
     public DbSet<StudentEnrollment> StudentEnrollments { get; set; } = null!;
 
-    // Identity Entities (Task 1)
+    // Identity Entities (Task 1 & 2)
     public DbSet<AcademiaUser> Users { get; set; } = null!;
+    public DbSet<AcademiaRole> Roles { get; set; } = null!;
+    public DbSet<AcademiaUserRole> UserRoles { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -473,6 +475,152 @@ public class AcademiaDbContext : DbContext
             // Add check constraint for access failed count
             entity.ToTable(t => t.HasCheckConstraint("CK_Users_AccessFailedCount",
                 "AccessFailedCount >= 0"));
+        });
+
+        // Configure AcademiaRole entity
+        modelBuilder.Entity<AcademiaRole>(entity =>
+        {
+            entity.ToTable("Roles");
+
+            // Primary key configuration
+            entity.HasKey(r => r.Id);
+
+            // Role type configuration
+            entity.Property(r => r.RoleType)
+                .IsRequired()
+                .HasConversion<int>();
+
+            // Name configuration
+            entity.Property(r => r.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(r => r.NormalizedName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.HasIndex(r => r.NormalizedName)
+                .IsUnique()
+                .HasDatabaseName("IX_Roles_NormalizedName");
+
+            // Description
+            entity.Property(r => r.Description)
+                .HasMaxLength(500);
+
+            // Priority configuration
+            entity.Property(r => r.Priority)
+                .HasDefaultValue(1);
+
+            // Boolean properties with defaults
+            entity.Property(r => r.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(r => r.IsSystemRole)
+                .HasDefaultValue(false);
+
+            // Department relationship (optional)
+            entity.HasOne(r => r.Department)
+                .WithMany()
+                .HasForeignKey(r => r.DepartmentName)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_Roles_Department_DepartmentName");
+
+            entity.HasIndex(r => r.DepartmentName)
+                .HasDatabaseName("IX_Roles_DepartmentName");
+
+            // Additional permissions (JSON)
+            entity.Property(r => r.AdditionalPermissions)
+                .HasColumnType("nvarchar(max)");
+
+            // Composite index for role type and department
+            entity.HasIndex(r => new { r.RoleType, r.DepartmentName })
+                .HasDatabaseName("IX_Roles_RoleType_Department");
+
+            // Check constraint for priority
+            entity.ToTable(t => t.HasCheckConstraint("CK_Roles_Priority",
+                "Priority >= 1 AND Priority <= 10"));
+        });
+
+        // Configure AcademiaUserRole entity
+        modelBuilder.Entity<AcademiaUserRole>(entity =>
+        {
+            entity.ToTable("UserRoles");
+
+            // Primary key configuration
+            entity.HasKey(ur => ur.Id);
+
+            // User relationship
+            entity.HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_UserRoles_User_UserId");
+
+            // Role relationship
+            entity.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_UserRoles_Role_RoleId");
+
+            // Department context relationship (optional)
+            entity.HasOne(ur => ur.DepartmentContext)
+                .WithMany()
+                .HasForeignKey(ur => ur.DepartmentContextName)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_UserRoles_DepartmentContext_DepartmentContextName");
+
+            // Indexes
+            entity.HasIndex(ur => ur.UserId)
+                .HasDatabaseName("IX_UserRoles_UserId");
+
+            entity.HasIndex(ur => ur.RoleId)
+                .HasDatabaseName("IX_UserRoles_RoleId");
+
+            entity.HasIndex(ur => ur.DepartmentContextName)
+                .HasDatabaseName("IX_UserRoles_DepartmentContextName");
+
+            // Composite index for user-role uniqueness (within same department context)
+            entity.HasIndex(ur => new { ur.UserId, ur.RoleId, ur.DepartmentContextName })
+                .IsUnique()
+                .HasDatabaseName("IX_UserRoles_User_Role_Department")
+                .HasFilter("DepartmentContextName IS NOT NULL");
+
+            // Alternative composite index for global roles (no department context)
+            entity.HasIndex(ur => new { ur.UserId, ur.RoleId })
+                .IsUnique()
+                .HasDatabaseName("IX_UserRoles_User_Role_Global")
+                .HasFilter("DepartmentContextName IS NULL");
+
+            // Date configuration
+            entity.Property(ur => ur.EffectiveDate)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(ur => ur.ExpirationDate)
+                .HasColumnType("datetime2");
+
+            // String properties
+            entity.Property(ur => ur.AssignmentReason)
+                .HasMaxLength(500);
+
+            entity.Property(ur => ur.AssignedBy)
+                .HasMaxLength(100);
+
+            // Assignment context (JSON)
+            entity.Property(ur => ur.AssignmentContext)
+                .HasColumnType("nvarchar(max)");
+
+            // Boolean properties with defaults
+            entity.Property(ur => ur.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(ur => ur.IsPrimary)
+                .HasDefaultValue(false);
+
+            // Check constraint for effective dates
+            entity.ToTable(t => t.HasCheckConstraint("CK_UserRoles_EffectiveDates",
+                "ExpirationDate IS NULL OR ExpirationDate > EffectiveDate"));
         });
     }
 }

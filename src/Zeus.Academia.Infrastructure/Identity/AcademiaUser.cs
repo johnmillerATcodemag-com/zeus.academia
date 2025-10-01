@@ -96,6 +96,12 @@ public class AcademiaUser : BaseEntity
     public virtual Academic? Academic { get; set; }
 
     /// <summary>
+    /// Navigation property to the roles assigned to this user.
+    /// Users can have multiple roles with different contexts and effective dates.
+    /// </summary>
+    public virtual ICollection<AcademiaUserRole> UserRoles { get; set; } = new List<AcademiaUserRole>();
+
+    /// <summary>
     /// Gets the computed full name of the user.
     /// </summary>
     public string FullName => !string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)
@@ -142,5 +148,99 @@ public class AcademiaUser : BaseEntity
         IsActive = true;
         ModifiedDate = DateTime.UtcNow;
         ModifiedBy = modifiedBy ?? ModifiedBy;
+    }
+
+    /// <summary>
+    /// Gets all currently effective roles for this user.
+    /// </summary>
+    /// <returns>Collection of effective user role assignments</returns>
+    public IEnumerable<AcademiaUserRole> GetEffectiveUserRoles()
+    {
+        return UserRoles.Where(ur => ur.IsCurrentlyEffective());
+    }
+
+    /// <summary>
+    /// Gets all currently effective roles for this user.
+    /// </summary>
+    /// <returns>Collection of effective roles</returns>
+    public IEnumerable<AcademiaRole> GetEffectiveRoles()
+    {
+        return GetEffectiveUserRoles().Select(ur => ur.Role);
+    }
+
+    /// <summary>
+    /// Gets the primary role for this user.
+    /// </summary>
+    /// <returns>The primary role if one exists, otherwise null</returns>
+    public AcademiaRole? GetPrimaryRole()
+    {
+        return GetEffectiveUserRoles()
+            .FirstOrDefault(ur => ur.IsPrimary)?.Role;
+    }
+
+    /// <summary>
+    /// Checks if the user has a specific role type.
+    /// </summary>
+    /// <param name="roleType">The role type to check for</param>
+    /// <returns>True if the user has an effective role of the specified type</returns>
+    public bool HasRole(AcademicRoleType roleType)
+    {
+        return GetEffectiveRoles().Any(r => r.RoleType == roleType);
+    }
+
+    /// <summary>
+    /// Checks if the user has any of the specified role types.
+    /// </summary>
+    /// <param name="roleTypes">The role types to check for</param>
+    /// <returns>True if the user has any of the specified roles</returns>
+    public bool HasAnyRole(params AcademicRoleType[] roleTypes)
+    {
+        var userRoleTypes = GetEffectiveRoles().Select(r => r.RoleType).ToHashSet();
+        return roleTypes.Any(rt => userRoleTypes.Contains(rt));
+    }
+
+    /// <summary>
+    /// Gets the highest priority role for this user.
+    /// </summary>
+    /// <returns>The role with the highest priority, or null if no roles</returns>
+    public AcademiaRole? GetHighestPriorityRole()
+    {
+        return GetEffectiveRoles()
+            .OrderByDescending(r => r.Priority)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Determines if this user can manage another user based on role hierarchy.
+    /// </summary>
+    /// <param name="targetUser">The user to check management permissions for</param>
+    /// <returns>True if this user can manage the target user</returns>
+    public bool CanManage(AcademiaUser targetUser)
+    {
+        var myHighestRole = GetHighestPriorityRole();
+        var targetHighestRole = targetUser.GetHighestPriorityRole();
+
+        if (myHighestRole == null || targetHighestRole == null)
+            return false;
+
+        return myHighestRole.CanManage(targetHighestRole);
+    }
+
+    /// <summary>
+    /// Gets a description of all effective roles for this user.
+    /// </summary>
+    /// <returns>Formatted string describing the user's roles</returns>
+    public string GetRolesDescription()
+    {
+        var effectiveRoles = GetEffectiveUserRoles().ToList();
+
+        if (!effectiveRoles.Any())
+            return "No active roles";
+
+        var descriptions = effectiveRoles
+            .Select(ur => ur.GetAssignmentDescription())
+            .ToList();
+
+        return string.Join(", ", descriptions);
     }
 }

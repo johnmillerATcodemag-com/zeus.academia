@@ -113,6 +113,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(lockoutSettings);
         services.AddSingleton(userSettings);
 
+        // Register role-based authorization services (Task 2)
+        services.AddScoped<IRoleHierarchyService, RoleHierarchyService>();
+        services.AddScoped<IRoleAssignmentService, RoleAssignmentService>();
+
         // Note: Authentication and Authorization services will be configured in the API project
         // Custom Identity services (UserService, PasswordHasher, etc.) will be added in Task 4
     }

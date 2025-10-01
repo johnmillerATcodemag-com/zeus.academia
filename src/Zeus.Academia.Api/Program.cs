@@ -1,4 +1,5 @@
 using Zeus.Academia.Infrastructure.Extensions;
+using Zeus.Academia.Infrastructure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,10 +31,51 @@ builder.Services.AddAuthorization(options =>
     // Default policy requiring authenticated users
     options.FallbackPolicy = options.DefaultPolicy;
 
-    // Additional policies will be added in Task 2 (Role-Based Authorization)
-});
+    // Role-based policies
+    options.AddPolicy(AcademiaPolicyNames.RequireStudentRole, policy =>
+        policy.RequireRole(AcademicRoleType.Student.ToString()));
 
-var app = builder.Build();
+    options.AddPolicy(AcademiaPolicyNames.RequireProfessorRole, policy =>
+        policy.RequireRole(AcademicRoleType.Professor.ToString()));
+
+    options.AddPolicy(AcademiaPolicyNames.RequireTeachingProfRole, policy =>
+        policy.RequireRole(AcademicRoleType.TeachingProf.ToString()));
+
+    options.AddPolicy(AcademiaPolicyNames.RequireChairRole, policy =>
+        policy.RequireRole(AcademicRoleType.Chair.ToString()));
+
+    options.AddPolicy(AcademiaPolicyNames.RequireAdministratorRole, policy =>
+        policy.RequireRole(AcademicRoleType.Administrator.ToString()));
+
+    options.AddPolicy(AcademiaPolicyNames.RequireSystemAdminRole, policy =>
+        policy.RequireRole(AcademicRoleType.SystemAdmin.ToString()));
+
+    // Hierarchical policies
+    options.AddPolicy(AcademiaPolicyNames.FacultyOrHigher, policy =>
+        policy.RequireRole(
+            AcademicRoleType.Professor.ToString(),
+            AcademicRoleType.TeachingProf.ToString(),
+            AcademicRoleType.Chair.ToString(),
+            AcademicRoleType.Administrator.ToString(),
+            AcademicRoleType.SystemAdmin.ToString()));
+
+    options.AddPolicy(AcademiaPolicyNames.AdministrativeStaff, policy =>
+        policy.RequireRole(
+            AcademicRoleType.Administrator.ToString(),
+            AcademicRoleType.SystemAdmin.ToString()));
+
+    options.AddPolicy(AcademiaPolicyNames.DepartmentLeadership, policy =>
+        policy.RequireRole(
+            AcademicRoleType.Chair.ToString(),
+            AcademicRoleType.SystemAdmin.ToString()));
+
+    options.AddPolicy(AcademiaPolicyNames.AcademicStaff, policy =>
+        policy.RequireRole(
+            AcademicRoleType.Student.ToString(),
+            AcademicRoleType.Professor.ToString(),
+            AcademicRoleType.TeachingProf.ToString(),
+            AcademicRoleType.Chair.ToString()));
+}); var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
