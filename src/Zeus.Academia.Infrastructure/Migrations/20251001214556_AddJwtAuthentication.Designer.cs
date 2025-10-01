@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Zeus.Academia.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using Zeus.Academia.Infrastructure.Data;
 namespace Zeus.Academia.Infrastructure.Migrations
 {
     [DbContext(typeof(AcademiaDbContext))]
-    partial class AcademiaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251001214556_AddJwtAuthentication")]
+    partial class AddJwtAuthentication
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

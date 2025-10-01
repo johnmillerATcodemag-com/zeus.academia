@@ -11,18 +11,69 @@ builder.Services.AddSwaggerGen();
 // Add Infrastructure services including Entity Framework
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// Configure Authentication
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
+// Configure JWT Authentication
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/Account/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-        options.SlidingExpiration = true;
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.Cookie.SameSite = SameSiteMode.Strict;
+        var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+        var secretKey = jwtSettings["SecretKey"];
+
+        if (string.IsNullOrEmpty(secretKey))
+        {
+            // Generate a secure key for development if not configured
+            var key = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(key);
+            secretKey = Convert.ToBase64String(key);
+
+            // Log warning in development
+            if (builder.Environment.IsDevelopment())
+            {
+                Console.WriteLine("Warning: JWT SecretKey not configured. Using generated key for development.");
+            }
+        }
+
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"] ?? "Zeus.Academia.Api",
+            ValidAudience = jwtSettings["Audience"] ?? "Zeus.Academia.Client",
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(secretKey)),
+            ClockSkew = TimeSpan.FromMinutes(1), // Allow 1 minute clock skew
+            RequireExpirationTime = true,
+            RequireSignedTokens = true
+        };
+
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                if (context.Exception.GetType() == typeof(Microsoft.IdentityModel.Tokens.SecurityTokenExpiredException))
+                {
+                    context.Response.Headers["Token-Expired"] = "true";
+                }
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize(new { error = "You are not authorized" });
+                return context.Response.WriteAsync(result);
+            },
+            OnForbidden = context =>
+            {
+                context.Response.StatusCode = 403;
+                context.Response.ContentType = "application/json";
+                var result = System.Text.Json.JsonSerializer.Serialize(new { error = "You do not have permission to access this resource" });
+                return context.Response.WriteAsync(result);
+            }
+        };
     });
 
 // Configure Authorization

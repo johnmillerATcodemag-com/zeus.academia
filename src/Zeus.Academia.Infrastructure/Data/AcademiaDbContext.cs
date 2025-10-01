@@ -51,6 +51,7 @@ public class AcademiaDbContext : DbContext
     public DbSet<AcademiaUser> Users { get; set; } = null!;
     public DbSet<AcademiaRole> Roles { get; set; } = null!;
     public DbSet<AcademiaUserRole> UserRoles { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -621,6 +622,81 @@ public class AcademiaDbContext : DbContext
             // Check constraint for effective dates
             entity.ToTable(t => t.HasCheckConstraint("CK_UserRoles_EffectiveDates",
                 "ExpirationDate IS NULL OR ExpirationDate > EffectiveDate"));
+        });
+
+        // Configure RefreshToken entity
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("RefreshTokens");
+
+            // Primary key configuration
+            entity.HasKey(rt => rt.Id);
+
+            // Token configuration
+            entity.Property(rt => rt.Token)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.HasIndex(rt => rt.Token)
+                .IsUnique()
+                .HasDatabaseName("IX_RefreshTokens_Token");
+
+            // User relationship
+            entity.HasOne(rt => rt.User)
+                .WithMany()
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_RefreshTokens_User_UserId");
+
+            entity.HasIndex(rt => rt.UserId)
+                .HasDatabaseName("IX_RefreshTokens_UserId");
+
+            // Date configuration
+            entity.Property(rt => rt.CreatedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(rt => rt.ExpiresAt)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(rt => rt.RevokedAt)
+                .HasColumnType("datetime2");
+
+            // String properties
+            entity.Property(rt => rt.RevocationReason)
+                .HasMaxLength(200);
+
+            entity.Property(rt => rt.JwtId)
+                .HasMaxLength(100);
+
+            entity.Property(rt => rt.CreatedByIp)
+                .HasMaxLength(50);
+
+            entity.Property(rt => rt.RevokedByIp)
+                .HasMaxLength(50);
+
+            // Boolean properties with defaults
+            entity.Property(rt => rt.IsRevoked)
+                .HasDefaultValue(false);
+
+            // Indexes for performance
+            entity.HasIndex(rt => rt.ExpiresAt)
+                .HasDatabaseName("IX_RefreshTokens_ExpiresAt");
+
+            entity.HasIndex(rt => rt.IsRevoked)
+                .HasDatabaseName("IX_RefreshTokens_IsRevoked");
+
+            entity.HasIndex(rt => new { rt.UserId, rt.IsRevoked, rt.ExpiresAt })
+                .HasDatabaseName("IX_RefreshTokens_User_Status_Expiry");
+
+            // Check constraint for expiration
+            entity.ToTable(t => t.HasCheckConstraint("CK_RefreshTokens_Dates",
+                "ExpiresAt > CreatedAt"));
+
+            // Check constraint for revocation logic
+            entity.ToTable(t => t.HasCheckConstraint("CK_RefreshTokens_Revocation",
+                "(IsRevoked = 0 AND RevokedAt IS NULL) OR (IsRevoked = 1 AND RevokedAt IS NOT NULL)"));
         });
     }
 }

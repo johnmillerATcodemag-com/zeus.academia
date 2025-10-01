@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Infrastructure.Identity;
+using Zeus.Academia.Infrastructure.Services;
 
 namespace Zeus.Academia.Infrastructure.Extensions;
 
@@ -116,6 +117,11 @@ public static class ServiceCollectionExtensions
         // Register role-based authorization services (Task 2)
         services.AddScoped<IRoleHierarchyService, RoleHierarchyService>();
         services.AddScoped<IRoleAssignmentService, RoleAssignmentService>();
+
+        // Register JWT authentication services (Task 3)
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IPasswordService, PasswordService>();
 
         // Note: Authentication and Authorization services will be configured in the API project
         // Custom Identity services (UserService, PasswordHasher, etc.) will be added in Task 4
