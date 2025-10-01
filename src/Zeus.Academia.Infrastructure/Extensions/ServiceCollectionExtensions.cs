@@ -123,7 +123,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IPasswordService, PasswordService>();
 
+        // Register User Management services (Task 4)
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IEmailService, EmailService>();
+
         // Note: Authentication and Authorization services will be configured in the API project
-        // Custom Identity services (UserService, PasswordHasher, etc.) will be added in Task 4
     }
 }
