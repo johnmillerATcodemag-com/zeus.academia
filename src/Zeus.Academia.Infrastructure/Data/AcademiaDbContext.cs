@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Zeus.Academia.Infrastructure.Entities;
+using Zeus.Academia.Infrastructure.Identity;
 
 namespace Zeus.Academia.Infrastructure.Data;
 
@@ -45,6 +46,9 @@ public class AcademiaDbContext : DbContext
     public DbSet<Extension> Extensions { get; set; } = null!;
     public DbSet<AccessLevel> AccessLevels { get; set; } = null!;
     public DbSet<StudentEnrollment> StudentEnrollments { get; set; } = null!;
+
+    // Identity Entities (Task 1)
+    public DbSet<AcademiaUser> Users { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -378,7 +382,97 @@ public class AcademiaDbContext : DbContext
         modelBuilder.Entity<AccessLevel>()
             .ToTable(t => t.HasCheckConstraint("CK_AccessLevel_Sessions", "MaxConcurrentSessions >= 1 OR MaxConcurrentSessions IS NULL"));
 
+        // Configure Identity entities
+        ConfigureIdentityEntities(modelBuilder);
+
         // Apply all entity configurations from the current assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AcademiaDbContext).Assembly);
+    }
+
+    private void ConfigureIdentityEntities(ModelBuilder modelBuilder)
+    {
+        // Configure AcademiaUser entity
+        modelBuilder.Entity<AcademiaUser>(entity =>
+        {
+            entity.ToTable("Users");
+
+            // Primary key configuration
+            entity.HasKey(u => u.Id);
+
+            // Username configuration
+            entity.Property(u => u.UserName)
+                .HasMaxLength(256);
+
+            entity.HasIndex(u => u.UserName)
+                .IsUnique()
+                .HasDatabaseName("IX_Users_UserName")
+                .HasFilter("UserName IS NOT NULL");
+
+            // Email configuration
+            entity.Property(u => u.Email)
+                .HasMaxLength(256);
+
+            entity.HasIndex(u => u.Email)
+                .IsUnique()
+                .HasDatabaseName("IX_Users_Email")
+                .HasFilter("Email IS NOT NULL");
+
+            // Password configuration
+            entity.Property(u => u.PasswordHash)
+                .HasMaxLength(255);
+
+            // Academic relationship
+            entity.HasOne(u => u.Academic)
+                .WithMany()
+                .HasForeignKey(u => u.AcademicId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_Users_Academic_AcademicId");
+
+            entity.HasIndex(u => u.AcademicId)
+                .HasDatabaseName("IX_Users_AcademicId");
+
+            // Personal information
+            entity.Property(u => u.FirstName)
+                .HasMaxLength(100);
+
+            entity.Property(u => u.LastName)
+                .HasMaxLength(100);
+
+            entity.Property(u => u.DisplayName)
+                .HasMaxLength(200);
+
+            // Login tracking
+            entity.Property(u => u.LastLoginDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(u => u.LastLoginIpAddress)
+                .HasMaxLength(45); // IPv6 max length
+
+            // Lockout configuration
+            entity.Property(u => u.LockoutEnd)
+                .HasColumnType("datetimeoffset");
+
+            // Access failure tracking
+            entity.Property(u => u.AccessFailedCount)
+                .HasDefaultValue(0);
+
+            // Boolean properties with defaults
+            entity.Property(u => u.EmailConfirmed)
+                .HasDefaultValue(false);
+
+            entity.Property(u => u.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(u => u.LockoutEnabled)
+                .HasDefaultValue(true);
+
+            // Add check constraint for valid email format
+            entity.ToTable(t => t.HasCheckConstraint("CK_Users_Email",
+                "Email IS NULL OR Email LIKE '%_@_%.__%'"));
+
+            // Add check constraint for access failed count
+            entity.ToTable(t => t.HasCheckConstraint("CK_Users_AccessFailedCount",
+                "AccessFailedCount >= 0"));
+        });
     }
 }
