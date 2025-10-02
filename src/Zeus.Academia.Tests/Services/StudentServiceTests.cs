@@ -18,6 +18,8 @@ public class StudentServiceTests : IDisposable
 {
     private readonly AcademiaDbContext _context;
     private readonly Mock<ILogger<StudentService>> _mockLogger;
+    private readonly Mock<Zeus.Academia.Infrastructure.Services.Interfaces.IEnrollmentApplicationService> _mockApplicationService;
+    private readonly Mock<Zeus.Academia.Infrastructure.Services.Interfaces.IEnrollmentHistoryService> _mockHistoryService;
     private readonly StudentService _studentService;
 
     public StudentServiceTests()
@@ -33,8 +35,12 @@ public class StudentServiceTests : IDisposable
         // Setup mock logger
         _mockLogger = new Mock<ILogger<StudentService>>();
 
+        // Setup mock services for enrollment management
+        _mockApplicationService = new Mock<Zeus.Academia.Infrastructure.Services.Interfaces.IEnrollmentApplicationService>();
+        _mockHistoryService = new Mock<Zeus.Academia.Infrastructure.Services.Interfaces.IEnrollmentHistoryService>();
+
         // Create service instance
-        _studentService = new StudentService(_context, _mockLogger.Object);
+        _studentService = new StudentService(_context, _mockLogger.Object, _mockApplicationService.Object, _mockHistoryService.Object);
 
         // Seed test data
         SeedTestData().Wait();

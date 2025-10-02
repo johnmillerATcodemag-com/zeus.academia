@@ -170,4 +170,80 @@ public interface IStudentService
     Task<(IEnumerable<Student> Students, int TotalCount)> GetStudentsRequiringAcademicReviewAsync(
         int pageNumber = 1,
         int pageSize = 10);
+
+    // Enrollment Management Methods
+
+    /// <summary>
+    /// Submits an enrollment application for a student
+    /// </summary>
+    /// <param name="studentId">The student ID</param>
+    /// <param name="programCode">Program to apply for</param>
+    /// <param name="preferredStartDate">Preferred start date</param>
+    /// <param name="applicationDocuments">Supporting documents</param>
+    /// <returns>The created enrollment application</returns>
+    Task<EnrollmentApplication> SubmitApplicationAsync(
+        int studentId,
+        string programCode,
+        DateTime preferredStartDate,
+        List<ApplicationDocument>? applicationDocuments = null);
+
+    /// <summary>
+    /// Processes an admission decision for an enrollment application
+    /// </summary>
+    /// <param name="applicationId">The application ID</param>
+    /// <param name="decision">Admission decision</param>
+    /// <param name="decisionReason">Reason for the decision</param>
+    /// <param name="decisionMadeBy">Person making the decision</param>
+    /// <param name="conditionalRequirements">Any conditional requirements</param>
+    /// <returns>True if processed successfully</returns>
+    Task<bool> ProcessAdmissionDecisionAsync(
+        int applicationId,
+        AdmissionDecision decision,
+        string decisionReason,
+        string decisionMadeBy,
+        string? conditionalRequirements = null);
+
+    /// <summary>
+    /// Processes enrollment for an admitted student
+    /// </summary>
+    /// <param name="applicationId">The application ID</param>
+    /// <param name="enrollmentDate">Date of enrollment</param>
+    /// <param name="academicTermId">Academic term for enrollment</param>
+    /// <param name="notes">Enrollment notes</param>
+    /// <returns>True if enrollment processed successfully</returns>
+    Task<bool> ProcessEnrollmentAsync(
+        int applicationId,
+        DateTime enrollmentDate,
+        int academicTermId,
+        string? notes = null);
+
+    /// <summary>
+    /// Gets enrollment applications for a student
+    /// </summary>
+    /// <param name="studentId">The student ID</param>
+    /// <param name="status">Optional status filter</param>
+    /// <returns>List of enrollment applications</returns>
+    Task<IEnumerable<EnrollmentApplication>> GetStudentApplicationsAsync(
+        int studentId,
+        ApplicationStatus? status = null);
+
+    /// <summary>
+    /// Gets enrollment history for a student
+    /// </summary>
+    /// <param name="studentId">The student ID</param>
+    /// <param name="includeDetails">Whether to include detailed information</param>
+    /// <returns>List of enrollment history entries</returns>
+    Task<IEnumerable<EnrollmentHistory>> GetStudentEnrollmentHistoryAsync(
+        int studentId,
+        bool includeDetails = false);
+
+    /// <summary>
+    /// Gets pending applications requiring admission review
+    /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Number of items per page</param>
+    /// <returns>Pending applications</returns>
+    Task<(IEnumerable<EnrollmentApplication> Applications, int TotalCount)> GetPendingApplicationsAsync(
+        int pageNumber = 1,
+        int pageSize = 10);
 }

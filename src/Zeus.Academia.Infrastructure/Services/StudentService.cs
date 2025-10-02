@@ -14,11 +14,19 @@ public class StudentService : IStudentService
 {
     private readonly AcademiaDbContext _context;
     private readonly ILogger<StudentService> _logger;
+    private readonly IEnrollmentApplicationService _enrollmentApplicationService;
+    private readonly IEnrollmentHistoryService _enrollmentHistoryService;
 
-    public StudentService(AcademiaDbContext context, ILogger<StudentService> logger)
+    public StudentService(
+        AcademiaDbContext context,
+        ILogger<StudentService> logger,
+        IEnrollmentApplicationService enrollmentApplicationService,
+        IEnrollmentHistoryService enrollmentHistoryService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _enrollmentApplicationService = enrollmentApplicationService ?? throw new ArgumentNullException(nameof(enrollmentApplicationService));
+        _enrollmentHistoryService = enrollmentHistoryService ?? throw new ArgumentNullException(nameof(enrollmentHistoryService));
     }
 
     public async Task<Student?> GetStudentByIdAsync(int studentId)
@@ -425,5 +433,255 @@ public class StudentService : IStudentService
             "F" => 0.0m,
             _ => null
         };
+    }
+
+    // Enrollment Management Methods
+
+    public async Task<EnrollmentApplication> SubmitApplicationAsync(
+        int studentId,
+        string programCode,
+        DateTime preferredStartDate,
+        List<ApplicationDocument>? applicationDocuments = null)
+    {
+        _logger.LogInformation("Submitting enrollment application for student {StudentId}", studentId);
+
+        var student = await GetStudentByIdAsync(studentId);
+        if (student == null)
+        {
+            throw new InvalidOperationException($"Student with ID {studentId} not found");
+        }
+
+        // Validate student can apply
+        if (student.EnrollmentStatus == EnrollmentStatus.Enrolled)
+        {
+            throw new InvalidOperationException("Student is already enrolled");
+        }
+
+        if (student.EnrollmentStatus == EnrollmentStatus.Graduated)
+        {
+            throw new InvalidOperationException("Student has already graduated");
+        }
+
+        // Check for existing pending applications by searching all applications for this student
+        var searchResults = await _enrollmentApplicationService.SearchApplicationsAsync(
+            status: ApplicationStatus.Submitted,
+            searchTerm: student.Name);
+
+        // Filter to check for applications from this specific student by employee number
+        var existingApplications = searchResults.Applications.Where(a => a.ApplicantEmpNr == studentId);
+        if (existingApplications.Any())
+        {
+            throw new InvalidOperationException("Student already has a pending application");
+        }
+
+        // Create enrollment application
+        var application = new EnrollmentApplication
+        {
+            ApplicantEmpNr = studentId,
+            ApplicantName = student.Name,
+            Email = student.Name.Replace(" ", ".").ToLower() + "@academia.edu",
+            Program = programCode,
+            DepartmentName = student.Department?.Name ?? "Unknown",
+            ApplicationDate = DateTime.UtcNow,
+            Status = ApplicationStatus.Submitted,
+            Priority = ApplicationPriority.Normal,
+            Notes = $"Application submitted for program: {programCode}",
+            Documents = applicationDocuments ?? new List<ApplicationDocument>()
+        };
+
+        var createdApplication = await _enrollmentApplicationService.SubmitApplicationAsync(application);
+
+        // Record enrollment history
+        await _enrollmentHistoryService.RecordEnrollmentEventAsync(
+            studentId,
+            EnrollmentEventType.ApplicationSubmitted,
+            student.EnrollmentStatus,
+            null,
+            $"Application submitted for program {programCode}",
+            createdApplication.Id.ToString());
+
+        // Update student status if currently Applied
+        if (student.EnrollmentStatus == EnrollmentStatus.Applied)
+        {
+            await UpdateEnrollmentStatusAsync(studentId, EnrollmentStatus.Applied,
+                "Application status updated - new application submitted");
+        }
+
+        _logger.LogInformation("Successfully submitted application {ApplicationId} for student {StudentId}",
+            createdApplication.Id, studentId);
+
+        return createdApplication;
+    }
+
+    public async Task<bool> ProcessAdmissionDecisionAsync(
+        int applicationId,
+        AdmissionDecision decision,
+        string decisionReason,
+        string decisionMadeBy,
+        string? conditionalRequirements = null)
+    {
+        _logger.LogInformation("Processing admission decision for application {ApplicationId}: {Decision}",
+            applicationId, decision);
+
+        var application = await _enrollmentApplicationService.GetApplicationByIdAsync(applicationId);
+        if (application == null)
+        {
+            throw new InvalidOperationException($"Application with ID {applicationId} not found");
+        }
+
+        var student = application.ApplicantEmpNr.HasValue
+            ? await GetStudentByIdAsync(application.ApplicantEmpNr.Value)
+            : null;
+
+        if (student == null)
+        {
+            throw new InvalidOperationException($"Student with ID {application.ApplicantEmpNr} not found");
+        }
+
+        // Process the admission decision
+        var success = await _enrollmentApplicationService.ProcessAdmissionDecisionAsync(
+            applicationId, decision, decisionReason, decisionMadeBy);
+
+        if (!success)
+        {
+            return false;
+        }
+
+        // Update student enrollment status based on decision
+        var newStatus = decision switch
+        {
+            AdmissionDecision.Admitted => EnrollmentStatus.Admitted,
+            AdmissionDecision.Rejected => EnrollmentStatus.Dismissed,
+            AdmissionDecision.Waitlisted => student.EnrollmentStatus, // Keep current status
+            AdmissionDecision.ConditionallyAdmitted => EnrollmentStatus.Admitted,
+            _ => student.EnrollmentStatus
+        };
+
+        if (newStatus != student.EnrollmentStatus && application.ApplicantEmpNr.HasValue)
+        {
+            await UpdateEnrollmentStatusAsync(application.ApplicantEmpNr.Value, newStatus,
+                $"Status updated based on admission decision: {decision}");
+        }
+
+        // Record enrollment history
+        var eventType = decision switch
+        {
+            AdmissionDecision.Admitted => EnrollmentEventType.AdmissionDecision,
+            AdmissionDecision.Rejected => EnrollmentEventType.AdmissionDecision,
+            AdmissionDecision.Waitlisted => EnrollmentEventType.AdmissionDecision,
+            AdmissionDecision.ConditionallyAdmitted => EnrollmentEventType.AdmissionDecision,
+            _ => EnrollmentEventType.AdmissionDecision
+        };
+
+        if (application.ApplicantEmpNr.HasValue)
+        {
+            await _enrollmentHistoryService.RecordEnrollmentEventAsync(
+                application.ApplicantEmpNr.Value,
+                eventType,
+                newStatus,
+                student.EnrollmentStatus,
+                $"Admission decision: {decision} - {decisionReason}",
+                applicationId.ToString(),
+                decisionMadeBy);
+        }
+
+        _logger.LogInformation("Successfully processed admission decision {Decision} for application {ApplicationId}",
+            decision, applicationId);
+
+        return true;
+    }
+
+    public async Task<bool> ProcessEnrollmentAsync(
+        int applicationId,
+        DateTime enrollmentDate,
+        int academicTermId,
+        string? notes = null)
+    {
+        _logger.LogInformation("Processing enrollment for application {ApplicationId}", applicationId);
+
+        var application = await _enrollmentApplicationService.GetApplicationByIdAsync(applicationId);
+        if (application == null)
+        {
+            throw new InvalidOperationException($"Application with ID {applicationId} not found");
+        }
+
+        if (application.Decision != AdmissionDecision.Admitted &&
+            application.Decision != AdmissionDecision.ConditionallyAdmitted)
+        {
+            throw new InvalidOperationException("Cannot enroll student without accepted admission");
+        }
+
+        if (!application.ApplicantEmpNr.HasValue)
+        {
+            throw new InvalidOperationException("Application must have a valid student ID");
+        }
+
+        var student = await GetStudentByIdAsync(application.ApplicantEmpNr.Value);
+        if (student == null)
+        {
+            throw new InvalidOperationException($"Student with ID {application.ApplicantEmpNr} not found");
+        }
+
+        if (student.EnrollmentStatus != EnrollmentStatus.Admitted)
+        {
+            throw new InvalidOperationException("Student must be in Admitted status to enroll");
+        }
+
+        // Update student enrollment information
+        student.EnrollmentStatus = EnrollmentStatus.Enrolled;
+        student.EnrollmentDate = enrollmentDate;
+        student.Program = application.Program;
+        student.ModifiedBy = "System";
+
+        await _context.SaveChangesAsync();
+
+        // Update application status
+        await _enrollmentApplicationService.UpdateApplicationStatusAsync(
+            applicationId, ApplicationStatus.Approved, notes ?? "Student successfully enrolled");
+
+        // Record enrollment history
+        await _enrollmentHistoryService.RecordEnrollmentEventAsync(
+            application.ApplicantEmpNr.Value,
+            EnrollmentEventType.Enrolled,
+            EnrollmentStatus.Enrolled,
+            EnrollmentStatus.Admitted,
+            $"Student enrolled in program {application.Program} for term {academicTermId}",
+            notes,
+            "System",
+            applicationId);
+
+        _logger.LogInformation("Successfully processed enrollment for student {StudentId} in application {ApplicationId}",
+            application.ApplicantEmpNr.Value, applicationId);
+
+        return true;
+    }
+
+    public async Task<IEnumerable<EnrollmentApplication>> GetStudentApplicationsAsync(
+        int studentId,
+        ApplicationStatus? status = null)
+    {
+        _logger.LogDebug("Getting applications for student {StudentId}", studentId);
+
+        return await _enrollmentApplicationService.GetApplicationsByStudentAsync(studentId, status);
+    }
+
+    public async Task<IEnumerable<EnrollmentHistory>> GetStudentEnrollmentHistoryAsync(
+        int studentId,
+        bool includeDetails = false)
+    {
+        _logger.LogDebug("Getting enrollment history for student {StudentId}", studentId);
+
+        var (history, _) = await _enrollmentHistoryService.GetStudentEnrollmentHistoryAsync(studentId);
+        return history;
+    }
+
+    public async Task<(IEnumerable<EnrollmentApplication> Applications, int TotalCount)> GetPendingApplicationsAsync(
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        _logger.LogDebug("Getting pending applications - Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+
+        return await _enrollmentApplicationService.GetApplicationsByStatusAsync(
+            ApplicationStatus.Submitted, pageNumber, pageSize);
     }
 }

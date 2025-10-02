@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Zeus.Academia.Infrastructure.Entities;
+using Zeus.Academia.Infrastructure.Enums;
 using Zeus.Academia.Infrastructure.Identity;
 
 namespace Zeus.Academia.Infrastructure.Data;
@@ -48,6 +49,12 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<Extension> Extensions { get; set; } = null!;
     public DbSet<AccessLevel> AccessLevels { get; set; } = null!;
     public DbSet<StudentEnrollment> StudentEnrollments { get; set; } = null!;
+
+    // Enrollment Management Entities (Prompt 4 Task 2)
+    public DbSet<EnrollmentApplication> EnrollmentApplications { get; set; } = null!;
+    public DbSet<ApplicationDocument> ApplicationDocuments { get; set; } = null!;
+    public DbSet<EnrollmentHistory> EnrollmentHistory { get; set; } = null!;
+    public DbSet<AcademicTerm> AcademicTerms { get; set; } = null!;
 
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
@@ -697,6 +704,283 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
             // Check constraint for revocation logic
             entity.ToTable(t => t.HasCheckConstraint("CK_RefreshTokens_Revocation",
                 "(IsRevoked = 0 AND RevokedAt IS NULL) OR (IsRevoked = 1 AND RevokedAt IS NOT NULL)"));
+        });
+
+        // Configure Enrollment Management Entities (Prompt 4 Task 2)
+
+        // Configure EnrollmentApplication entity
+        modelBuilder.Entity<EnrollmentApplication>(entity =>
+        {
+            entity.ToTable("EnrollmentApplications");
+
+            entity.HasKey(ea => ea.Id);
+
+            // Required fields
+            entity.Property(ea => ea.ApplicantName)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(ea => ea.Email)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(ea => ea.Program)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(ea => ea.DepartmentName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            // Enum configurations
+            entity.Property(ea => ea.Status)
+                .HasConversion<int>()
+                .IsRequired();
+
+            entity.Property(ea => ea.Decision)
+                .HasConversion<int>();
+
+            entity.Property(ea => ea.Priority)
+                .HasConversion<int>()
+                .HasDefaultValue(ApplicationPriority.Normal); // Normal priority
+
+            // Date configurations
+            entity.Property(ea => ea.ApplicationDate)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(ea => ea.DecisionDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(ea => ea.ExpectedEnrollmentDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(ea => ea.DateOfBirth)
+                .HasColumnType("datetime2");
+
+            entity.Property(ea => ea.PreviousGraduationDate)
+                .HasColumnType("datetime2");
+
+            // Relationships
+            entity.HasOne(ea => ea.Applicant)
+                .WithMany()
+                .HasForeignKey(ea => ea.ApplicantEmpNr)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(ea => ea.Department)
+                .WithMany()
+                .HasForeignKey(ea => ea.DepartmentName)
+                .HasPrincipalKey(d => d.Name)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(ea => ea.Email)
+                .HasDatabaseName("IX_EnrollmentApplications_Email");
+
+            entity.HasIndex(ea => ea.Status)
+                .HasDatabaseName("IX_EnrollmentApplications_Status");
+
+            entity.HasIndex(ea => ea.ApplicationDate)
+                .HasDatabaseName("IX_EnrollmentApplications_ApplicationDate");
+
+            entity.HasIndex(ea => new { ea.DepartmentName, ea.Status })
+                .HasDatabaseName("IX_EnrollmentApplications_Department_Status");
+        });
+
+        // Configure ApplicationDocument entity
+        modelBuilder.Entity<ApplicationDocument>(entity =>
+        {
+            entity.ToTable("ApplicationDocuments");
+
+            entity.HasKey(ad => ad.Id);
+
+            // Required fields
+            entity.Property(ad => ad.DocumentType)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(ad => ad.FileName)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(ad => ad.FilePath)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            // Date configurations
+            entity.Property(ad => ad.UploadDate)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(ad => ad.VerificationDate)
+                .HasColumnType("datetime2");
+
+            // Relationships
+            entity.HasOne(ad => ad.Application)
+                .WithMany(ea => ea.Documents)
+                .HasForeignKey(ad => ad.ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes
+            entity.HasIndex(ad => ad.ApplicationId)
+                .HasDatabaseName("IX_ApplicationDocuments_ApplicationId");
+
+            entity.HasIndex(ad => ad.DocumentType)
+                .HasDatabaseName("IX_ApplicationDocuments_DocumentType");
+
+            entity.HasIndex(ad => ad.IsRequired)
+                .HasDatabaseName("IX_ApplicationDocuments_IsRequired");
+        });
+
+        // Configure EnrollmentHistory entity
+        modelBuilder.Entity<EnrollmentHistory>(entity =>
+        {
+            entity.ToTable("EnrollmentHistory");
+
+            entity.HasKey(eh => eh.Id);
+
+            // Enum configurations
+            entity.Property(eh => eh.EventType)
+                .HasConversion<int>()
+                .IsRequired();
+
+            entity.Property(eh => eh.PreviousStatus)
+                .HasConversion<int>();
+
+            entity.Property(eh => eh.NewStatus)
+                .HasConversion<int>()
+                .IsRequired();
+
+            // Date configurations
+            entity.Property(eh => eh.EventDate)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(eh => eh.EffectiveDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(eh => eh.NotificationDate)
+                .HasColumnType("datetime2");
+
+            // Relationships
+            entity.HasOne(eh => eh.Student)
+                .WithMany()
+                .HasForeignKey(eh => eh.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(eh => eh.Application)
+                .WithMany(ea => ea.EnrollmentHistory)
+                .HasForeignKey(eh => eh.ApplicationId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(eh => eh.Department)
+                .WithMany()
+                .HasForeignKey(eh => eh.DepartmentName)
+                .HasPrincipalKey(d => d.Name)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Indexes
+            entity.HasIndex(eh => eh.StudentEmpNr)
+                .HasDatabaseName("IX_EnrollmentHistory_StudentEmpNr");
+
+            entity.HasIndex(eh => eh.EventType)
+                .HasDatabaseName("IX_EnrollmentHistory_EventType");
+
+            entity.HasIndex(eh => eh.EventDate)
+                .HasDatabaseName("IX_EnrollmentHistory_EventDate");
+
+            entity.HasIndex(eh => new { eh.StudentEmpNr, eh.EventDate })
+                .HasDatabaseName("IX_EnrollmentHistory_Student_Date");
+        });
+
+        // Configure AcademicTerm entity
+        modelBuilder.Entity<AcademicTerm>(entity =>
+        {
+            entity.ToTable("AcademicTerms");
+
+            entity.HasKey(at => at.Id);
+
+            // Required fields
+            entity.Property(at => at.TermCode)
+                .IsRequired()
+                .HasMaxLength(20);
+
+            entity.Property(at => at.TermName)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            // Enum configuration
+            entity.Property(at => at.TermType)
+                .HasConversion<int>()
+                .IsRequired();
+
+            // Date configurations
+            entity.Property(at => at.StartDate)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(at => at.EndDate)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(at => at.ApplicationDeadline)
+                .HasColumnType("datetime2");
+
+            entity.Property(at => at.EarlyApplicationDeadline)
+                .HasColumnType("datetime2");
+
+            entity.Property(at => at.EnrollmentStartDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(at => at.EnrollmentDeadline)
+                .HasColumnType("datetime2");
+
+            entity.Property(at => at.LateEnrollmentDeadline)
+                .HasColumnType("datetime2");
+
+            entity.Property(at => at.DropDeadline)
+                .HasColumnType("datetime2");
+
+            entity.Property(at => at.WithdrawDeadline)
+                .HasColumnType("datetime2");
+
+            // Decimal configurations
+            entity.Property(at => at.TuitionAmount)
+                .HasColumnType("decimal(10,2)");
+
+            entity.Property(at => at.LateEnrollmentFee)
+                .HasColumnType("decimal(8,2)");
+
+            // Unique constraints
+            entity.HasIndex(at => at.TermCode)
+                .IsUnique()
+                .HasDatabaseName("IX_AcademicTerms_TermCode");
+
+            // Indexes
+            entity.HasIndex(at => at.AcademicYear)
+                .HasDatabaseName("IX_AcademicTerms_AcademicYear");
+
+            entity.HasIndex(at => at.TermType)
+                .HasDatabaseName("IX_AcademicTerms_TermType");
+
+            entity.HasIndex(at => new { at.IsActive, at.IsCurrent })
+                .HasDatabaseName("IX_AcademicTerms_Active_Current");
+
+            entity.HasIndex(at => at.ApplicationsOpen)
+                .HasDatabaseName("IX_AcademicTerms_ApplicationsOpen");
+
+            entity.HasIndex(at => at.EnrollmentOpen)
+                .HasDatabaseName("IX_AcademicTerms_EnrollmentOpen");
+
+            // Check constraints
+            entity.ToTable(t => t.HasCheckConstraint("CK_AcademicTerms_Dates",
+                "EndDate > StartDate"));
+
+            entity.ToTable(t => t.HasCheckConstraint("CK_AcademicTerms_ApplicationDates",
+                "ApplicationDeadline IS NULL OR ApplicationDeadline <= StartDate"));
+
+            entity.ToTable(t => t.HasCheckConstraint("CK_AcademicTerms_EarlyApplication",
+                "EarlyApplicationDeadline IS NULL OR ApplicationDeadline IS NULL OR EarlyApplicationDeadline <= ApplicationDeadline"));
         });
     }
 }
