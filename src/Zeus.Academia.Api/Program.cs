@@ -271,6 +271,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Global exception handling (must be early in pipeline)
+app.UseMiddleware<Zeus.Academia.Api.Middleware.GlobalExceptionMiddleware>();
+
 // Security middleware (Order is important!)
 app.UseSecurityHeaders();          // Add security headers first
 app.UseHttpsRedirection();         // Force HTTPS
