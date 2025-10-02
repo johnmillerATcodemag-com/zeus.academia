@@ -1,0 +1,82 @@
+Summary
+  Generated on: 10/1/2025 - 7:36:36 PM
+  Coverage date: 9/30/2025 - 8:20:04 PM - 10/1/2025 - 7:34:04 PM
+  Parser: MultiReport (35x Cobertura)
+  Assemblies: 1
+  Classes: 60
+  Files: 30
+  Line coverage: 42.6%
+  Covered lines: 2437
+  Uncovered lines: 3279
+  Coverable lines: 5716
+  Total lines: 9455
+  Branch coverage: 23% (170 of 736)
+  Covered branches: 170
+  Total branches: 736
+  Method coverage: 43% (256 of 594)
+  Full method coverage: 21.2% (126 of 594)
+  Covered methods: 256
+  Fully covered methods: 126
+  Total methods: 594
+
+Zeus.Academia.Infrastructure                                                          42.6%
+  Zeus.Academia.Infrastructure.Data.AcademiaDbContext                                 98.7%
+  Zeus.Academia.Infrastructure.Data.AcademiaDbContextFactory                           100%
+  Zeus.Academia.Infrastructure.Data.DatabaseInfo                                       100%
+  Zeus.Academia.Infrastructure.Data.DatabaseInitializer                               64.2%
+  Zeus.Academia.Infrastructure.Data.DatabaseInitializerExtensions                     82.3%
+  Zeus.Academia.Infrastructure.Data.DatabaseSeeder                                     100%
+  Zeus.Academia.Infrastructure.Data.DbTransactionWrapper                                 0%
+  Zeus.Academia.Infrastructure.Data.Repositories.AcademicRepository                   73.4%
+  Zeus.Academia.Infrastructure.Data.Repositories.DepartmentRepository                 63.4%
+  Zeus.Academia.Infrastructure.Data.Repositories.DepartmentWithCount                   100%
+  Zeus.Academia.Infrastructure.Data.Repositories.Repository<T>                        67.2%
+  Zeus.Academia.Infrastructure.Data.Repositories.SubjectRepository                    63.4%
+  Zeus.Academia.Infrastructure.Data.RepositoryServiceCollectionExtensions               59%
+  Zeus.Academia.Infrastructure.Data.UnitOfWork                                          88%
+  Zeus.Academia.Infrastructure.Repositories.AcademicRepository                          81%
+  Zeus.Academia.Infrastructure.Repositories.DepartmentRepository                      69.8%
+  Zeus.Academia.Infrastructure.Repositories.Interfaces.RefreshTokenStatistics            0%
+  Zeus.Academia.Infrastructure.Repositories.Interfaces.RoleDeletionValidationResult      0%
+  Zeus.Academia.Infrastructure.Repositories.Interfaces.RoleStatistics                    0%
+  Zeus.Academia.Infrastructure.Repositories.Interfaces.TokenUsageStatistics              0%
+  Zeus.Academia.Infrastructure.Repositories.Interfaces.UserStatistics                    0%
+  Zeus.Academia.Infrastructure.Repositories.RefreshTokenRepository                       0%
+  Zeus.Academia.Infrastructure.Repositories.Repository<T>                             82.3%
+  Zeus.Academia.Infrastructure.Repositories.RoleRepository                               0%
+  Zeus.Academia.Infrastructure.Repositories.SubjectRepository                         71.1%
+  Zeus.Academia.Infrastructure.Repositories.UnitOfWork                                71.7%
+  Zeus.Academia.Infrastructure.Repositories.UserRepository                               0%
+  Zeus.Academia.Infrastructure.Services.AuditLogEntry                                    0%
+  Zeus.Academia.Infrastructure.Services.AuditService                                     0%
+  Zeus.Academia.Infrastructure.Services.AuditServiceExtensions                           0%
+  Zeus.Academia.Infrastructure.Services.CourseService                                    0%
+  Zeus.Academia.Infrastructure.Services.EmailConfirmationResult                          0%
+  Zeus.Academia.Infrastructure.Services.EmailOperationResult                             0%
+  Zeus.Academia.Infrastructure.Services.EmailSendResult                                  0%
+  Zeus.Academia.Infrastructure.Services.EmailService                                     0%
+  Zeus.Academia.Infrastructure.Services.JwtTokenService                                  0%
+  Zeus.Academia.Infrastructure.Services.PagedResult<T>                                   0%
+  Zeus.Academia.Infrastructure.Services.PasswordChangeResult                             0%
+  Zeus.Academia.Infrastructure.Services.PasswordResetRequestResult                       0%
+  Zeus.Academia.Infrastructure.Services.PasswordResetResult                              0%
+  Zeus.Academia.Infrastructure.Services.PasswordService                                  0%
+  Zeus.Academia.Infrastructure.Services.RefreshTokenService                              0%
+  Zeus.Academia.Infrastructure.Services.RoleAssignmentResult                             0%
+  Zeus.Academia.Infrastructure.Services.UserAdminDetails                                 0%
+  Zeus.Academia.Infrastructure.Services.UserAuthenticationResult                         0%
+  Zeus.Academia.Infrastructure.Services.UserCreationResult                               0%
+  Zeus.Academia.Infrastructure.Services.UserExportResult                                 0%
+  Zeus.Academia.Infrastructure.Services.UserImportError                                  0%
+  Zeus.Academia.Infrastructure.Services.UserImportRequest                                0%
+  Zeus.Academia.Infrastructure.Services.UserImportResult                                 0%
+  Zeus.Academia.Infrastructure.Services.UserProfile                                      0%
+  Zeus.Academia.Infrastructure.Services.UserProfileUpdateRequest                         0%
+  Zeus.Academia.Infrastructure.Services.UserRegistrationRequest                          0%
+  Zeus.Academia.Infrastructure.Services.UserRegistrationResult                           0%
+  Zeus.Academia.Infrastructure.Services.UserRoleInfo                                     0%
+  Zeus.Academia.Infrastructure.Services.UserSearchRequest                                0%
+  Zeus.Academia.Infrastructure.Services.UserService                                      0%
+  Zeus.Academia.Infrastructure.Services.UserStatusChangeResult                           0%
+  Zeus.Academia.Infrastructure.Services.UserSummary                                      0%
+  Zeus.Academia.Infrastructure.Services.UserUpdateResult                                 0%

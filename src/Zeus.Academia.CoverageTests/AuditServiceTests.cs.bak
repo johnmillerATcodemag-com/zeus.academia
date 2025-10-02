@@ -1,0 +1,748 @@
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.Security.Claims;
+using Xunit;
+using Zeus.Academia.Infrastructure.Services;
+
+namespace Zeus.Academia.CoverageTests;
+
+/// <summary>
+/// Comprehensive tests for AuditService covering audit logging, tracking, and compliance functionality
+/// </summary>
+public class AuditServiceTests
+{
+    private readonly Mock<ILogger<AuditService>> _mockLogger;
+    private readonly IAuditService _auditService;
+    private readonly TestLoggerProvider _loggerProvider;
+
+    public AuditServiceTests()
+    {
+        _loggerProvider = new TestLoggerProvider();
+        _mockLogger = new Mock<ILogger<AuditService>>();
+        _auditService = new AuditService(_mockLogger.Object);
+    }
+
+    #region General Action Logging Tests
+
+    [Fact]
+    public async Task LogActionAsync_WithBasicInfo_LogsCorrectly()
+    {
+        // Arrange
+        var action = "CREATE";
+        var entityType = "Student";
+        var entityId = "123";
+        var userId = "user1";
+        var userName = "testuser";
+
+        // Act
+        await _auditService.LogActionAsync(
+            action: action,
+            entityType: entityType,
+            entityId: entityId,
+            userId: userId,
+            userName: userName);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("AUDIT: CREATE on Student(123) by testuser(user1)")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogActionAsync_WithOldAndNewValues_SerializesValues()
+    {
+        // Arrange
+        var action = "UPDATE";
+        var entityType = "Student";
+        var entityId = "123";
+        var oldValues = new { Name = "John Doe", Email = "john@old.com" };
+        var newValues = new { Name = "John Smith", Email = "john@new.com" };
+
+        // Act
+        await _auditService.LogActionAsync(
+            action: action,
+            entityType: entityType,
+            entityId: entityId,
+            oldValues: oldValues,
+            newValues: newValues);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("AUDIT_ENTRY")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogActionAsync_WithAdditionalData_SerializesData()
+    {
+        // Arrange
+        var action = "CUSTOM_ACTION";
+        var entityType = "Course";
+        var additionalData = new { CourseCode = "CS101", Credits = 3, Instructor = "Dr. Smith" };
+
+        // Act
+        await _auditService.LogActionAsync(
+            action: action,
+            entityType: entityType,
+            additionalData: additionalData);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("AUDIT_ENTRY")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogActionAsync_WithFailure_LogsWarning()
+    {
+        // Arrange
+        var action = "DELETE";
+        var entityType = "Student";
+        var entityId = "123";
+        var errorMessage = "Access denied";
+
+        // Act
+        await _auditService.LogActionAsync(
+            action: action,
+            entityType: entityType,
+            entityId: entityId,
+            isSuccess: false,
+            errorMessage: errorMessage);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed: Access denied")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogActionAsync_WithCompleteContext_LogsAllInformation()
+    {
+        // Arrange
+        var action = "UPDATE_PROFILE";
+        var entityType = "User";
+        var entityId = "user123";
+        var userId = "admin1";
+        var userName = "administrator";
+        var ipAddress = "192.168.1.100";
+        var userAgent = "Mozilla/5.0 Test Browser";
+        var oldValues = new { FirstName = "John", LastName = "Doe" };
+        var newValues = new { FirstName = "Jane", LastName = "Smith" };
+
+        // Act
+        await _auditService.LogActionAsync(
+            action: action,
+            entityType: entityType,
+            entityId: entityId,
+            oldValues: oldValues,
+            newValues: newValues,
+            userId: userId,
+            userName: userName,
+            ipAddress: ipAddress,
+            userAgent: userAgent);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("UPDATE_PROFILE on User(user123) by administrator(admin1) from 192.168.1.100")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region Authentication Logging Tests
+
+    [Fact]
+    public async Task LogLoginAsync_SuccessfulLogin_LogsInformation()
+    {
+        // Arrange
+        var userId = "user123";
+        var userName = "testuser";
+        var ipAddress = "192.168.1.50";
+        var userAgent = "Chrome/91.0";
+
+        // Act
+        await _auditService.LogLoginAsync(userId, userName, ipAddress, userAgent, isSuccess: true);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("LOGIN_SUCCESS on User(user123) by testuser(user123) from 192.168.1.50")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogLoginAsync_FailedLogin_LogsWarning()
+    {
+        // Arrange
+        var userId = "user123";
+        var userName = "testuser";
+        var ipAddress = "192.168.1.50";
+        var userAgent = "Chrome/91.0";
+        var errorMessage = "Invalid credentials";
+
+        // Act
+        await _auditService.LogLoginAsync(userId, userName, ipAddress, userAgent, isSuccess: false, errorMessage: errorMessage);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("LOGIN_FAILED on User(user123) by testuser(user123) from 192.168.1.50 - Failed: Invalid credentials")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogLogoutAsync_LogsInformation()
+    {
+        // Arrange
+        var userId = "user123";
+        var userName = "testuser";
+        var ipAddress = "192.168.1.50";
+        var userAgent = "Chrome/91.0";
+
+        // Act
+        await _auditService.LogLogoutAsync(userId, userName, ipAddress, userAgent);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("LOGOUT on User(user123) by testuser(user123) from 192.168.1.50")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region Password Management Logging Tests
+
+    [Fact]
+    public async Task LogPasswordChangeAsync_SuccessfulChange_LogsInformation()
+    {
+        // Arrange
+        var userId = "user123";
+        var userName = "testuser";
+        var ipAddress = "192.168.1.50";
+
+        // Act
+        await _auditService.LogPasswordChangeAsync(userId, userName, ipAddress, isSuccess: true);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("PASSWORD_CHANGE_SUCCESS on User(user123) by testuser(user123) from 192.168.1.50")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogPasswordChangeAsync_FailedChange_LogsWarning()
+    {
+        // Arrange
+        var userId = "user123";
+        var userName = "testuser";
+        var ipAddress = "192.168.1.50";
+        var errorMessage = "Current password is incorrect";
+
+        // Act
+        await _auditService.LogPasswordChangeAsync(userId, userName, ipAddress, isSuccess: false, errorMessage: errorMessage);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("PASSWORD_CHANGE_FAILED on User(user123) by testuser(user123) from 192.168.1.50 - Failed: Current password is incorrect")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region Role Management Logging Tests
+
+    [Fact]
+    public async Task LogRoleChangeAsync_RoleAssignment_LogsCorrectly()
+    {
+        // Arrange
+        var targetUserId = "student123";
+        var targetUserName = "john.doe";
+        var action = "ASSIGN";
+        var roleName = "Student";
+        var performedByUserId = "admin1";
+        var performedByUserName = "administrator";
+        var ipAddress = "192.168.1.100";
+
+        // Act
+        await _auditService.LogRoleChangeAsync(
+            targetUserId, targetUserName, action, roleName,
+            performedByUserId, performedByUserName, ipAddress);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ROLE_ASSIGN on UserRole(student123) by administrator(admin1) from 192.168.1.100")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogRoleChangeAsync_RoleRevocation_LogsCorrectly()
+    {
+        // Arrange
+        var targetUserId = "student123";
+        var targetUserName = "john.doe";
+        var action = "REVOKE";
+        var roleName = "Student";
+        var performedByUserId = "admin1";
+        var performedByUserName = "administrator";
+
+        // Act
+        await _auditService.LogRoleChangeAsync(
+            targetUserId, targetUserName, action, roleName,
+            performedByUserId, performedByUserName);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ROLE_REVOKE on UserRole(student123)")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogRoleChangeAsync_FailedRoleChange_LogsWarning()
+    {
+        // Arrange
+        var targetUserId = "student123";
+        var targetUserName = "john.doe";
+        var action = "ASSIGN";
+        var roleName = "Administrator";
+        var errorMessage = "Insufficient privileges";
+
+        // Act
+        await _auditService.LogRoleChangeAsync(
+            targetUserId, targetUserName, action, roleName,
+            isSuccess: false, errorMessage: errorMessage);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ROLE_ASSIGN on UserRole(student123)") && v.ToString()!.Contains("Failed: Insufficient privileges")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region Administrative Action Logging Tests
+
+    [Fact]
+    public async Task LogAdminActionAsync_SystemMaintenance_LogsCorrectly()
+    {
+        // Arrange
+        var action = "SYSTEM_BACKUP";
+        var description = "Scheduled database backup";
+        var performedByUserId = "admin1";
+        var performedByUserName = "system.admin";
+
+        // Act
+        await _auditService.LogAdminActionAsync(
+            action, description,
+            performedByUserId: performedByUserId,
+            performedByUserName: performedByUserName);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ADMIN_SYSTEM_BACKUP on System") && v.ToString()!.Contains("system.admin(admin1)")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogAdminActionAsync_UserManagement_LogsWithTargetEntity()
+    {
+        // Arrange
+        var action = "USER_SUSPENSION";
+        var description = "User account suspended for policy violation";
+        var targetEntityType = "User";
+        var targetEntityId = "user456";
+        var performedByUserId = "admin2";
+        var performedByUserName = "moderator";
+
+        // Act
+        await _auditService.LogAdminActionAsync(
+            action, description, targetEntityType, targetEntityId,
+            performedByUserId, performedByUserName);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ADMIN_USER_SUSPENSION on User(user456) by moderator(admin2)")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogAdminActionAsync_FailedAction_LogsWarning()
+    {
+        // Arrange
+        var action = "CONFIG_UPDATE";
+        var description = "Failed to update system configuration";
+        var errorMessage = "Configuration file is locked";
+
+        // Act
+        await _auditService.LogAdminActionAsync(
+            action, description,
+            isSuccess: false, errorMessage: errorMessage);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ADMIN_CONFIG_UPDATE") && v.ToString()!.Contains("Failed: Configuration file is locked")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region Data Access Logging Tests
+
+    [Fact]
+    public async Task LogDataAccessAsync_ReadAccess_LogsCorrectly()
+    {
+        // Arrange
+        var entityType = "StudentRecord";
+        var entityId = "record123";
+        var accessType = "READ";
+        var userId = "professor1";
+        var userName = "prof.smith";
+        var ipAddress = "192.168.1.200";
+
+        // Act
+        await _auditService.LogDataAccessAsync(
+            entityType, entityId, accessType,
+            userId, userName, ipAddress);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("DATA_READ on StudentRecord(record123) by prof.smith(professor1) from 192.168.1.200")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogDataAccessAsync_WriteAccess_LogsCorrectly()
+    {
+        // Arrange
+        var entityType = "Grade";
+        var entityId = "grade456";
+        var accessType = "WRITE";
+        var userId = "professor2";
+        var userName = "prof.jones";
+
+        // Act
+        await _auditService.LogDataAccessAsync(
+            entityType, entityId, accessType,
+            userId, userName);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("DATA_WRITE on Grade(grade456) by prof.jones(professor2)")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task LogDataAccessAsync_UnauthorizedAccess_LogsWarning()
+    {
+        // Arrange
+        var entityType = "FinancialRecord";
+        var entityId = "fin789";
+        var accessType = "READ";
+        var userId = "student1";
+        var userName = "john.student";
+        var errorMessage = "Access denied - insufficient privileges";
+
+        // Act
+        await _auditService.LogDataAccessAsync(
+            entityType, entityId, accessType,
+            userId, userName, isSuccess: false, errorMessage: errorMessage);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("DATA_READ on FinancialRecord(fin789) by john.student(student1)") && v.ToString()!.Contains("Failed: Access denied - insufficient privileges")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region Extension Method Tests
+
+    [Fact]
+    public void AuditServiceExtensions_GetUserInfo_ExtractsCorrectClaims()
+    {
+        // Arrange
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "user123"),
+            new Claim(ClaimTypes.Name, "testuser"),
+            new Claim(ClaimTypes.Email, "test@example.com"),
+            new Claim(ClaimTypes.Role, "Student")
+        };
+        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
+
+        // Act
+        var (userId, userName) = claimsPrincipal.GetUserInfo();
+
+        // Assert
+        Assert.Equal("user123", userId);
+        Assert.Equal("testuser", userName);
+    }
+
+    [Fact]
+    public void AuditServiceExtensions_GetUserInfo_FallsBackToEmail()
+    {
+        // Arrange
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "user456"),
+            new Claim(ClaimTypes.Email, "fallback@example.com"),
+            new Claim(ClaimTypes.Role, "Professor")
+        };
+        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
+
+        // Act
+        var (userId, userName) = claimsPrincipal.GetUserInfo();
+
+        // Assert
+        Assert.Equal("user456", userId);
+        Assert.Equal("fallback@example.com", userName);
+    }
+
+    [Fact]
+    public void AuditServiceExtensions_GetUserInfo_HandlesEmptyClaims()
+    {
+        // Arrange
+        var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity());
+
+        // Act
+        var (userId, userName) = claimsPrincipal.GetUserInfo();
+
+        // Assert
+        Assert.Null(userId);
+        Assert.Null(userName);
+    }
+
+    #endregion
+
+    #region Complex Scenario Tests
+
+    [Theory]
+    [InlineData("CREATE", "Student", true)]
+    [InlineData("UPDATE", "Course", true)]
+    [InlineData("DELETE", "Grade", false)]
+    [InlineData("READ", "Financial", true)]
+    public async Task LogActionAsync_DifferentActionsAndEntities_LogsAppropriately(string action, string entityType, bool isSuccess)
+    {
+        // Arrange
+        var entityId = $"{entityType.ToLower()}123";
+        var userId = "testuser";
+        var userName = "Test User";
+        var errorMessage = isSuccess ? null : "Operation failed";
+
+        // Act
+        await _auditService.LogActionAsync(
+            action: action,
+            entityType: entityType,
+            entityId: entityId,
+            userId: userId,
+            userName: userName,
+            isSuccess: isSuccess,
+            errorMessage: errorMessage);
+
+        // Assert
+        var expectedLogLevel = isSuccess ? LogLevel.Information : LogLevel.Warning;
+        _mockLogger.Verify(
+            x => x.Log(
+                expectedLogLevel,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"{action} on {entityType}({entityId})")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AuditService_SequentialOperations_LogsAllEvents()
+    {
+        // Arrange & Act
+        await _auditService.LogLoginAsync("user1", "testuser1", "192.168.1.1");
+        await _auditService.LogActionAsync("CREATE", "Student", "student1", userId: "user1", userName: "testuser1");
+        await _auditService.LogActionAsync("UPDATE", "Student", "student1", userId: "user1", userName: "testuser1");
+        await _auditService.LogLogoutAsync("user1", "testuser1", "192.168.1.1");
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                It.IsAny<LogLevel>(),
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Exactly(8)); // 4 operations × 2 log entries each (summary + detailed)
+    }
+
+    [Fact]
+    public async Task AuditService_WithNullValues_HandlesGracefully()
+    {
+        // Act
+        await _auditService.LogActionAsync(
+            action: "TEST_ACTION",
+            entityType: "TestEntity",
+            entityId: null,
+            userId: null,
+            userName: null,
+            ipAddress: null,
+            userAgent: null);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("TEST_ACTION on TestEntity")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Test logger provider for capturing log entries in tests
+/// </summary>
+public class TestLoggerProvider : ILoggerProvider
+{
+    public readonly List<TestLogEntry> LogEntries = new();
+
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new TestLogger(categoryName, LogEntries);
+    }
+
+    public void Dispose()
+    {
+        LogEntries.Clear();
+    }
+
+    public class TestLogger : ILogger
+    {
+        private readonly string _categoryName;
+        private readonly List<TestLogEntry> _logEntries;
+
+        public TestLogger(string categoryName, List<TestLogEntry> logEntries)
+        {
+            _categoryName = categoryName;
+            _logEntries = logEntries;
+        }
+
+        public IDisposable BeginScope<TState>(TState state) => null!;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+            _logEntries.Add(new TestLogEntry
+            {
+                CategoryName = _categoryName,
+                LogLevel = logLevel,
+                EventId = eventId,
+                Message = formatter(state, exception),
+                Exception = exception,
+                State = state
+            });
+        }
+    }
+
+    public class TestLogEntry
+    {
+        public string CategoryName { get; set; } = string.Empty;
+        public LogLevel LogLevel { get; set; }
+        public EventId EventId { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public Exception? Exception { get; set; }
+        public object? State { get; set; }
+    }
+}

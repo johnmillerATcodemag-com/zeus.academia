@@ -1,0 +1,861 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using Zeus.Academia.Infrastructure.Data;
+using Zeus.Academia.Infrastructure.Identity;
+using Zeus.Academia.Infrastructure.Services;
+using Zeus.Academia.Infrastructure.Entities;
+
+namespace Zeus.Academia.CoverageTests;
+
+/// <summary>
+/// Comprehensive tests for UserService covering user management, profile operations, and business logic
+/// </summary>
+public class UserServiceTests : IDisposable
+{
+    private readonly AcademiaDbContext _context;
+    private readonly Mock<IPasswordService> _mockPasswordService;
+    private readonly Mock<IRoleAssignmentService> _mockRoleAssignmentService;
+    private readonly Mock<IRoleHierarchyService> _mockRoleHierarchyService;
+    private readonly Mock<IEmailService> _mockEmailService;
+    private readonly Mock<ILogger<UserService>> _mockLogger;
+    private readonly IUserService _userService;
+
+    public UserServiceTests()
+    {
+        var options = new DbContextOptionsBuilder<AcademiaDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new AcademiaDbContext(options);
+
+        _mockPasswordService = new Mock<IPasswordService>();
+        _mockRoleAssignmentService = new Mock<IRoleAssignmentService>();
+        _mockRoleHierarchyService = new Mock<IRoleHierarchyService>();
+        _mockEmailService = new Mock<IEmailService>();
+        _mockLogger = new Mock<ILogger<UserService>>();
+
+        _userService = new UserService(
+            _context,
+            _mockPasswordService.Object,
+            _mockRoleAssignmentService.Object,
+            _mockRoleHierarchyService.Object,
+            _mockEmailService.Object,
+            _mockLogger.Object);
+
+        // Setup common mock behaviors
+        _mockPasswordService.Setup(p => p.HashPassword(It.IsAny<string>()))
+            .Returns((string password) => $"hashed_{password}");
+        _mockPasswordService.Setup(p => p.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string password, string hash) => hash == $"hashed_{password}");
+    }
+
+    public void Dispose()
+    {
+        _context.Dispose();
+    }
+
+    #region User Registration Tests
+
+    [Fact]
+    public async Task RegisterUserAsync_ValidRequest_CreatesUserSuccessfully()
+    {
+        // Arrange
+        var request = new UserRegistrationRequest
+        {
+            UserName = "newuser",
+            Email = "newuser@example.com",
+            Password = "SecurePassword123!",
+            FirstName = "New",
+            LastName = "User",
+            AcademicType = AcademicType.Student,
+            DepartmentName = "Computer Science",
+            EnrollmentDate = DateTime.UtcNow,
+            StudentNumber = "ST12345"
+        };
+
+        _mockRoleAssignmentService.Setup(r => r.AssignDefaultRolesAsync(It.IsAny<int>(), It.IsAny<AcademicType>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _userService.RegisterUserAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.User);
+        Assert.Equal(request.UserName, result.User.UserName);
+        Assert.Equal(request.Email, result.User.Email);
+        Assert.Equal(request.FirstName, result.User.FirstName);
+        Assert.Equal(request.LastName, result.User.LastName);
+        Assert.True(result.User.IsActive);
+
+        // Verify user is saved to database
+        var savedUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        Assert.NotNull(savedUser);
+        Assert.Equal("hashed_SecurePassword123!", savedUser.PasswordHash);
+
+        // Verify academic entity is created
+        var student = await _context.Students.FirstOrDefaultAsync(s => s.StudentNumber == "ST12345");
+        Assert.NotNull(student);
+        Assert.Equal(request.FirstName, student.FirstName);
+        Assert.Equal(request.LastName, student.LastName);
+    }
+
+    [Fact]
+    public async Task RegisterUserAsync_DuplicateEmail_ReturnsError()
+    {
+        // Arrange
+        var existingUser = new AcademiaUser
+        {
+            UserName = "existing",
+            Email = "existing@example.com",
+            PasswordHash = "hashed_password",
+            IsActive = true
+        };
+        _context.Users.Add(existingUser);
+        await _context.SaveChangesAsync();
+
+        var request = new UserRegistrationRequest
+        {
+            UserName = "newuser",
+            Email = "existing@example.com", // Duplicate email
+            Password = "SecurePassword123!",
+            FirstName = "New",
+            LastName = "User",
+            AcademicType = AcademicType.Student
+        };
+
+        // Act
+        var result = await _userService.RegisterUserAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Email address is already registered", result.ErrorMessages);
+    }
+
+    [Fact]
+    public async Task RegisterUserAsync_DuplicateUserName_ReturnsError()
+    {
+        // Arrange
+        var existingUser = new AcademiaUser
+        {
+            UserName = "existing",
+            Email = "existing@example.com",
+            PasswordHash = "hashed_password",
+            IsActive = true
+        };
+        _context.Users.Add(existingUser);
+        await _context.SaveChangesAsync();
+
+        var request = new UserRegistrationRequest
+        {
+            UserName = "existing", // Duplicate username
+            Email = "newuser@example.com",
+            Password = "SecurePassword123!",
+            FirstName = "New",
+            LastName = "User",
+            AcademicType = AcademicType.Student
+        };
+
+        // Act
+        var result = await _userService.RegisterUserAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Username is already taken", result.ErrorMessages);
+    }
+
+    [Theory]
+    [InlineData("", "Email is required")]
+    [InlineData("invalid-email", "Email address is not valid")]
+    [InlineData("test@", "Email address is not valid")]
+    public async Task RegisterUserAsync_InvalidEmail_ReturnsValidationError(string email, string expectedError)
+    {
+        // Arrange
+        var request = new UserRegistrationRequest
+        {
+            UserName = "testuser",
+            Email = email,
+            Password = "SecurePassword123!",
+            FirstName = "Test",
+            LastName = "User",
+            AcademicType = AcademicType.Student
+        };
+
+        // Act
+        var result = await _userService.RegisterUserAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains(expectedError, result.ErrorMessages);
+    }
+
+    [Theory]
+    [InlineData("", "Username is required")]
+    [InlineData("ab", "Username must be at least 3 characters long")]
+    [InlineData("this_username_is_way_too_long_and_exceeds_maximum_length", "Username cannot exceed 50 characters")]
+    public async Task RegisterUserAsync_InvalidUserName_ReturnsValidationError(string userName, string expectedError)
+    {
+        // Arrange
+        var request = new UserRegistrationRequest
+        {
+            UserName = userName,
+            Email = "test@example.com",
+            Password = "SecurePassword123!",
+            FirstName = "Test",
+            LastName = "User",
+            AcademicType = AcademicType.Student
+        };
+
+        // Act
+        var result = await _userService.RegisterUserAsync(request);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Contains(expectedError, result.ErrorMessages);
+    }
+
+    #endregion
+
+    #region User Authentication Tests
+
+    [Fact]
+    public async Task ValidateUserAsync_ValidCredentials_ReturnsSuccess()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hashed_password123",
+            FirstName = "Test",
+            LastName = "User",
+            IsActive = true,
+            EmailConfirmed = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ValidateUserAsync("testuser", "password123");
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.User);
+        Assert.Equal(user.Id, result.User.Id);
+        Assert.Equal(user.UserName, result.User.UserName);
+    }
+
+    [Fact]
+    public async Task ValidateUserAsync_InvalidPassword_ReturnsFailure()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hashed_password123",
+            IsActive = true,
+            EmailConfirmed = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ValidateUserAsync("testuser", "wrongpassword");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid username or password", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ValidateUserAsync_InactiveUser_ReturnsFailure()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hashed_password123",
+            IsActive = false, // Inactive user
+            EmailConfirmed = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ValidateUserAsync("testuser", "password123");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("User account is inactive", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ValidateUserAsync_UnconfirmedEmail_ReturnsFailure()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hashed_password123",
+            IsActive = true,
+            EmailConfirmed = false // Unconfirmed email
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ValidateUserAsync("testuser", "password123");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Email address is not confirmed", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ValidateUserAsync_NonexistentUser_ReturnsFailure()
+    {
+        // Act
+        var result = await _userService.ValidateUserAsync("nonexistent", "password");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid username or password", result.ErrorMessage);
+    }
+
+    #endregion
+
+    #region User Existence Tests
+
+    [Fact]
+    public async Task UserExistsAsync_ExistingUserName_ReturnsTrue()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "existinguser",
+            Email = "existing@example.com",
+            PasswordHash = "hashed_password",
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var exists = await _userService.UserExistsAsync("existinguser");
+
+        // Assert
+        Assert.True(exists);
+    }
+
+    [Fact]
+    public async Task UserExistsAsync_ExistingEmail_ReturnsTrue()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "existinguser",
+            Email = "existing@example.com",
+            PasswordHash = "hashed_password",
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var exists = await _userService.UserExistsAsync("existing@example.com");
+
+        // Assert
+        Assert.True(exists);
+    }
+
+    [Fact]
+    public async Task UserExistsAsync_NonexistentUser_ReturnsFalse()
+    {
+        // Act
+        var exists = await _userService.UserExistsAsync("nonexistent");
+
+        // Assert
+        Assert.False(exists);
+    }
+
+    #endregion
+
+    #region Profile Management Tests
+
+    [Fact]
+    public async Task GetUserProfileAsync_ExistingUser_ReturnsProfile()
+    {
+        // Arrange
+        var student = new Student
+        {
+            EmpNr = 1001,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john.doe@example.com",
+            StudentNumber = "ST12345",
+            EnrollmentDate = DateTime.UtcNow.AddMonths(-6)
+        };
+
+        var user = new AcademiaUser
+        {
+            UserName = "johndoe",
+            Email = "john.doe@example.com",
+            FirstName = "John",
+            LastName = "Doe",
+            Academic = student,
+            AcademicId = student.EmpNr,
+            IsActive = true
+        };
+
+        _context.Students.Add(student);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var profile = await _userService.GetUserProfileAsync(user.Id);
+
+        // Assert
+        Assert.NotNull(profile);
+        Assert.Equal(user.Id, profile.UserId);
+        Assert.Equal(user.UserName, profile.UserName);
+        Assert.Equal(user.Email, profile.Email);
+        Assert.Equal(user.FirstName, profile.FirstName);
+        Assert.Equal(user.LastName, profile.LastName);
+        Assert.Equal(student.EmpNr, profile.AcademicId);
+        Assert.Equal(AcademicType.Student, profile.AcademicType);
+    }
+
+    [Fact]
+    public async Task GetUserProfileAsync_NonexistentUser_ReturnsNull()
+    {
+        // Act
+        var profile = await _userService.GetUserProfileAsync(999);
+
+        // Assert
+        Assert.Null(profile);
+    }
+
+    [Fact]
+    public async Task UpdateUserProfileAsync_ValidUpdate_UpdatesSuccessfully()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            FirstName = "Original",
+            LastName = "Name",
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        var updateRequest = new UserProfileUpdateRequest
+        {
+            FirstName = "Updated",
+            LastName = "Name",
+            DisplayName = "Updated Name",
+            PhoneNumber = "+1234567890"
+        };
+
+        // Act
+        var result = await _userService.UpdateUserProfileAsync(user.Id, updateRequest);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        // Verify changes in database
+        var updatedUser = await _context.Users.FindAsync(user.Id);
+        Assert.NotNull(updatedUser);
+        Assert.Equal("Updated", updatedUser.FirstName);
+        Assert.Equal("Name", updatedUser.LastName);
+        Assert.Equal("Updated Name", updatedUser.DisplayName);
+        Assert.Equal("+1234567890", updatedUser.PhoneNumber);
+    }
+
+    [Fact]
+    public async Task UpdateUserProfileAsync_NonexistentUser_ReturnsError()
+    {
+        // Arrange
+        var updateRequest = new UserProfileUpdateRequest
+        {
+            FirstName = "Updated",
+            LastName = "Name"
+        };
+
+        // Act
+        var result = await _userService.UpdateUserProfileAsync(999, updateRequest);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("User not found", result.ErrorMessage);
+    }
+
+    #endregion
+
+    #region Password Management Tests
+
+    [Fact]
+    public async Task ChangePasswordAsync_ValidPasswordChange_UpdatesSuccessfully()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hashed_oldpassword",
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ChangePasswordAsync(user.Id, "oldpassword", "newpassword");
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        // Verify password is updated in database
+        var updatedUser = await _context.Users.FindAsync(user.Id);
+        Assert.NotNull(updatedUser);
+        Assert.Equal("hashed_newpassword", updatedUser.PasswordHash);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_InvalidCurrentPassword_ReturnsError()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            PasswordHash = "hashed_oldpassword",
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ChangePasswordAsync(user.Id, "wrongpassword", "newpassword");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Current password is incorrect", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_NonexistentUser_ReturnsError()
+    {
+        // Act
+        var result = await _userService.ChangePasswordAsync(999, "oldpassword", "newpassword");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("User not found", result.ErrorMessage);
+    }
+
+    #endregion
+
+    #region User Retrieval Tests
+
+    [Fact]
+    public async Task GetUserWithRolesAsync_ExistingUser_ReturnsUserWithRoles()
+    {
+        // Arrange
+        var role = new AcademiaRole
+        {
+            Name = "Student",
+            Description = "Student role"
+        };
+
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            IsActive = true
+        };
+
+        var userRole = new UserRole
+        {
+            User = user,
+            Role = role,
+            AssignedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        _context.Roles.Add(role);
+        _context.Users.Add(user);
+        _context.UserRoles.Add(userRole);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.GetUserWithRolesAsync(user.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(user.Id, result.Id);
+        Assert.Single(result.UserRoles);
+        Assert.Equal("Student", result.UserRoles.First().Role.Name);
+    }
+
+    [Fact]
+    public async Task GetUserWithAcademicAsync_ExistingUserWithAcademic_ReturnsUserWithAcademic()
+    {
+        // Arrange
+        var student = new Student
+        {
+            EmpNr = 1001,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john.doe@example.com",
+            StudentNumber = "ST12345"
+        };
+
+        var user = new AcademiaUser
+        {
+            UserName = "johndoe",
+            Email = "john.doe@example.com",
+            Academic = student,
+            AcademicId = student.EmpNr,
+            IsActive = true
+        };
+
+        _context.Students.Add(student);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.GetUserWithAcademicAsync(user.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(user.Id, result.Id);
+        Assert.NotNull(result.Academic);
+        Assert.Equal(student.EmpNr, result.Academic.EmpNr);
+        Assert.Equal("ST12345", ((Student)result.Academic).StudentNumber);
+    }
+
+    [Fact]
+    public async Task GetUserWithAcademicAndRolesAsync_ExistingUser_ReturnsUserWithBoth()
+    {
+        // Arrange
+        var student = new Student
+        {
+            EmpNr = 1001,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john.doe@example.com",
+            StudentNumber = "ST12345"
+        };
+
+        var role = new AcademiaRole
+        {
+            Name = "Student",
+            Description = "Student role"
+        };
+
+        var user = new AcademiaUser
+        {
+            UserName = "johndoe",
+            Email = "john.doe@example.com",
+            Academic = student,
+            AcademicId = student.EmpNr,
+            IsActive = true
+        };
+
+        var userRole = new UserRole
+        {
+            User = user,
+            Role = role,
+            AssignedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        _context.Students.Add(student);
+        _context.Roles.Add(role);
+        _context.Users.Add(user);
+        _context.UserRoles.Add(userRole);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.GetUserWithAcademicAndRolesAsync(user.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(user.Id, result.Id);
+        Assert.NotNull(result.Academic);
+        Assert.Equal(student.EmpNr, result.Academic.EmpNr);
+        Assert.Single(result.UserRoles);
+        Assert.Equal("Student", result.UserRoles.First().Role.Name);
+    }
+
+    #endregion
+
+    #region Email Confirmation Tests
+
+    [Fact]
+    public async Task SendEmailConfirmationAsync_ValidUser_SendsEmailSuccessfully()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            EmailConfirmed = false,
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        _mockEmailService.Setup(e => e.SendEmailConfirmationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new EmailOperationResult { IsSuccess = true });
+
+        // Act
+        var result = await _userService.SendEmailConfirmationAsync(user.Id);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        _mockEmailService.Verify(e => e.SendEmailConfirmationAsync(user.Email, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendEmailConfirmationAsync_NonexistentUser_ReturnsError()
+    {
+        // Act
+        var result = await _userService.SendEmailConfirmationAsync(999);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("User not found", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ConfirmEmailAsync_ValidToken_ConfirmsEmailSuccessfully()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            EmailConfirmed = false,
+            EmailConfirmationToken = "valid-token",
+            EmailConfirmationTokenExpires = DateTime.UtcNow.AddHours(1),
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ConfirmEmailAsync(user.Id, "valid-token");
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        // Verify email is confirmed in database
+        var updatedUser = await _context.Users.FindAsync(user.Id);
+        Assert.NotNull(updatedUser);
+        Assert.True(updatedUser.EmailConfirmed);
+        Assert.Null(updatedUser.EmailConfirmationToken);
+        Assert.Null(updatedUser.EmailConfirmationTokenExpires);
+    }
+
+    [Fact]
+    public async Task ConfirmEmailAsync_InvalidToken_ReturnsError()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            EmailConfirmed = false,
+            EmailConfirmationToken = "valid-token",
+            EmailConfirmationTokenExpires = DateTime.UtcNow.AddHours(1),
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ConfirmEmailAsync(user.Id, "invalid-token");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid or expired confirmation token", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ConfirmEmailAsync_ExpiredToken_ReturnsError()
+    {
+        // Arrange
+        var user = new AcademiaUser
+        {
+            UserName = "testuser",
+            Email = "test@example.com",
+            EmailConfirmed = false,
+            EmailConfirmationToken = "expired-token",
+            EmailConfirmationTokenExpires = DateTime.UtcNow.AddHours(-1), // Expired
+            IsActive = true
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.ConfirmEmailAsync(user.Id, "expired-token");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Invalid or expired confirmation token", result.ErrorMessage);
+    }
+
+    #endregion
+
+    #region Academic Entity Creation Tests
+
+    [Fact]
+    public async Task CreateUserForAcademicAsync_ExistingStudent_CreatesUserSuccessfully()
+    {
+        // Arrange
+        var student = new Student
+        {
+            EmpNr = 1001,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john.doe@example.com",
+            StudentNumber = "ST12345"
+        };
+        _context.Students.Add(student);
+        await _context.SaveChangesAsync();
+
+        _mockRoleAssignmentService.Setup(r => r.AssignDefaultRolesAsync(It.IsAny<int>(), AcademicType.Student))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _userService.CreateUserForAcademicAsync(student.EmpNr, "john.doe@example.com", "TempPassword123");
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.User);
+        Assert.Equal("john.doe@example.com", result.User.Email);
+        Assert.Equal(student.EmpNr, result.User.AcademicId);
+        Assert.False(result.User.EmailConfirmed); // Should require confirmation
+        Assert.True(result.TemporaryPassword); // Should require password change
+    }
+
+    [Fact]
+    public async Task CreateUserForAcademicAsync_NonexistentAcademic_ReturnsError()
+    {
+        // Act
+        var result = await _userService.CreateUserForAcademicAsync(999, "test@example.com", "TempPassword123");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Academic entity not found", result.ErrorMessage);
+    }
+
+    #endregion
+}

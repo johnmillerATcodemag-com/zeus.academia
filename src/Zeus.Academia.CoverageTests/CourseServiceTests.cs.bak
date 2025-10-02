@@ -1,0 +1,723 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using Zeus.Academia.Infrastructure.Data;
+using Zeus.Academia.Infrastructure.Entities;
+using Zeus.Academia.Infrastructure.Services;
+
+namespace Zeus.Academia.CoverageTests;
+
+/// <summary>
+/// Comprehensive tests for CourseService covering course management business logic and operations
+/// </summary>
+public class CourseServiceTests : IDisposable
+{
+    private readonly AcademiaDbContext _context;
+    private readonly Mock<ILogger<CourseService>> _mockLogger;
+    private readonly ICourseService _courseService;
+
+    public CourseServiceTests()
+    {
+        var options = new DbContextOptionsBuilder<AcademiaDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new AcademiaDbContext(options);
+        _mockLogger = new Mock<ILogger<CourseService>>();
+        _courseService = new CourseService(_context, _mockLogger.Object);
+
+        // Seed test data
+        SeedTestData();
+    }
+
+    public void Dispose()
+    {
+        _context.Dispose();
+    }
+
+    private void SeedTestData()
+    {
+        // Create test subjects
+        var subjects = new[]
+        {
+            new Subject { Code = "CS101", Title = "Introduction to Programming", CreditHours = 3, IsActive = true },
+            new Subject { Code = "CS102", Title = "Data Structures", CreditHours = 4, IsActive = true },
+            new Subject { Code = "CS103", Title = "Algorithms", CreditHours = 3, IsActive = true },
+            new Subject { Code = "CS999", Title = "Archived Course", CreditHours = 2, IsActive = false }
+        };
+
+        // Create test students
+        var students = new[]
+        {
+            new Student { EmpNr = 1001, FirstName = "John", LastName = "Doe", Email = "john.doe@example.com", StudentNumber = "ST001" },
+            new Student { EmpNr = 1002, FirstName = "Jane", LastName = "Smith", Email = "jane.smith@example.com", StudentNumber = "ST002" },
+            new Student { EmpNr = 1003, FirstName = "Bob", LastName = "Johnson", Email = "bob.johnson@example.com", StudentNumber = "ST003" }
+        };
+
+        // Create test professors
+        var professors = new[]
+        {
+            new Professor { EmpNr = 2001, FirstName = "Dr. Alice", LastName = "Brown", Email = "alice.brown@example.com", HireDate = DateTime.UtcNow.AddYears(-5) },
+            new Professor { EmpNr = 2002, FirstName = "Dr. Mark", LastName = "Wilson", Email = "mark.wilson@example.com", HireDate = DateTime.UtcNow.AddYears(-3) }
+        };
+
+        // Create test enrollments
+        var enrollments = new[]
+        {
+            new StudentEnrollment { StudentEmpNr = 1001, SubjectCode = "CS101", Status = "enrolled", EnrolledDate = DateTime.UtcNow.AddMonths(-2) },
+            new StudentEnrollment { StudentEmpNr = 1001, SubjectCode = "CS102", Status = "enrolled", EnrolledDate = DateTime.UtcNow.AddMonths(-1) },
+            new StudentEnrollment { StudentEmpNr = 1002, SubjectCode = "CS101", Status = "enrolled", EnrolledDate = DateTime.UtcNow.AddMonths(-2) },
+            new StudentEnrollment { StudentEmpNr = 1002, SubjectCode = "CS103", Status = "withdrawn", EnrolledDate = DateTime.UtcNow.AddMonths(-3) },
+            new StudentEnrollment { StudentEmpNr = 1003, SubjectCode = "CS102", Status = "enrolled", EnrolledDate = DateTime.UtcNow.AddMonths(-1) }
+        };
+
+        // Create test teachings
+        var teachings = new[]
+        {
+            new Teaching { AcademicEmpNr = 2001, SubjectCode = "CS101" },
+            new Teaching { AcademicEmpNr = 2001, SubjectCode = "CS102" },
+            new Teaching { AcademicEmpNr = 2002, SubjectCode = "CS103" }
+        };
+
+        _context.Subjects.AddRange(subjects);
+        _context.Students.AddRange(students);
+        _context.Professors.AddRange(professors);
+        _context.StudentEnrollments.AddRange(enrollments);
+        _context.Teachings.AddRange(teachings);
+        _context.SaveChanges();
+    }
+
+    #region Student Enrollment Tests
+
+    [Fact]
+    public async Task IsStudentEnrolledAsync_EnrolledStudent_ReturnsTrue()
+    {
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(1001, "CS101");
+
+        // Assert
+        Assert.True(result);
+        VerifyDebugLog("Checking if student 1001 is enrolled in course CS101");
+        VerifyDebugLog("Student 1001 enrollment in course CS101: True");
+    }
+
+    [Fact]
+    public async Task IsStudentEnrolledAsync_NotEnrolledStudent_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(1003, "CS101");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if student 1003 is enrolled in course CS101");
+        VerifyDebugLog("Student 1003 enrollment in course CS101: False");
+    }
+
+    [Fact]
+    public async Task IsStudentEnrolledAsync_WithdrawnStudent_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(1002, "CS103");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if student 1002 is enrolled in course CS103");
+        VerifyDebugLog("Student 1002 enrollment in course CS103: False");
+    }
+
+    [Fact]
+    public async Task IsStudentEnrolledAsync_NonexistentStudent_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(9999, "CS101");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if student 9999 is enrolled in course CS101");
+        VerifyDebugLog("Student 9999 enrollment in course CS101: False");
+    }
+
+    [Fact]
+    public async Task IsStudentEnrolledAsync_NonexistentCourse_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(1001, "NONEXISTENT");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if student 1001 is enrolled in course NONEXISTENT");
+        VerifyDebugLog("Student 1001 enrollment in course NONEXISTENT: False");
+    }
+
+    [Fact]
+    public async Task IsStudentEnrolledAsync_WithCancellationToken_UsesCancellationToken()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(1001, "CS101", cts.Token);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    #endregion
+
+    #region Faculty Teaching Tests
+
+    [Fact]
+    public async Task DoesFacultyTeachCourseAsync_TeachingFaculty_ReturnsTrue()
+    {
+        // Act
+        var result = await _courseService.DoesFacultyTeachCourseAsync(2001, "CS101");
+
+        // Assert
+        Assert.True(result);
+        VerifyDebugLog("Checking if faculty 2001 teaches course CS101");
+        VerifyDebugLog("Faculty 2001 teaches course CS101: True");
+    }
+
+    [Fact]
+    public async Task DoesFacultyTeachCourseAsync_NonTeachingFaculty_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.DoesFacultyTeachCourseAsync(2002, "CS101");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if faculty 2002 teaches course CS101");
+        VerifyDebugLog("Faculty 2002 teaches course CS101: False");
+    }
+
+    [Fact]
+    public async Task DoesFacultyTeachCourseAsync_NonexistentFaculty_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.DoesFacultyTeachCourseAsync(9999, "CS101");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if faculty 9999 teaches course CS101");
+        VerifyDebugLog("Faculty 9999 teaches course CS101: False");
+    }
+
+    [Fact]
+    public async Task DoesFacultyTeachCourseAsync_NonexistentCourse_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.DoesFacultyTeachCourseAsync(2001, "NONEXISTENT");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if faculty 2001 teaches course NONEXISTENT");
+        VerifyDebugLog("Faculty 2001 teaches course NONEXISTENT: False");
+    }
+
+    [Fact]
+    public async Task DoesFacultyTeachCourseAsync_WithCancellationToken_UsesCancellationToken()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        var result = await _courseService.DoesFacultyTeachCourseAsync(2001, "CS101", cts.Token);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    #endregion
+
+    #region Student Enrolled Courses Tests
+
+    [Fact]
+    public async Task GetStudentEnrolledCoursesAsync_StudentWithMultipleEnrollments_ReturnsAllEnrolledCourses()
+    {
+        // Act
+        var result = await _courseService.GetStudentEnrolledCoursesAsync(1001);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Equal(2, courses.Count);
+        Assert.Contains("CS101", courses);
+        Assert.Contains("CS102", courses);
+        VerifyDebugLog("Getting enrolled courses for student 1001");
+        VerifyDebugLog("Found 2 enrolled courses for student 1001");
+    }
+
+    [Fact]
+    public async Task GetStudentEnrolledCoursesAsync_StudentWithOneEnrollment_ReturnsSingleCourse()
+    {
+        // Act
+        var result = await _courseService.GetStudentEnrolledCoursesAsync(1002);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Single(courses);
+        Assert.Contains("CS101", courses);
+        Assert.DoesNotContain("CS103", courses); // Withdrawn course should not be included
+        VerifyDebugLog("Getting enrolled courses for student 1002");
+        VerifyDebugLog("Found 1 enrolled courses for student 1002");
+    }
+
+    [Fact]
+    public async Task GetStudentEnrolledCoursesAsync_StudentWithNoEnrollments_ReturnsEmptyList()
+    {
+        // Arrange - Add a student with no enrollments
+        var newStudent = new Student { EmpNr = 1004, FirstName = "Alice", LastName = "Green", Email = "alice.green@example.com", StudentNumber = "ST004" };
+        _context.Students.Add(newStudent);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _courseService.GetStudentEnrolledCoursesAsync(1004);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Empty(courses);
+        VerifyDebugLog("Getting enrolled courses for student 1004");
+        VerifyDebugLog("Found 0 enrolled courses for student 1004");
+    }
+
+    [Fact]
+    public async Task GetStudentEnrolledCoursesAsync_NonexistentStudent_ReturnsEmptyList()
+    {
+        // Act
+        var result = await _courseService.GetStudentEnrolledCoursesAsync(9999);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Empty(courses);
+        VerifyDebugLog("Getting enrolled courses for student 9999");
+        VerifyDebugLog("Found 0 enrolled courses for student 9999");
+    }
+
+    [Fact]
+    public async Task GetStudentEnrolledCoursesAsync_WithCancellationToken_UsesCancellationToken()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        var result = await _courseService.GetStudentEnrolledCoursesAsync(1001, cts.Token);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Equal(2, courses.Count);
+    }
+
+    #endregion
+
+    #region Faculty Taught Courses Tests
+
+    [Fact]
+    public async Task GetFacultyTaughtCoursesAsync_FacultyWithMultipleCourses_ReturnsAllCourses()
+    {
+        // Act
+        var result = await _courseService.GetFacultyTaughtCoursesAsync(2001);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Equal(2, courses.Count);
+        Assert.Contains("CS101", courses);
+        Assert.Contains("CS102", courses);
+        VerifyDebugLog("Getting taught courses for faculty 2001");
+        VerifyDebugLog("Found 2 taught courses for faculty 2001");
+    }
+
+    [Fact]
+    public async Task GetFacultyTaughtCoursesAsync_FacultyWithOneCourse_ReturnsSingleCourse()
+    {
+        // Act
+        var result = await _courseService.GetFacultyTaughtCoursesAsync(2002);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Single(courses);
+        Assert.Contains("CS103", courses);
+        VerifyDebugLog("Getting taught courses for faculty 2002");
+        VerifyDebugLog("Found 1 taught courses for faculty 2002");
+    }
+
+    [Fact]
+    public async Task GetFacultyTaughtCoursesAsync_FacultyWithNoCourses_ReturnsEmptyList()
+    {
+        // Arrange - Add a professor with no teachings
+        var newProfessor = new Professor { EmpNr = 2003, FirstName = "Dr. Carol", LastName = "Davis", Email = "carol.davis@example.com", HireDate = DateTime.UtcNow.AddYears(-1) };
+        _context.Professors.Add(newProfessor);
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _courseService.GetFacultyTaughtCoursesAsync(2003);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Empty(courses);
+        VerifyDebugLog("Getting taught courses for faculty 2003");
+        VerifyDebugLog("Found 0 taught courses for faculty 2003");
+    }
+
+    [Fact]
+    public async Task GetFacultyTaughtCoursesAsync_NonexistentFaculty_ReturnsEmptyList()
+    {
+        // Act
+        var result = await _courseService.GetFacultyTaughtCoursesAsync(9999);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Empty(courses);
+        VerifyDebugLog("Getting taught courses for faculty 9999");
+        VerifyDebugLog("Found 0 taught courses for faculty 9999");
+    }
+
+    [Fact]
+    public async Task GetFacultyTaughtCoursesAsync_WithCancellationToken_UsesCancellationToken()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        var result = await _courseService.GetFacultyTaughtCoursesAsync(2001, cts.Token);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Equal(2, courses.Count);
+    }
+
+    #endregion
+
+    #region Course Existence Tests
+
+    [Fact]
+    public async Task DoesCourseExistAsync_ActiveCourse_ReturnsTrue()
+    {
+        // Act
+        var result = await _courseService.DoesCourseExistAsync("CS101");
+
+        // Assert
+        Assert.True(result);
+        VerifyDebugLog("Checking if course CS101 exists");
+        VerifyDebugLog("Course CS101 exists: True");
+    }
+
+    [Fact]
+    public async Task DoesCourseExistAsync_InactiveCourse_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.DoesCourseExistAsync("CS999");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if course CS999 exists");
+        VerifyDebugLog("Course CS999 exists: False");
+    }
+
+    [Fact]
+    public async Task DoesCourseExistAsync_NonexistentCourse_ReturnsFalse()
+    {
+        // Act
+        var result = await _courseService.DoesCourseExistAsync("NONEXISTENT");
+
+        // Assert
+        Assert.False(result);
+        VerifyDebugLog("Checking if course NONEXISTENT exists");
+        VerifyDebugLog("Course NONEXISTENT exists: False");
+    }
+
+    [Fact]
+    public async Task DoesCourseExistAsync_WithCancellationToken_UsesCancellationToken()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        var result = await _courseService.DoesCourseExistAsync("CS101", cts.Token);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    #endregion
+
+    #region Get Course Tests
+
+    [Fact]
+    public async Task GetCourseAsync_ExistingActiveCourse_ReturnsCourse()
+    {
+        // Act
+        var result = await _courseService.GetCourseAsync("CS101");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("CS101", result.Code);
+        Assert.Equal("Introduction to Programming", result.Title);
+        Assert.Equal(3, result.CreditHours);
+        Assert.True(result.IsActive);
+        VerifyDebugLog("Getting course information for CS101");
+        VerifyDebugLog("Found course CS101: Introduction to Programming");
+    }
+
+    [Fact]
+    public async Task GetCourseAsync_InactiveCourse_ReturnsNull()
+    {
+        // Act
+        var result = await _courseService.GetCourseAsync("CS999");
+
+        // Assert
+        Assert.Null(result);
+        VerifyDebugLog("Getting course information for CS999");
+        VerifyDebugLog("Course CS999 not found");
+    }
+
+    [Fact]
+    public async Task GetCourseAsync_NonexistentCourse_ReturnsNull()
+    {
+        // Act
+        var result = await _courseService.GetCourseAsync("NONEXISTENT");
+
+        // Assert
+        Assert.Null(result);
+        VerifyDebugLog("Getting course information for NONEXISTENT");
+        VerifyDebugLog("Course NONEXISTENT not found");
+    }
+
+    [Fact]
+    public async Task GetCourseAsync_WithCancellationToken_UsesCancellationToken()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        // Act
+        var result = await _courseService.GetCourseAsync("CS101", cts.Token);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("CS101", result.Code);
+    }
+
+    #endregion
+
+    #region Edge Cases and Error Handling Tests
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task IsStudentEnrolledAsync_InvalidCourseCode_ReturnsFalse(string courseCode)
+    {
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(1001, courseCode);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task DoesFacultyTeachCourseAsync_InvalidCourseCode_ReturnsFalse(string courseCode)
+    {
+        // Act
+        var result = await _courseService.DoesFacultyTeachCourseAsync(2001, courseCode);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task DoesCourseExistAsync_InvalidCourseCode_ReturnsFalse(string courseCode)
+    {
+        // Act
+        var result = await _courseService.DoesCourseExistAsync(courseCode);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task GetCourseAsync_InvalidCourseCode_ReturnsNull(string courseCode)
+    {
+        // Act
+        var result = await _courseService.GetCourseAsync(courseCode);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task IsStudentEnrolledAsync_DatabaseError_ReturnsFalseAndLogsError()
+    {
+        // Arrange - Dispose the context to simulate database error
+        _context.Dispose();
+
+        // Act
+        var result = await _courseService.IsStudentEnrolledAsync(1001, "CS101");
+
+        // Assert
+        Assert.False(result);
+        VerifyErrorLog("Error checking student enrollment for student 1001 in course CS101");
+    }
+
+    [Fact]
+    public async Task DoesFacultyTeachCourseAsync_DatabaseError_ReturnsFalseAndLogsError()
+    {
+        // Arrange - Dispose the context to simulate database error
+        _context.Dispose();
+
+        // Act
+        var result = await _courseService.DoesFacultyTeachCourseAsync(2001, "CS101");
+
+        // Assert
+        Assert.False(result);
+        VerifyErrorLog("Error checking faculty teaching for faculty 2001 in course CS101");
+    }
+
+    [Fact]
+    public async Task GetStudentEnrolledCoursesAsync_DatabaseError_ReturnsEmptyListAndLogsError()
+    {
+        // Arrange - Dispose the context to simulate database error
+        _context.Dispose();
+
+        // Act
+        var result = await _courseService.GetStudentEnrolledCoursesAsync(1001);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Empty(courses);
+        VerifyErrorLog("Error getting enrolled courses for student 1001");
+    }
+
+    [Fact]
+    public async Task GetFacultyTaughtCoursesAsync_DatabaseError_ReturnsEmptyListAndLogsError()
+    {
+        // Arrange - Dispose the context to simulate database error
+        _context.Dispose();
+
+        // Act
+        var result = await _courseService.GetFacultyTaughtCoursesAsync(2001);
+
+        // Assert
+        var courses = result.ToList();
+        Assert.Empty(courses);
+        VerifyErrorLog("Error getting taught courses for faculty 2001");
+    }
+
+    [Fact]
+    public async Task DoesCourseExistAsync_DatabaseError_ReturnsFalseAndLogsError()
+    {
+        // Arrange - Dispose the context to simulate database error
+        _context.Dispose();
+
+        // Act
+        var result = await _courseService.DoesCourseExistAsync("CS101");
+
+        // Assert
+        Assert.False(result);
+        VerifyErrorLog("Error checking if course CS101 exists");
+    }
+
+    [Fact]
+    public async Task GetCourseAsync_DatabaseError_ReturnsNullAndLogsError()
+    {
+        // Arrange - Dispose the context to simulate database error
+        _context.Dispose();
+
+        // Act
+        var result = await _courseService.GetCourseAsync("CS101");
+
+        // Assert
+        Assert.Null(result);
+        VerifyErrorLog("Error getting course information for CS101");
+    }
+
+    #endregion
+
+    #region Complex Scenario Tests
+
+    [Fact]
+    public async Task CourseService_ComplexStudentEnrollmentScenario_WorksCorrectly()
+    {
+        // Scenario: Check multiple aspects of a student's enrollment
+        var studentId = 1001;
+
+        // Act
+        var enrolledCourses = await _courseService.GetStudentEnrolledCoursesAsync(studentId);
+        var isEnrolledCS101 = await _courseService.IsStudentEnrolledAsync(studentId, "CS101");
+        var isEnrolledCS103 = await _courseService.IsStudentEnrolledAsync(studentId, "CS103");
+
+        // Assert
+        var courses = enrolledCourses.ToList();
+        Assert.Equal(2, courses.Count);
+        Assert.True(isEnrolledCS101);
+        Assert.False(isEnrolledCS103); // Student 1001 is not enrolled in CS103
+    }
+
+    [Fact]
+    public async Task CourseService_ComplexFacultyTeachingScenario_WorksCorrectly()
+    {
+        // Scenario: Check multiple aspects of a faculty's teaching
+        var facultyId = 2001;
+
+        // Act
+        var taughtCourses = await _courseService.GetFacultyTaughtCoursesAsync(facultyId);
+        var teachesCS101 = await _courseService.DoesFacultyTeachCourseAsync(facultyId, "CS101");
+        var teachesCS103 = await _courseService.DoesFacultyTeachCourseAsync(facultyId, "CS103");
+
+        // Assert
+        var courses = taughtCourses.ToList();
+        Assert.Equal(2, courses.Count);
+        Assert.True(teachesCS101);
+        Assert.False(teachesCS103); // Faculty 2001 does not teach CS103
+    }
+
+    [Fact]
+    public async Task CourseService_CourseExistenceAndRetrieval_WorksCorrectly()
+    {
+        // Act
+        var cs101Exists = await _courseService.DoesCourseExistAsync("CS101");
+        var cs101Details = await _courseService.GetCourseAsync("CS101");
+        var nonexistentExists = await _courseService.DoesCourseExistAsync("FAKE999");
+        var nonexistentDetails = await _courseService.GetCourseAsync("FAKE999");
+
+        // Assert
+        Assert.True(cs101Exists);
+        Assert.NotNull(cs101Details);
+        Assert.Equal("Introduction to Programming", cs101Details.Title);
+        Assert.False(nonexistentExists);
+        Assert.Null(nonexistentDetails);
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private void VerifyDebugLog(string expectedMessage)
+    {
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    private void VerifyErrorLog(string expectedMessage)
+    {
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedMessage)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    #endregion
+}
