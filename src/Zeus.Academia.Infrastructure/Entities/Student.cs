@@ -137,6 +137,128 @@ public class Student : Academic
     /// </summary>
     public bool IsFullTime { get; set; } = true;
 
+    // Profile Management Fields (Task 3)
+
+    /// <summary>
+    /// Gets or sets the path to the student's profile photo.
+    /// </summary>
+    [MaxLength(500)]
+    public string? ProfilePhotoPath { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's preferred name (if different from legal name).
+    /// </summary>
+    [MaxLength(100)]
+    public string? PreferredName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's gender identity.
+    /// </summary>
+    [MaxLength(50)]
+    public string? Gender { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's date of birth.
+    /// </summary>
+    public DateTime? DateOfBirth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's primary address.
+    /// </summary>
+    [MaxLength(500)]
+    public string? PrimaryAddress { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's city.
+    /// </summary>
+    [MaxLength(100)]
+    public string? City { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's state or province.
+    /// </summary>
+    [MaxLength(50)]
+    public string? State { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's postal/zip code.
+    /// </summary>
+    [MaxLength(20)]
+    public string? PostalCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's country.
+    /// </summary>
+    [MaxLength(100)]
+    public string? Country { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's personal email address.
+    /// </summary>
+    [MaxLength(255)]
+    public string? PersonalEmail { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's emergency contact phone number.
+    /// </summary>
+    [MaxLength(20)]
+    public string? EmergencyPhone { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's citizenship status.
+    /// </summary>
+    [MaxLength(100)]
+    public string? CitizenshipStatus { get; set; }
+
+    /// <summary>
+    /// Gets or sets the student's ethnicity (optional, for reporting purposes).
+    /// </summary>
+    [MaxLength(100)]
+    public string? Ethnicity { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the student has any dietary restrictions.
+    /// </summary>
+    public bool HasDietaryRestrictions { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets details about dietary restrictions.
+    /// </summary>
+    [MaxLength(500)]
+    public string? DietaryRestrictions { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the student has any disabilities or accommodations.
+    /// </summary>
+    public bool RequiresAccommodations { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the student's preferred contact method.
+    /// </summary>
+    public ContactMethod PreferredContactMethod { get; set; } = ContactMethod.Email;
+
+    /// <summary>
+    /// Gets or sets the profile completion percentage (0-100).
+    /// </summary>
+    public decimal ProfileCompletionPercentage { get; set; } = 0;
+
+    /// <summary>
+    /// Gets or sets when the profile was last updated.
+    /// </summary>
+    public DateTime? ProfileLastUpdated { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional personal interests or hobbies.
+    /// </summary>
+    [MaxLength(1000)]
+    public string? PersonalInterests { get; set; }
+
+    /// <summary>
+    /// Gets or sets career goals or aspirations.
+    /// </summary>
+    [MaxLength(1000)]
+    public string? CareerGoals { get; set; }
+
     /// <summary>
     /// Navigation property to the degree.
     /// </summary>
@@ -156,4 +278,19 @@ public class Student : Academic
     /// Navigation property for courses the student is enrolled in.
     /// </summary>
     public virtual ICollection<StudentEnrollment> Enrollments { get; set; } = new List<StudentEnrollment>();
+
+    /// <summary>
+    /// Navigation property for emergency contacts.
+    /// </summary>
+    public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
+
+    /// <summary>
+    /// Navigation property for student documents.
+    /// </summary>
+    public virtual ICollection<StudentDocument> Documents { get; set; } = new List<StudentDocument>();
+
+    /// <summary>
+    /// Navigation property for advisor assignments.
+    /// </summary>
+    public virtual ICollection<StudentAdvisorAssignment> AdvisorAssignments { get; set; } = new List<StudentAdvisorAssignment>();
 }

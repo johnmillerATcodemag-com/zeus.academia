@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Infrastructure.Identity;
 using Zeus.Academia.Infrastructure.Services;
+using Zeus.Academia.Infrastructure.Services.Interfaces;
 using Zeus.Academia.Infrastructure.Repositories;
 using Zeus.Academia.Infrastructure.Repositories.Interfaces;
 
@@ -132,6 +133,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ICourseService, CourseService>();
 
+        // Register Student Profile Management services (Prompt 4 Task 3)
+        services.AddScoped<IStudentProfileService, StudentProfileService>();
+
         // Register Identity Repositories (Task 5)
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
@@ -139,6 +143,9 @@ public static class ServiceCollectionExtensions
 
         // Register Security and Audit services (Task 6)
         services.AddScoped<IAuditService, AuditService>();
+
+        // Register Student Profile Management services (Prompt 4 Task 3)
+        services.AddScoped<IStudentProfileService, StudentProfileService>();
 
         return services;
     }

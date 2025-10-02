@@ -194,3 +194,172 @@ public enum EnrollmentEventType
     /// </summary>
     ReturnedFromLeave = 10
 }
+
+/// <summary>
+/// Enumeration for preferred contact methods
+/// </summary>
+public enum ContactMethod
+{
+    /// <summary>
+    /// Contact via phone call
+    /// </summary>
+    Phone = 0,
+
+    /// <summary>
+    /// Contact via email
+    /// </summary>
+    Email = 1,
+
+    /// <summary>
+    /// Contact via SMS text message
+    /// </summary>
+    SMS = 2,
+
+    /// <summary>
+    /// Contact via postal mail
+    /// </summary>
+    Mail = 3,
+
+    /// <summary>
+    /// No preferred method - any method acceptable
+    /// </summary>
+    Any = 4
+}
+
+/// <summary>
+/// Enumeration for student document types
+/// </summary>
+public enum StudentDocumentType
+{
+    /// <summary>
+    /// Student profile photo
+    /// </summary>
+    ProfilePhoto = 0,
+
+    /// <summary>
+    /// Official transcript
+    /// </summary>
+    Transcript = 1,
+
+    /// <summary>
+    /// Diploma or certificate
+    /// </summary>
+    Diploma = 2,
+
+    /// <summary>
+    /// Immigration document (visa, passport, etc.)
+    /// </summary>
+    Immigration = 3,
+
+    /// <summary>
+    /// Medical records or immunization
+    /// </summary>
+    Medical = 4,
+
+    /// <summary>
+    /// Financial aid document
+    /// </summary>
+    FinancialAid = 5,
+
+    /// <summary>
+    /// Letter of recommendation
+    /// </summary>
+    Recommendation = 6,
+
+    /// <summary>
+    /// Personal statement or essay
+    /// </summary>
+    PersonalStatement = 7,
+
+    /// <summary>
+    /// Resume or curriculum vitae
+    /// </summary>
+    Resume = 8,
+
+    /// <summary>
+    /// Portfolio or work samples
+    /// </summary>
+    Portfolio = 9,
+
+    /// <summary>
+    /// Other miscellaneous document
+    /// </summary>
+    Other = 10
+}
+
+/// <summary>
+/// Enumeration for document access levels
+/// </summary>
+public enum DocumentAccessLevel
+{
+    /// <summary>
+    /// Only the student can access
+    /// </summary>
+    StudentOnly = 0,
+
+    /// <summary>
+    /// Student and their advisor can access
+    /// </summary>
+    StudentAndAdvisor = 1,
+
+    /// <summary>
+    /// Student and department staff can access
+    /// </summary>
+    StudentAndDepartment = 2,
+
+    /// <summary>
+    /// Student and faculty can access
+    /// </summary>
+    StudentAndFaculty = 3,
+
+    /// <summary>
+    /// Administrative staff can access
+    /// </summary>
+    Administrative = 4,
+
+    /// <summary>
+    /// Public access (e.g., profile photos)
+    /// </summary>
+    Public = 5
+}
+
+/// <summary>
+/// Enumeration for advisor types
+/// </summary>
+public enum AdvisorType
+{
+    /// <summary>
+    /// Academic advisor for coursework and degree planning
+    /// </summary>
+    Academic = 0,
+
+    /// <summary>
+    /// Faculty advisor for research or thesis work
+    /// </summary>
+    Faculty = 1,
+
+    /// <summary>
+    /// Career counselor or advisor
+    /// </summary>
+    Career = 2,
+
+    /// <summary>
+    /// Financial aid advisor
+    /// </summary>
+    Financial = 3,
+
+    /// <summary>
+    /// Mental health or counseling advisor
+    /// </summary>
+    Counseling = 4,
+
+    /// <summary>
+    /// Disability services advisor
+    /// </summary>
+    Disability = 5,
+
+    /// <summary>
+    /// International student advisor
+    /// </summary>
+    International = 6
+}

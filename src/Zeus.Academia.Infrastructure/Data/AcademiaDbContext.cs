@@ -56,6 +56,12 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<EnrollmentHistory> EnrollmentHistory { get; set; } = null!;
     public DbSet<AcademicTerm> AcademicTerms { get; set; } = null!;
 
+    // Student Profile Management Entities (Prompt 4 Task 3)
+    public DbSet<EmergencyContact> EmergencyContacts { get; set; } = null!;
+    public DbSet<StudentDocument> StudentDocuments { get; set; } = null!;
+    public DbSet<AcademicAdvisor> AcademicAdvisors { get; set; } = null!;
+    public DbSet<StudentAdvisorAssignment> StudentAdvisorAssignments { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
@@ -981,6 +987,300 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
 
             entity.ToTable(t => t.HasCheckConstraint("CK_AcademicTerms_EarlyApplication",
                 "EarlyApplicationDeadline IS NULL OR ApplicationDeadline IS NULL OR EarlyApplicationDeadline <= ApplicationDeadline"));
+        });
+
+        // ========== Prompt 4 Task 3: Student Profile Management Entity Configurations ==========
+
+        // Configure EmergencyContact relationships and constraints
+        modelBuilder.Entity<EmergencyContact>(entity =>
+        {
+            entity.HasKey(ec => ec.Id);
+
+            entity.HasOne(ec => ec.Student)
+                .WithMany(s => s.EmergencyContacts)
+                .HasForeignKey(ec => ec.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // String length constraints
+            entity.Property(ec => ec.ContactName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(ec => ec.Relationship)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(ec => ec.PrimaryPhone)
+                .IsRequired()
+                .HasMaxLength(20);
+
+            entity.Property(ec => ec.SecondaryPhone)
+                .HasMaxLength(20);
+
+            entity.Property(ec => ec.Email)
+                .HasMaxLength(255);
+
+            entity.Property(ec => ec.Address)
+                .HasMaxLength(255);
+
+            entity.Property(ec => ec.City)
+                .HasMaxLength(100);
+
+            entity.Property(ec => ec.State)
+                .HasMaxLength(50);
+
+            entity.Property(ec => ec.PostalCode)
+                .HasMaxLength(20);
+
+            entity.Property(ec => ec.Country)
+                .HasMaxLength(100)
+                .HasDefaultValue("United States");
+
+            entity.Property(ec => ec.Notes)
+                .HasMaxLength(1000);
+
+            // Enum conversions
+            entity.Property(ec => ec.PreferredContactMethod)
+                .HasConversion<int>();
+
+            // Boolean defaults
+            entity.Property(ec => ec.NotifyInEmergency)
+                .HasDefaultValue(true);
+
+            entity.Property(ec => ec.IsActive)
+                .HasDefaultValue(true);
+
+            // Check constraints
+            entity.ToTable(t => t.HasCheckConstraint("CK_EmergencyContacts_Priority",
+                "Priority >= 1 AND Priority <= 10"));
+
+            // Indexes
+            entity.HasIndex(ec => ec.StudentEmpNr)
+                .HasDatabaseName("IX_EmergencyContacts_StudentEmpNr");
+
+            entity.HasIndex(ec => new { ec.StudentEmpNr, ec.Priority })
+                .HasDatabaseName("IX_EmergencyContacts_Student_Priority");
+        });
+
+        // Configure StudentDocument relationships and constraints
+        modelBuilder.Entity<StudentDocument>(entity =>
+        {
+            entity.HasKey(sd => sd.Id);
+
+            entity.HasOne(sd => sd.Student)
+                .WithMany(s => s.Documents)
+                .HasForeignKey(sd => sd.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // String length constraints
+            entity.Property(sd => sd.OriginalFileName)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(sd => sd.StoredFileName)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(sd => sd.FilePath)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(sd => sd.MimeType)
+                .HasMaxLength(100);
+
+            entity.Property(sd => sd.Description)
+                .HasMaxLength(1000);
+
+            entity.Property(sd => sd.VerifiedBy)
+                .HasMaxLength(100);
+
+            entity.Property(sd => sd.Notes)
+                .HasMaxLength(1000);
+
+            // Enum conversions
+            entity.Property(sd => sd.DocumentType)
+                .IsRequired()
+                .HasConversion<int>();
+
+            entity.Property(sd => sd.AccessLevel)
+                .HasConversion<int>()
+                .HasDefaultValue(DocumentAccessLevel.StudentOnly);
+
+            // Decimal precision
+            entity.Property(sd => sd.FileSizeBytes)
+                .HasColumnType("bigint");
+
+            // Boolean defaults
+            entity.Property(sd => sd.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(sd => sd.IsVerified)
+                .HasDefaultValue(false);
+
+            entity.Property(sd => sd.IsRequired)
+                .HasDefaultValue(false);
+
+            // DateTime configurations
+            entity.Property(sd => sd.UploadDate)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(sd => sd.VerificationDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(sd => sd.ExpirationDate)
+                .HasColumnType("datetime2");
+
+            // Check constraints
+            entity.ToTable(t => t.HasCheckConstraint("CK_StudentDocuments_FileSize",
+                "FileSizeBytes >= 0"));
+
+            // Indexes
+            entity.HasIndex(sd => sd.StudentEmpNr)
+                .HasDatabaseName("IX_StudentDocuments_StudentEmpNr");
+
+            entity.HasIndex(sd => sd.DocumentType)
+                .HasDatabaseName("IX_StudentDocuments_DocumentType");
+
+            entity.HasIndex(sd => sd.IsVerified)
+                .HasDatabaseName("IX_StudentDocuments_IsVerified");
+
+            entity.HasIndex(sd => new { sd.StudentEmpNr, sd.DocumentType })
+                .HasDatabaseName("IX_StudentDocuments_Student_Type");
+        });
+
+        // Configure AcademicAdvisor relationships and constraints
+        modelBuilder.Entity<AcademicAdvisor>(entity =>
+        {
+            entity.HasKey(aa => aa.Id);
+
+            // Configure relationship to Academic (faculty member)
+            entity.HasOne(aa => aa.FacultyMember)
+                .WithMany()
+                .HasForeignKey(aa => aa.FacultyEmpNr)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(aa => aa.Department)
+                .WithMany()
+                .HasForeignKey(aa => aa.DepartmentName)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // String length constraints
+            entity.Property(aa => aa.AdvisorName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(aa => aa.Title)
+                .HasMaxLength(100);
+
+            entity.Property(aa => aa.Email)
+                .HasMaxLength(255);
+
+            entity.Property(aa => aa.PhoneNumber)
+                .HasMaxLength(20);
+
+            entity.Property(aa => aa.OfficeLocation)
+                .HasMaxLength(100);
+
+            entity.Property(aa => aa.Specializations)
+                .HasMaxLength(500);
+
+            entity.Property(aa => aa.OfficeHours)
+                .HasMaxLength(200);
+
+            entity.Property(aa => aa.Notes)
+                .HasMaxLength(1000);
+
+            // Enum conversions
+            entity.Property(aa => aa.PreferredContactMethod)
+                .HasConversion<int>();
+
+            // Boolean defaults
+            entity.Property(aa => aa.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(aa => aa.IsAcceptingNewStudents)
+                .HasDefaultValue(true);
+
+            // Check constraints
+            entity.ToTable(t => t.HasCheckConstraint("CK_AcademicAdvisors_Capacity",
+                "MaxStudentLoad >= 1 OR MaxStudentLoad IS NULL"));
+
+            entity.ToTable(t => t.HasCheckConstraint("CK_AcademicAdvisors_CurrentLoad",
+                "CurrentStudentLoad >= 0"));
+
+            // Indexes
+            entity.HasIndex(aa => aa.FacultyEmpNr)
+                .IsUnique()
+                .HasDatabaseName("IX_AcademicAdvisors_FacultyEmpNr");
+
+            entity.HasIndex(aa => aa.DepartmentName)
+                .HasDatabaseName("IX_AcademicAdvisors_DepartmentName");
+
+            entity.HasIndex(aa => aa.IsAcceptingNewStudents)
+                .HasDatabaseName("IX_AcademicAdvisors_AcceptingNewStudents");
+        });
+
+        // Configure StudentAdvisorAssignment relationships and constraints
+        modelBuilder.Entity<StudentAdvisorAssignment>(entity =>
+        {
+            entity.HasKey(saa => saa.Id);
+
+            entity.HasOne(saa => saa.Student)
+                .WithMany(s => s.AdvisorAssignments)
+                .HasForeignKey(saa => saa.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(saa => saa.Advisor)
+                .WithMany(aa => aa.StudentAssignments)
+                .HasForeignKey(saa => saa.AdvisorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // String length constraints
+            entity.Property(saa => saa.AssignmentReason)
+                .HasMaxLength(500);
+
+            entity.Property(saa => saa.EndReason)
+                .HasMaxLength(500);
+
+            entity.Property(saa => saa.AssignedBy)
+                .HasMaxLength(100);
+
+            entity.Property(saa => saa.Notes)
+                .HasMaxLength(1000);
+
+            // Enum conversions
+            entity.Property(saa => saa.AdvisorType)
+                .IsRequired()
+                .HasConversion<int>();
+
+            // Boolean defaults
+            entity.Property(saa => saa.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(saa => saa.IsPrimary)
+                .HasDefaultValue(false);
+
+            // DateTime configurations
+            entity.Property(saa => saa.AssignmentDate)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.Property(saa => saa.EndDate)
+                .HasColumnType("datetime2");
+
+            // Indexes
+            entity.HasIndex(saa => saa.StudentEmpNr)
+                .HasDatabaseName("IX_StudentAdvisorAssignments_StudentEmpNr");
+
+            entity.HasIndex(saa => saa.AdvisorId)
+                .HasDatabaseName("IX_StudentAdvisorAssignments_AdvisorId");
+
+            entity.HasIndex(saa => new { saa.StudentEmpNr, saa.IsPrimary, saa.IsActive })
+                .HasDatabaseName("IX_StudentAdvisorAssignments_Student_Primary_Active");
+
+            entity.HasIndex(saa => new { saa.AdvisorId, saa.IsActive })
+                .HasDatabaseName("IX_StudentAdvisorAssignments_Advisor_Active");
         });
     }
 }
