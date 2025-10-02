@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Zeus.Academia.Api.Models.Responses;
+using Zeus.Academia.Api.Models.Requests;
+using Zeus.Academia.Api.Extensions;
 
 namespace Zeus.Academia.Api.Controllers;
 
@@ -86,7 +89,32 @@ public abstract class BaseApiController : ControllerBase
     /// Gets the correlation ID for the current request
     /// </summary>
     protected string CorrelationId =>
-        HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
+        HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets the API version for the current request
+    /// </summary>
+    protected string? GetApiVersion()
+    {
+        // Try to get version from various sources
+        if (HttpContext?.Items?.ContainsKey("ApiVersion") == true)
+        {
+            return HttpContext.Items["ApiVersion"]?.ToString();
+        }
+
+        if (HttpContext?.Request?.Headers?.ContainsKey("X-Api-Version") == true)
+        {
+            return HttpContext.Request.Headers["X-Api-Version"].FirstOrDefault();
+        }
+
+        if (HttpContext?.Request?.Query?.ContainsKey("version") == true)
+        {
+            return HttpContext.Request.Query["version"].FirstOrDefault();
+        }
+
+        // Default to v1.0 if no version specified
+        return "1.0";
+    }
 
     /// <summary>
     /// Creates a success response with data
@@ -102,9 +130,16 @@ public abstract class BaseApiController : ControllerBase
             Success = true,
             Data = data,
             Message = message,
-            Timestamp = DateTime.UtcNow,
-            CorrelationId = CorrelationId
+            CorrelationId = CorrelationId,
+            Timestamp = DateTime.UtcNow
         };
+
+        // Set version if available
+        var version = GetApiVersion();
+        if (!string.IsNullOrEmpty(version))
+        {
+            response.Version = version;
+        }
 
         return Ok(response);
     }
@@ -121,7 +156,8 @@ public abstract class BaseApiController : ControllerBase
             Success = true,
             Message = message,
             Timestamp = DateTime.UtcNow,
-            CorrelationId = CorrelationId
+            CorrelationId = CorrelationId,
+            Version = GetApiVersion()
         };
 
         return Ok(response);
@@ -142,7 +178,8 @@ public abstract class BaseApiController : ControllerBase
             Message = message,
             Errors = errors,
             Timestamp = DateTime.UtcNow,
-            CorrelationId = CorrelationId
+            CorrelationId = CorrelationId,
+            Version = GetApiVersion()
         };
 
         return StatusCode(statusCode, response);
@@ -187,47 +224,46 @@ public abstract class BaseApiController : ControllerBase
     {
         return Error(message, 403);
     }
-}
-
-/// <summary>
-/// Generic API response wrapper
-/// </summary>
-/// <typeparam name="T">Type of response data</typeparam>
-public class ApiResponse<T> : ApiResponse
-{
-    /// <summary>
-    /// Response data
-    /// </summary>
-    public T? Data { get; set; }
-}
-
-/// <summary>
-/// Base API response wrapper
-/// </summary>
-public class ApiResponse
-{
-    /// <summary>
-    /// Indicates if the operation was successful
-    /// </summary>
-    public bool Success { get; set; }
 
     /// <summary>
-    /// Response message
+    /// Creates a successful paged response
     /// </summary>
-    public string? Message { get; set; }
+    /// <typeparam name="T">Type of items in the collection</typeparam>
+    /// <param name="data">Page data</param>
+    /// <param name="currentPage">Current page number</param>
+    /// <param name="pageSize">Items per page</param>
+    /// <param name="totalItems">Total number of items</param>
+    /// <param name="message">Optional success message</param>
+    /// <returns>OK result with paged response</returns>
+    protected IActionResult PagedSuccess<T>(
+        IEnumerable<T> data,
+        int currentPage,
+        int pageSize,
+        int totalItems,
+        string? message = null)
+    {
+        var response = PagedApiResponse<T>.CreateSuccess(
+            data,
+            currentPage,
+            pageSize,
+            totalItems,
+            message,
+            CorrelationId,
+            GetApiVersion());
+
+        return Ok(response);
+    }
 
     /// <summary>
-    /// Error details (only populated on failure)
+    /// Creates a successful paged response from pagination result
     /// </summary>
-    public object? Errors { get; set; }
-
-    /// <summary>
-    /// Response timestamp
-    /// </summary>
-    public DateTime Timestamp { get; set; }
-
-    /// <summary>
-    /// Correlation ID for request tracking
-    /// </summary>
-    public string? CorrelationId { get; set; }
+    /// <typeparam name="T">Type of items in the collection</typeparam>
+    /// <param name="pagedResult">Paged result</param>
+    /// <param name="message">Optional success message</param>
+    /// <returns>OK result with paged response</returns>
+    protected IActionResult PagedSuccess<T>(PagedResult<T> pagedResult, string? message = null)
+    {
+        var response = pagedResult.ToApiResponse(message, CorrelationId, GetApiVersion());
+        return Ok(response);
+    }
 }

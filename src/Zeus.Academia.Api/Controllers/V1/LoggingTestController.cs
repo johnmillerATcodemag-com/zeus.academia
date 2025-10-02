@@ -36,12 +36,14 @@ public class LoggingTestController : BaseApiController
 
         await Task.Delay(100); // Simulate some processing time
 
-        return Ok(new
+        var responseData = new
         {
             Message = "Simple request processed successfully",
             CorrelationId = _correlationIdService.CorrelationId,
             Timestamp = DateTime.UtcNow
-        });
+        };
+
+        return Success(responseData, "Simple request processed successfully");
     }
 
     /// <summary>
@@ -57,14 +59,16 @@ public class LoggingTestController : BaseApiController
 
         await Task.Delay(200); // Simulate processing time
 
-        return Ok(new TestResponse
+        var response = new TestResponse
         {
             Id = Guid.NewGuid(),
             ProcessedName = request.Name?.ToUpper(),
             ProcessedEmail = request.Email?.ToLower(),
             ProcessedAt = DateTime.UtcNow,
             CorrelationId = _correlationIdService.CorrelationId
-        });
+        };
+
+        return Success(response, "Request processed successfully");
     }
 
     /// <summary>
@@ -83,13 +87,15 @@ public class LoggingTestController : BaseApiController
         _logger.LogInformation("Completed slow request after {DelayMs}ms, CorrelationId: {CorrelationId}",
             delayMs, _correlationIdService.CorrelationId);
 
-        return Ok(new
+        var responseData = new
         {
             Message = $"Slow request completed after {delayMs}ms",
             CorrelationId = _correlationIdService.CorrelationId,
             DelayMs = delayMs,
             Timestamp = DateTime.UtcNow
-        });
+        };
+
+        return Success(responseData, $"Slow request completed after {delayMs}ms");
     }
 
     /// <summary>
@@ -107,13 +113,15 @@ public class LoggingTestController : BaseApiController
 
         await Task.Delay(50);
 
-        return Ok(new
+        var responseData = new
         {
             Message = "Various log levels generated",
             CorrelationId = correlationId,
             LogLevels = new[] { "Debug", "Information", "Warning" },
             Timestamp = DateTime.UtcNow
-        });
+        };
+
+        return Success(responseData, "Various log levels generated");
     }
 
     /// <summary>
@@ -135,7 +143,7 @@ public class LoggingTestController : BaseApiController
         _logger.LogInformation("Completed correlation test. Initial: {InitialId}, Final: {FinalId}",
             initialCorrelationId, finalCorrelationId);
 
-        return Ok(new
+        var responseData = new
         {
             Message = "Correlation ID propagation test completed",
             InitialCorrelationId = initialCorrelationId,
@@ -143,7 +151,9 @@ public class LoggingTestController : BaseApiController
             ConsistentCorrelationId = initialCorrelationId == finalCorrelationId,
             StepResults = new[] { result1, result2 },
             Timestamp = DateTime.UtcNow
-        });
+        };
+
+        return Success(responseData, "Correlation ID propagation test completed");
     }
 
     private async Task<string> ProcessStepOne()

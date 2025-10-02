@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Zeus.Academia.Api.Controllers.V1;
+using Zeus.Academia.Api.Models.Responses;
 using Zeus.Academia.Api.Services;
 
 namespace Zeus.Academia.CoverageTests.Api.Controllers.V1;
@@ -70,8 +71,10 @@ public class LoggingTestControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<TestResponse>(okResult.Value);
+        var apiResponse = Assert.IsType<ApiResponse<TestResponse>>(okResult.Value);
+        var response = apiResponse.Data;
 
+        Assert.NotNull(response);
         Assert.NotEqual(Guid.Empty, response.Id);
         Assert.Equal("JOHN DOE", response.ProcessedName);
         Assert.Equal("john.doe@example.com", response.ProcessedEmail);
@@ -106,8 +109,10 @@ public class LoggingTestControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<TestResponse>(okResult.Value);
+        var apiResponse = Assert.IsType<ApiResponse<TestResponse>>(okResult.Value);
+        var response = apiResponse.Data;
 
+        Assert.NotNull(response);
         Assert.Null(response.ProcessedName);
         Assert.Equal("test@example.com", response.ProcessedEmail);
     }
@@ -129,8 +134,10 @@ public class LoggingTestControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<TestResponse>(okResult.Value);
+        var apiResponse = Assert.IsType<ApiResponse<TestResponse>>(okResult.Value);
+        var response = apiResponse.Data;
 
+        Assert.NotNull(response);
         Assert.Equal("TEST USER", response.ProcessedName);
         Assert.Null(response.ProcessedEmail);
     }
@@ -321,8 +328,10 @@ public class LoggingTestControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<TestResponse>(okResult.Value);
+        var apiResponse = Assert.IsType<ApiResponse<TestResponse>>(okResult.Value);
+        var response = apiResponse.Data;
 
+        Assert.NotNull(response);
         if (string.IsNullOrEmpty(name))
         {
             Assert.Null(response.ProcessedName);

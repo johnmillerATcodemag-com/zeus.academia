@@ -114,31 +114,10 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
-// Configure CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("DefaultCorsPolicy", policy =>
-    {
-        if (builder.Environment.IsDevelopment())
-        {
-            // Development: Allow any origin for testing
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        }
-        else
-        {
-            // Production: Restrict to specific origins
-            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                ?? new[] { "https://zeus-academia.com", "https://app.zeus-academia.com" };
-
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
-        }
-    });
-});
+// Configure Response Formatting and CORS
+builder.Services.AddCustomResponseCompression();
+builder.Services.AddContentNegotiation();
+builder.Services.AddComprehensiveCors(builder.Configuration, builder.Environment);
 
 // Configure Rate Limiting
 builder.Services.Configure<RateLimitOptions>(
@@ -324,6 +303,9 @@ if (app.Environment.IsDevelopment())
 
 // Enable static files for custom CSS
 app.UseStaticFiles();
+
+// Response compression (must be early in pipeline, before any middleware that writes to response)
+app.UseResponseCompression();
 
 // Global exception handling (must be early in pipeline)
 app.UseMiddleware<Zeus.Academia.Api.Middleware.GlobalExceptionMiddleware>();
