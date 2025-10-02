@@ -2,14 +2,82 @@ using Zeus.Academia.Infrastructure.Extensions;
 using Zeus.Academia.Infrastructure.Identity;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Api.Middleware;
+using Zeus.Academia.Api.Extensions;
+using Zeus.Academia.Api.Configuration;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+// Configure logging early
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+// Add environment variables support
+builder.Configuration.AddEnvironmentVariables("ZEUS_ACADEMIA_");
+
+// Validate configuration
+builder.Services.AddApplicationConfiguration(builder.Configuration);
+builder.Services.ConfigureEnvironmentSettings(builder.Environment, builder.Configuration);
+
+// Add API services
+builder.Services.AddApiServices();
+
+// Add API documentation
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var apiConfig = builder.Configuration.GetSection(ApiConfiguration.SectionName).Get<ApiConfiguration>()
+        ?? new ApiConfiguration();
+
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = apiConfig.Title,
+        Version = apiConfig.Version,
+        Description = apiConfig.Description,
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = apiConfig.Contact.Name,
+            Email = apiConfig.Contact.Email,
+            Url = new Uri(apiConfig.Contact.Url)
+        }
+    });
+
+    // Add JWT authentication to Swagger
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter 'Bearer' followed by a space and your JWT token"
+    });
+
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+
+    // Include XML comments
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -189,7 +257,12 @@ builder.Services.AddAuthorization(options =>
             AcademicRoleType.Professor.ToString(),
             AcademicRoleType.TeachingProf.ToString(),
             AcademicRoleType.Chair.ToString()));
-}); var app = builder.Build();
+});
+
+// Add Health Checks
+builder.Services.AddHealthChecks();
+
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -210,5 +283,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Health Check endpoint
+app.MapHealthChecks("/health");
 
 app.Run();

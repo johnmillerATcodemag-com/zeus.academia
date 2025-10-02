@@ -287,7 +287,7 @@ public class UserService : IUserService
                 .Select(ur => new UserRoleInfo
                 {
                     RoleId = ur.RoleId,
-                    RoleName = ur.Role.Name,
+                    RoleName = ur.Role?.Name ?? string.Empty,
                     DepartmentContext = ur.DepartmentContextName,
                     EffectiveDate = ur.EffectiveDate,
                     ExpirationDate = ur.ExpirationDate,
@@ -908,8 +908,8 @@ public class UserService : IUserService
                     LastLoginDate = u.LastLoginDate,
                     CreatedDate = u.CreatedDate,
                     Roles = u.UserRoles
-                        .Where(ur => ur.IsCurrentlyEffective())
-                        .Select(ur => ur.Role.Name)
+                        .Where(ur => ur.IsCurrentlyEffective() && ur.Role != null)
+                        .Select(ur => ur.Role.Name!)
                         .ToList()
                 })
                 .ToListAsync();
@@ -950,7 +950,7 @@ public class UserService : IUserService
                 .Select(ur => new UserRoleInfo
                 {
                     RoleId = ur.RoleId,
-                    RoleName = ur.Role.Name,
+                    RoleName = ur.Role?.Name ?? string.Empty,
                     DepartmentContext = ur.DepartmentContextName,
                     EffectiveDate = ur.EffectiveDate,
                     ExpirationDate = ur.ExpirationDate,
@@ -1074,7 +1074,7 @@ public class UserService : IUserService
                 .Select(ur => new UserRoleInfo
                 {
                     RoleId = ur.RoleId,
-                    RoleName = ur.Role.Name,
+                    RoleName = ur.Role.Name!,
                     DepartmentContext = ur.DepartmentContextName,
                     EffectiveDate = ur.EffectiveDate,
                     ExpirationDate = ur.ExpirationDate,
@@ -1150,7 +1150,7 @@ public class UserService : IUserService
             await _emailService.SendRoleAssignmentAsync(
                 user.Email ?? string.Empty,
                 user.DisplayName ?? user.UserName ?? "User",
-                role.Name,
+                role.Name ?? string.Empty,
                 departmentContext);
 
             result.Success = true;

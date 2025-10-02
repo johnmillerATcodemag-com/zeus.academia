@@ -105,7 +105,7 @@ public class AcademiaRole : IdentityRole<int>
     /// </summary>
     public void UpdateNormalizedName()
     {
-        NormalizedName = Name.ToUpperInvariant();
+        NormalizedName = Name?.ToUpperInvariant() ?? string.Empty;
         ModifiedDate = DateTime.UtcNow;
     }
 
@@ -162,9 +162,9 @@ public class AcademiaRole : IdentityRole<int>
     {
         if (!string.IsNullOrEmpty(DepartmentName) && Department != null)
         {
-            return $"{Name} - {Department.Name}";
+            return $"{Name ?? string.Empty} - {Department.Name}";
         }
 
-        return Name;
+        return Name ?? string.Empty;
     }
 }

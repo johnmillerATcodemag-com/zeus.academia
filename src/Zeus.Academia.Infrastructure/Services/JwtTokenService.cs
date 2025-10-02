@@ -46,7 +46,7 @@ public class JwtTokenService : IJwtTokenService
     public TimeSpan AccessTokenExpiration => _accessTokenExpiration;
     public TimeSpan RefreshTokenExpiration => _refreshTokenExpiration;
 
-    public async Task<string> GenerateAccessTokenAsync(AcademiaUser user, IList<string> roles, AcademiaPermission permissions)
+    public Task<string> GenerateAccessTokenAsync(AcademiaUser user, IList<string> roles, AcademiaPermission permissions)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_secretKey);
@@ -97,7 +97,7 @@ public class JwtTokenService : IJwtTokenService
         _logger.LogDebug("Generated JWT token for user {UserId} with {RoleCount} roles and {PermissionCount} permissions",
             user.Id, roles.Count, permissionFlags.Count);
 
-        return tokenString;
+        return Task.FromResult(tokenString);
     }
 
     public string GenerateRefreshToken()
