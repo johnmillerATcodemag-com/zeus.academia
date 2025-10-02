@@ -65,7 +65,7 @@ public class RequestLoggingMiddlewareTests
         var context = CreateHttpContext();
         var existingCorrelationId = "existing-correlation-456";
 
-        context.Request.Headers.Add("X-Correlation-ID", existingCorrelationId);
+        context.Request.Headers["X-Correlation-ID"] = existingCorrelationId;
         _mockNext.Setup(x => x(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
@@ -183,7 +183,7 @@ public class RequestLoggingMiddlewareTests
         // Arrange
         var context = CreateHttpContext();
         var forwardedIp = "192.168.1.100";
-        context.Request.Headers.Add("X-Forwarded-For", $"{forwardedIp}, 10.0.0.1");
+        context.Request.Headers["X-Forwarded-For"] = $"{forwardedIp}, 10.0.0.1";
 
         // Act - Using reflection to test private method
         var middleware = CreateMiddleware();
@@ -202,7 +202,7 @@ public class RequestLoggingMiddlewareTests
         // Arrange
         var context = CreateHttpContext();
         var realIp = "203.0.113.1";
-        context.Request.Headers.Add("X-Real-IP", realIp);
+        context.Request.Headers["X-Real-IP"] = realIp;
 
         // Act - Using reflection to test private method
         var middleware = CreateMiddleware();

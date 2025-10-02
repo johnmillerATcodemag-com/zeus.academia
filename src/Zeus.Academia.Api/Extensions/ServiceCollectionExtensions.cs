@@ -8,7 +8,7 @@ namespace Zeus.Academia.Api.Extensions;
 /// <summary>
 /// Extension methods for configuring application services
 /// </summary>
-public static class ServiceCollectionExtensions
+public static partial class ServiceCollectionExtensions
 {
     /// <summary>
     /// Add and configure application settings
@@ -50,6 +50,9 @@ public static class ServiceCollectionExtensions
 
         // Add correlation ID service for request tracking
         services.AddSingleton<ICorrelationIdService, CorrelationIdService>();
+
+        // Add validation services
+        services.AddValidationServices();
 
         // Add health checks
         services.AddHealthChecks();
@@ -175,5 +178,49 @@ public class ValidateOptionsConfiguration<T> : IValidateOptions<T> where T : cla
         }
 
         return ValidateOptionsResult.Success;
+    }
+}
+
+/// <summary>
+/// Extension methods for configuring validation services
+/// </summary>
+public static partial class ServiceCollectionExtensions
+{
+    /// <summary>
+    /// Adds validation services and validators to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddValidationServices(this IServiceCollection services)
+    {
+        // Add the validation service
+        services.AddScoped<Zeus.Academia.Api.Validation.IValidationService, Zeus.Academia.Api.Validation.ValidationService>();
+
+        // Register all validators
+        services.AddValidators();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers all validators in the application.
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <returns>The service collection for chaining</returns>
+    private static IServiceCollection AddValidators(this IServiceCollection services)
+    {
+        // Register professor validators
+        services.AddScoped<Zeus.Academia.Api.Validation.IValidator<Zeus.Academia.Api.Models.Requests.CreateProfessorRequest>,
+            Zeus.Academia.Api.Validation.Validators.CreateProfessorRequestValidator>();
+        services.AddScoped<Zeus.Academia.Api.Validation.IValidator<Zeus.Academia.Api.Models.Requests.UpdateProfessorRequest>,
+            Zeus.Academia.Api.Validation.Validators.UpdateProfessorRequestValidator>();
+
+        // Register student validators
+        services.AddScoped<Zeus.Academia.Api.Validation.IValidator<Zeus.Academia.Api.Models.Requests.CreateStudentRequest>,
+            Zeus.Academia.Api.Validation.Validators.CreateStudentRequestValidator>();
+        services.AddScoped<Zeus.Academia.Api.Validation.IValidator<Zeus.Academia.Api.Models.Requests.UpdateStudentRequest>,
+            Zeus.Academia.Api.Validation.Validators.UpdateStudentRequestValidator>();
+
+        return services;
     }
 }
