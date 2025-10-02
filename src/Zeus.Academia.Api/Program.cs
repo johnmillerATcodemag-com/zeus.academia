@@ -4,15 +4,27 @@ using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Api.Middleware;
 using Zeus.Academia.Api.Extensions;
 using Zeus.Academia.Api.Configuration;
+using Zeus.Academia.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
+using Serilog.Enrichers.CorrelationId;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure logging early
+// Configure Serilog early
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithCorrelationId()
+    .Enrich.WithProperty("ApplicationName", "Zeus.Academia.Api")
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}")
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// Clear existing logging providers since we're using Serilog
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 // Add environment variables support
 builder.Configuration.AddEnvironmentVariables("ZEUS_ACADEMIA_");
@@ -273,6 +285,9 @@ if (app.Environment.IsDevelopment())
 
 // Global exception handling (must be early in pipeline)
 app.UseMiddleware<Zeus.Academia.Api.Middleware.GlobalExceptionMiddleware>();
+
+// Request/response logging and monitoring middleware
+app.UseMiddleware<Zeus.Academia.Api.Middleware.RequestLoggingMiddleware>();
 
 // Security middleware (Order is important!)
 app.UseSecurityHeaders();          // Add security headers first

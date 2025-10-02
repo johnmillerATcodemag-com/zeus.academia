@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using Zeus.Academia.Api.Configuration;
+using Zeus.Academia.Api.Services;
 
 namespace Zeus.Academia.Api.Extensions;
 
@@ -46,6 +47,9 @@ public static class ServiceCollectionExtensions
 
         // Add memory cache
         services.AddMemoryCache();
+
+        // Add correlation ID service for request tracking
+        services.AddSingleton<ICorrelationIdService, CorrelationIdService>();
 
         // Add health checks
         services.AddHealthChecks();
