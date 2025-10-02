@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Zeus.Academia.Infrastructure.Enums;
 
 namespace Zeus.Academia.Infrastructure.Entities;
 
@@ -57,6 +58,84 @@ public class Student : Academic
     /// Gets or sets whether the student is currently active/enrolled.
     /// </summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the student's current enrollment status.
+    /// </summary>
+    public EnrollmentStatus EnrollmentStatus { get; set; } = EnrollmentStatus.Applied;
+
+    /// <summary>
+    /// Gets or sets the student's academic standing.
+    /// </summary>
+    public AcademicStanding AcademicStanding { get; set; } = AcademicStanding.NewStudent;
+
+    /// <summary>
+    /// Gets or sets the current cumulative GPA for the student.
+    /// </summary>
+    public decimal? CumulativeGPA { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current semester GPA for the student.
+    /// </summary>
+    public decimal? SemesterGPA { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total credit hours attempted by the student.
+    /// </summary>
+    public int? TotalCreditHoursAttempted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total credit hours earned by the student.
+    /// </summary>
+    public int? TotalCreditHoursEarned { get; set; }
+
+    /// <summary>
+    /// Gets or sets the credit hours needed for graduation.
+    /// </summary>
+    public int? CreditHoursRequired { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last academic standing review date.
+    /// </summary>
+    public DateTime? LastAcademicReviewDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date when the student's enrollment status was last updated.
+    /// </summary>
+    public DateTime? EnrollmentStatusDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the academic advisor assigned to the student.
+    /// </summary>
+    [MaxLength(50)]
+    public string? AcademicAdvisor { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current academic term/semester.
+    /// </summary>
+    [MaxLength(20)]
+    public string? CurrentTerm { get; set; }
+
+    /// <summary>
+    /// Gets or sets admission date.
+    /// </summary>
+    public DateTime? AdmissionDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the graduation date (if graduated).
+    /// </summary>
+    public DateTime? ActualGraduationDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets notes about the student's academic progress or status.
+    /// </summary>
+    [MaxLength(1000)]
+    public string? Notes { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the student is a full-time or part-time student.
+    /// </summary>
+    public bool IsFullTime { get; set; } = true;
 
     /// <summary>
     /// Navigation property to the degree.
