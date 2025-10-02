@@ -43,17 +43,40 @@ builder.Services.AddSwaggerGen(options =>
     var apiConfig = builder.Configuration.GetSection(ApiConfiguration.SectionName).Get<ApiConfiguration>()
         ?? new ApiConfiguration();
 
+    // Configure multiple API versions for Swagger
     options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
         Title = apiConfig.Title,
-        Version = apiConfig.Version,
-        Description = apiConfig.Description,
+        Version = "1.0",
+        Description = $"{apiConfig.Description} - Version 1.0 with core functionality",
         Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
             Name = apiConfig.Contact.Name,
             Email = apiConfig.Contact.Email,
             Url = new Uri(apiConfig.Contact.Url)
         }
+    });
+
+    options.SwaggerDoc("v2", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = apiConfig.Title,
+        Version = "2.0",
+        Description = $"{apiConfig.Description} - Version 2.0 with enhanced features",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = apiConfig.Contact.Name,
+            Email = apiConfig.Contact.Email,
+            Url = new Uri(apiConfig.Contact.Url)
+        }
+    });
+
+    // Add API versioning header to Swagger
+    options.AddSecurityDefinition("ApiVersion", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "X-API-Version",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "API Version Header (e.g., '1.0', '2.0')"
     });
 
     // Add JWT authentication to Swagger
@@ -280,11 +303,33 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        // Configure Swagger UI for multiple versions
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Zeus Academia API v1.0");
+        options.SwaggerEndpoint("/swagger/v2/swagger.json", "Zeus Academia API v2.0");
+
+        // Set default version
+        options.DefaultModelsExpandDepth(2);
+        options.DefaultModelRendering(Swashbuckle.AspNetCore.SwaggerUI.ModelRendering.Example);
+        options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+        options.EnableDeepLinking();
+        options.DisplayOperationId();
+        options.DisplayRequestDuration();
+
+        // Add custom CSS for better styling
+        options.InjectStylesheet("/css/swagger-custom.css");
+    });
 }
+
+// Enable static files for custom CSS
+app.UseStaticFiles();
 
 // Global exception handling (must be early in pipeline)
 app.UseMiddleware<Zeus.Academia.Api.Middleware.GlobalExceptionMiddleware>();
+
+// API versioning middleware (before other API processing)
+app.UseMiddleware<Zeus.Academia.Api.Versioning.ApiVersioningMiddleware>();
 
 // Request/response logging and monitoring middleware
 app.UseMiddleware<Zeus.Academia.Api.Middleware.RequestLoggingMiddleware>();

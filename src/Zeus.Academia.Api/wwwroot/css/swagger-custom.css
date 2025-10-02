@@ -1,0 +1,61 @@
+/* Custom Swagger UI Styles for Zeus Academia API */
+
+.swagger-ui .topbar {
+  background-color: #1b365d;
+  border-bottom: 3px solid #2c5282;
+}
+
+.swagger-ui .topbar .download-url-wrapper .select-label {
+  color: #ffffff;
+}
+
+.swagger-ui .info .title {
+  color: #1a202c;
+  font-weight: bold;
+}
+
+.swagger-ui .info .description {
+  color: #4a5568;
+}
+
+.swagger-ui .scheme-container {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+  background: #2b6cb0;
+}
+
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+  background: #38a169;
+}
+
+.swagger-ui .opblock.opblock-put .opblock-summary-method {
+  background: #d69e2e;
+}
+
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+  background: #e53e3e;
+}
+
+/* Version selector styling */
+.swagger-ui select {
+  font-weight: bold;
+  color: #1a202c;
+  border: 2px solid #2c5282;
+  border-radius: 4px;
+}
+
+/* Highlight API version headers */
+.swagger-ui .info .base-url {
+  background: #ebf8ff;
+  border: 1px solid #3182ce;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 10px 0;
+  font-family: monospace;
+}

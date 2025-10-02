@@ -51,6 +51,9 @@ public static partial class ServiceCollectionExtensions
         // Add correlation ID service for request tracking
         services.AddSingleton<ICorrelationIdService, CorrelationIdService>();
 
+        // Add API versioning services
+        services.AddApiVersioningServices();
+
         // Add validation services
         services.AddValidationServices();
 
@@ -220,6 +223,19 @@ public static partial class ServiceCollectionExtensions
             Zeus.Academia.Api.Validation.Validators.CreateStudentRequestValidator>();
         services.AddScoped<Zeus.Academia.Api.Validation.IValidator<Zeus.Academia.Api.Models.Requests.UpdateStudentRequest>,
             Zeus.Academia.Api.Validation.Validators.UpdateStudentRequestValidator>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds API versioning services to the service collection
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddApiVersioningServices(this IServiceCollection services)
+    {
+        // Register the API version service
+        services.AddSingleton<Zeus.Academia.Api.Versioning.IApiVersionService, Zeus.Academia.Api.Versioning.ApiVersionService>();
 
         return services;
     }

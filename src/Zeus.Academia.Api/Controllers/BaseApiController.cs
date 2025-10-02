@@ -4,10 +4,18 @@ using System.Security.Claims;
 namespace Zeus.Academia.Api.Controllers;
 
 /// <summary>
-/// Base controller for Zeus Academia API with common functionality
+/// Base controller for Zeus Academia API with common functionality and authentication support
 /// </summary>
+/// <remarks>
+/// This controller provides common functionality for all API controllers including:
+/// - User authentication and claims access
+/// - Standard response formatting
+/// - Error handling helpers
+/// - Security utilities
+/// </remarks>
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/[controller]")] // Also support header-based versioning
 [Produces("application/json")]
 public abstract class BaseApiController : ControllerBase
 {
