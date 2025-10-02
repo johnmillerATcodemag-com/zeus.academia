@@ -6,10 +6,53 @@ namespace Zeus.Academia.Infrastructure.Repositories.Interfaces;
 
 /// <summary>
 /// Repository interface for user management operations.
-/// Extends the generic repository with user-specific functionality.
+/// Provides user-specific functionality for Identity users.
 /// </summary>
-public interface IUserRepository : IRepository<AcademiaUser>
+public interface IUserRepository
 {
+    #region Basic CRUD Operations
+
+    /// <summary>
+    /// Gets all users asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Collection of all users</returns>
+    Task<IEnumerable<AcademiaUser>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a user by ID asynchronously.
+    /// </summary>
+    /// <param name="id">The user ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The user if found, otherwise null</returns>
+    Task<AcademiaUser?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a new user asynchronously.
+    /// </summary>
+    /// <param name="user">The user to add</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The added user</returns>
+    Task<AcademiaUser> AddAsync(AcademiaUser user, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates an existing user asynchronously.
+    /// </summary>
+    /// <param name="user">The user to update</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The updated user</returns>
+    Task<AcademiaUser> UpdateAsync(AcademiaUser user, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a user asynchronously.
+    /// </summary>
+    /// <param name="user">The user to remove</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if removed successfully</returns>
+    Task<bool> RemoveAsync(AcademiaUser user, CancellationToken cancellationToken = default);
+
+    #endregion
+
     #region User Queries
 
     /// <summary>

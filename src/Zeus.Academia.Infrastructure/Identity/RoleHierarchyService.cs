@@ -69,6 +69,14 @@ public interface IRoleHierarchyService
     /// <param name="availableRoles">The available roles to filter</param>
     /// <returns>Roles that can be managed by the manager role</returns>
     IEnumerable<AcademiaRole> GetManageableRoles(AcademiaRole managerRole, IEnumerable<AcademiaRole> availableRoles);
+
+    /// <summary>
+    /// Checks if a user has the specified role or a higher priority role.
+    /// </summary>
+    /// <param name="user">The user to check</param>
+    /// <param name="requiredRole">The minimum required role</param>
+    /// <returns>True if the user has the required role or higher</returns>
+    bool HasRoleOrHigher(AcademiaUser user, AcademicRoleType requiredRole);
 }
 
 /// <summary>
@@ -269,5 +277,27 @@ public class RoleHierarchyService : IRoleHierarchyService
             .ToList();
 
         return string.Join(" > ", roles);
+    }
+
+    /// <summary>
+    /// Checks if a user has the specified role or a higher priority role.
+    /// </summary>
+    /// <param name="user">The user to check</param>
+    /// <param name="requiredRole">The minimum required role</param>
+    /// <returns>True if the user has the required role or higher</returns>
+    public bool HasRoleOrHigher(AcademiaUser user, AcademicRoleType requiredRole)
+    {
+        if (user == null || !user.IsActive)
+            return false;
+
+        var userRoles = user.GetEffectiveRoles();
+        if (!userRoles.Any())
+            return false;
+
+        var requiredPriority = requiredRole.GetPriority();
+
+        // Check if user has the exact role or a higher priority role
+        return userRoles.Any(r => r.RoleType == requiredRole) ||
+               userRoles.Any(r => r.Priority > requiredPriority);
     }
 }

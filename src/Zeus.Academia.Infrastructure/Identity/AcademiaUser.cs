@@ -1,14 +1,15 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 using Zeus.Academia.Infrastructure.Entities;
 
 namespace Zeus.Academia.Infrastructure.Identity;
 
 /// <summary>
-/// Custom user entity that will integrate with Identity and links to the Academic entity.
+/// Custom user entity that integrates with Identity and links to the Academic entity.
 /// Represents user accounts in the Zeus Academia System with academic integration.
-/// Note: This will be updated to inherit from IdentityUser once Identity packages are properly configured.
+/// Inherits from IdentityUser to provide authentication and authorization capabilities.
 /// </summary>
-public class AcademiaUser : BaseEntity
+public class AcademiaUser : IdentityUser<int>
 {
     /// <summary>
     /// Gets or sets the academic employee number that this user account is linked to.
@@ -36,47 +37,30 @@ public class AcademiaUser : BaseEntity
     public string? DisplayName { get; set; }
 
     /// <summary>
-    /// Gets or sets the username for the user account.
-    /// </summary>
-    [MaxLength(256)]
-    public string? UserName { get; set; }
-
-    /// <summary>
-    /// Gets or sets the email address for the user account.
-    /// </summary>
-    [MaxLength(256)]
-    public string? Email { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether the email address has been confirmed.
-    /// </summary>
-    public bool EmailConfirmed { get; set; } = false;
-
-    /// <summary>
-    /// Gets or sets the hashed password for the user account.
-    /// </summary>
-    public string? PasswordHash { get; set; }
-
-    /// <summary>
     /// Gets or sets whether the user account is active.
     /// Inactive accounts cannot log in to the system.
     /// </summary>
     public bool IsActive { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the number of failed login attempts.
+    /// Gets or sets the date when the entity was created.
     /// </summary>
-    public int AccessFailedCount { get; set; } = 0;
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Gets or sets whether the account is locked out.
+    /// Gets or sets the identifier of the user who created the entity.
     /// </summary>
-    public bool LockoutEnabled { get; set; } = true;
+    public string? CreatedBy { get; set; }
 
     /// <summary>
-    /// Gets or sets the date when the lockout ends (if locked out).
+    /// Gets or sets the date when the entity was last modified.
     /// </summary>
-    public DateTimeOffset? LockoutEnd { get; set; }
+    public DateTime? ModifiedDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier of the user who last modified the entity.
+    /// </summary>
+    public string? ModifiedBy { get; set; }
 
     /// <summary>
     /// Gets or sets the date when the user last logged in.

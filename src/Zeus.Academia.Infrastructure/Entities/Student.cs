@@ -69,6 +69,11 @@ public class Student : Academic
     public virtual Department? Department { get; set; }
 
     /// <summary>
+    /// Gets the department ID from the associated department.
+    /// </summary>
+    public override int? DepartmentId => Department?.Id;
+
+    /// <summary>
     /// Navigation property for courses the student is enrolled in.
     /// </summary>
     public virtual ICollection<StudentEnrollment> Enrollments { get; set; } = new List<StudentEnrollment>();

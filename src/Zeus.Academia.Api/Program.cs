@@ -1,5 +1,8 @@
 using Zeus.Academia.Infrastructure.Extensions;
 using Zeus.Academia.Infrastructure.Identity;
+using Zeus.Academia.Infrastructure.Data;
+using Zeus.Academia.Api.Middleware;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,8 +11,68 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DefaultCorsPolicy", policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // Development: Allow any origin for testing
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            // Production: Restrict to specific origins
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                ?? new[] { "https://zeus-academia.com", "https://app.zeus-academia.com" };
+
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+    });
+});
+
+// Configure Rate Limiting
+builder.Services.Configure<RateLimitOptions>(
+    builder.Configuration.GetSection(RateLimitOptions.SectionName));
+
 // Add Infrastructure services including Entity Framework
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// Add ASP.NET Core Identity
+builder.Services.AddIdentity<AcademiaUser, AcademiaRole>(options =>
+    {
+        // Password settings
+        options.Password.RequireDigit = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequiredUniqueChars = 6;
+
+        // Lockout settings
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.AllowedForNewUsers = true;
+
+        // User settings
+        options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+        options.User.RequireUniqueEmail = true;
+
+        // Sign-in settings
+        options.SignIn.RequireConfirmedEmail = false; // Set to true in production
+        options.SignIn.RequireConfirmedPhoneNumber = false;
+    })
+    .AddEntityFrameworkStores<AcademiaDbContext>()
+    .AddDefaultTokenProviders();
+
+// Add additional Infrastructure Identity services
+builder.Services.AddInfrastructureIdentityServices(builder.Configuration);
 
 // Configure JWT Authentication
 builder.Services.AddAuthentication("Bearer")
@@ -135,7 +198,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Security middleware (Order is important!)
+app.UseSecurityHeaders();          // Add security headers first
+app.UseHttpsRedirection();         // Force HTTPS
+app.UseCors("DefaultCorsPolicy");  // CORS configuration
+app.UseRateLimiting();            // Rate limiting for brute force protection
+app.UseSecurityLogging();         // Security event logging
 
 // Authentication and Authorization middleware
 app.UseAuthentication();

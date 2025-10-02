@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 using Zeus.Academia.Infrastructure.Entities;
 
 namespace Zeus.Academia.Infrastructure.Identity;
@@ -7,7 +8,7 @@ namespace Zeus.Academia.Infrastructure.Identity;
 /// Represents a role in the Zeus Academia System.
 /// Roles define sets of permissions and capabilities for users within the academic context.
 /// </summary>
-public class AcademiaRole : BaseEntity
+public class AcademiaRole : IdentityRole<int>
 {
     /// <summary>
     /// Gets or sets the type of academic role.
@@ -16,17 +17,24 @@ public class AcademiaRole : BaseEntity
     public AcademicRoleType RoleType { get; set; }
 
     /// <summary>
-    /// Gets or sets the name of the role.
-    /// This is typically the same as the RoleType display name but can be customized.
+    /// Gets or sets the date when the entity was created.
     /// </summary>
-    [MaxLength(100)]
-    public string Name { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Gets or sets the normalized name of the role for case-insensitive searches.
+    /// Gets or sets the identifier of the user who created the entity.
     /// </summary>
-    [MaxLength(100)]
-    public string NormalizedName { get; set; } = string.Empty;
+    public string? CreatedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date when the entity was last modified.
+    /// </summary>
+    public DateTime? ModifiedDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier of the user who last modified the entity.
+    /// </summary>
+    public string? ModifiedBy { get; set; }
 
     /// <summary>
     /// Gets or sets the description of the role and its responsibilities.

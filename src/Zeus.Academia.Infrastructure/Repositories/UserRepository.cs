@@ -9,19 +9,109 @@ namespace Zeus.Academia.Infrastructure.Repositories;
 
 /// <summary>
 /// Repository implementation for user management operations.
-/// Provides specialized user queries and operations extending the base repository.
+/// Provides specialized user queries and operations for Identity users.
 /// </summary>
-public class UserRepository : Repository<AcademiaUser>, IUserRepository
+public class UserRepository : IUserRepository
 {
+    private readonly AcademiaDbContext _context;
+    private readonly ILogger<UserRepository> _logger;
+    private readonly DbSet<AcademiaUser> _dbSet;
+
     /// <summary>
     /// Initializes a new instance of the UserRepository class.
     /// </summary>
     /// <param name="context">The database context</param>
     /// <param name="logger">The logger instance</param>
     public UserRepository(AcademiaDbContext context, ILogger<UserRepository> logger)
-        : base(context, logger)
     {
+        _context = context;
+        _logger = logger;
+        _dbSet = context.Set<AcademiaUser>();
     }
+
+    #region Basic CRUD Operations
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<AcademiaUser>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Getting all users");
+            return await _dbSet.Where(u => u.IsActive).ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all users");
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<AcademiaUser?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Getting user by ID: {UserId}", id);
+            return await _dbSet.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user by ID: {UserId}", id);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<AcademiaUser> AddAsync(AcademiaUser entity, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Adding user: {UserName}", entity.UserName);
+            entity.CreatedDate = DateTime.UtcNow;
+            await _dbSet.AddAsync(entity, cancellationToken);
+            return entity;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding user: {UserName}", entity.UserName);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task<AcademiaUser> UpdateAsync(AcademiaUser entity, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Updating user: {UserId}", entity.Id);
+            entity.ModifiedDate = DateTime.UtcNow;
+            _dbSet.Update(entity);
+            return Task.FromResult(entity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user: {UserId}", entity.Id);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> RemoveAsync(AcademiaUser entity, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Removing user: {UserId}", entity.Id);
+            _dbSet.Remove(entity);
+            return Task.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing user: {UserId}", entity.Id);
+            return Task.FromResult(false);
+        }
+    }
+
+    #endregion
 
     #region User Queries
 
@@ -428,15 +518,14 @@ public class UserRepository : Repository<AcademiaUser>, IUserRepository
 
             // Get user counts by role
             var roleStats = await _context.UserRoles
-                .Include(ur => ur.Role)
-                .Where(ur => ur.IsCurrentlyEffective())
-                .GroupBy(ur => ur.Role.Name)
+                .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { UserRole = ur, Role = r })
+                .GroupBy(x => x.Role.Name)
                 .Select(g => new { RoleName = g.Key, Count = g.Count() })
                 .ToListAsync(cancellationToken);
 
-            foreach (var roleStat in roleStats)
+            foreach (var roleStat in roleStats.Where(rs => rs.RoleName != null))
             {
-                stats.UsersByRole[roleStat.RoleName] = roleStat.Count;
+                stats.UsersByRole[roleStat.RoleName!] = roleStat.Count;
             }
 
             // Get user counts by academic type

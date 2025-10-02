@@ -15,6 +15,7 @@ public class BasicCoverageImprovementTests
 {
     private AcademiaDbContext CreateInMemoryContext()
     {
+
         var options = new DbContextOptionsBuilder<AcademiaDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;

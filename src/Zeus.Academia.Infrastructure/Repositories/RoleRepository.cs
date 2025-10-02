@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Zeus.Academia.Infrastructure.Data;
@@ -8,19 +9,109 @@ namespace Zeus.Academia.Infrastructure.Repositories;
 
 /// <summary>
 /// Repository implementation for role management operations.
-/// Provides specialized role queries and hierarchy operations extending the base repository.
+/// Provides specialized role queries and hierarchy operations for AcademiaRole entities.
 /// </summary>
-public class RoleRepository : Repository<AcademiaRole>, IRoleRepository
+public class RoleRepository : IRoleRepository
 {
+    private readonly AcademiaDbContext _context;
+    private readonly ILogger<RoleRepository> _logger;
+    private readonly DbSet<AcademiaRole> _dbSet;
+
     /// <summary>
     /// Initializes a new instance of the RoleRepository class.
     /// </summary>
     /// <param name="context">The database context</param>
     /// <param name="logger">The logger instance</param>
     public RoleRepository(AcademiaDbContext context, ILogger<RoleRepository> logger)
-        : base(context, logger)
     {
+        _context = context;
+        _logger = logger;
+        _dbSet = context.Set<AcademiaRole>();
     }
+
+    #region Basic CRUD Operations
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<AcademiaRole>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Getting all roles");
+            return await _dbSet.Where(r => r.IsActive).ToListAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all roles");
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<AcademiaRole?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Getting role by ID: {RoleId}", id);
+            return await _dbSet.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting role by ID: {RoleId}", id);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<AcademiaRole> AddAsync(AcademiaRole entity, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Adding role: {RoleName}", entity.Name);
+            entity.CreatedDate = DateTime.UtcNow;
+            await _dbSet.AddAsync(entity, cancellationToken);
+            return entity;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding role: {RoleName}", entity.Name);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task<AcademiaRole> UpdateAsync(AcademiaRole entity, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Updating role: {RoleId}", entity.Id);
+            entity.ModifiedDate = DateTime.UtcNow;
+            _dbSet.Update(entity);
+            return Task.FromResult(entity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating role: {RoleId}", entity.Id);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> RemoveAsync(AcademiaRole entity, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Removing role: {RoleId}", entity.Id);
+            _dbSet.Remove(entity);
+            return Task.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing role: {RoleId}", entity.Id);
+            return Task.FromResult(false);
+        }
+    }
+
+    #endregion
 
     #region Role Queries
 
@@ -218,8 +309,8 @@ public class RoleRepository : Repository<AcademiaRole>, IRoleRepository
             {
                 var lowerSearchTerm = searchTerm.ToLower();
                 query = query.Where(r =>
-                    r.Name.ToLower().Contains(lowerSearchTerm) ||
-                    r.Description.ToLower().Contains(lowerSearchTerm));
+                    (r.Name != null && r.Name.ToLower().Contains(lowerSearchTerm)) ||
+                    (r.Description != null && r.Description.ToLower().Contains(lowerSearchTerm)));
             }
 
             if (isActive.HasValue)
@@ -311,7 +402,9 @@ public class RoleRepository : Repository<AcademiaRole>, IRoleRepository
             _logger.LogDebug("Checking if role has active assignments: {RoleId}", roleId);
 
             return await _context.UserRoles
-                .AnyAsync(ur => ur.RoleId == roleId && ur.IsCurrentlyEffective() && ur.User.IsActive, cancellationToken);
+                .Where(ur => ur.RoleId == roleId)
+                .Join(_context.Users, ur => ur.UserId, u => u.Id, (ur, u) => u)
+                .AnyAsync(u => u.IsActive, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -338,7 +431,9 @@ public class RoleRepository : Repository<AcademiaRole>, IRoleRepository
 
             // Check for active assignments
             var activeAssignments = await _context.UserRoles
-                .CountAsync(ur => ur.RoleId == roleId && ur.IsCurrentlyEffective() && ur.User.IsActive, cancellationToken);
+                .Where(ur => ur.RoleId == roleId)
+                .Join(_context.Users, ur => ur.UserId, u => u.Id, (ur, u) => u)
+                .CountAsync(u => u.IsActive, cancellationToken);
 
             var totalAssignments = await _context.UserRoles
                 .CountAsync(ur => ur.RoleId == roleId, cancellationToken);
@@ -352,7 +447,7 @@ public class RoleRepository : Repository<AcademiaRole>, IRoleRepository
             }
 
             // Check if it's a system role that shouldn't be deleted
-            if (IsSystemRole(role.Name))
+            if (role.Name != null && IsSystemRole(role.Name))
             {
                 result.Issues.Add("System roles cannot be deleted");
             }
@@ -434,20 +529,22 @@ public class RoleRepository : Repository<AcademiaRole>, IRoleRepository
             _logger.LogDebug("Getting role user counts, IncludeInactiveUsers: {IncludeInactiveUsers}", includeInactiveUsers);
 
             var query = _context.UserRoles
-                .Include(ur => ur.Role)
-                .Where(ur => ur.IsCurrentlyEffective());
+                .Join(_context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { UserRole = ur, Role = r })
+                .Join(_context.Users, combined => combined.UserRole.UserId, u => u.Id, (combined, u) => new { combined.UserRole, combined.Role, User = u });
 
             if (!includeInactiveUsers)
             {
-                query = query.Where(ur => ur.User.IsActive);
+                query = query.Where(x => x.User.IsActive);
             }
 
             var roleCounts = await query
-                .GroupBy(ur => ur.Role.Name)
+                .GroupBy(x => x.Role.Name)
                 .Select(g => new { RoleName = g.Key, Count = g.Count() })
                 .ToListAsync(cancellationToken);
 
-            return roleCounts.ToDictionary(rc => rc.RoleName, rc => rc.Count);
+            return roleCounts
+                .Where(rc => rc.RoleName != null)
+                .ToDictionary(rc => rc.RoleName!, rc => rc.Count);
         }
         catch (Exception ex)
         {

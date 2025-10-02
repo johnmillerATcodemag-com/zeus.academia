@@ -320,6 +320,54 @@ public class UserService : IUserService
         }
     }
 
+    public async Task<AcademiaUser?> GetUserWithRolesAsync(int userId)
+    {
+        try
+        {
+            return await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user with roles for user {UserId}", userId);
+            return null;
+        }
+    }
+
+    public async Task<AcademiaUser?> GetUserWithAcademicAsync(int userId)
+    {
+        try
+        {
+            return await _context.Users
+                .Include(u => u.Academic)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user with academic for user {UserId}", userId);
+            return null;
+        }
+    }
+
+    public async Task<AcademiaUser?> GetUserWithAcademicAndRolesAsync(int userId)
+    {
+        try
+        {
+            return await _context.Users
+                .Include(u => u.Academic)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user with academic and roles for user {UserId}", userId);
+            return null;
+        }
+    }
+
     public async Task<UserUpdateResult> UpdateUserProfileAsync(int userId, UserProfileUpdateRequest profile)
     {
         var result = new UserUpdateResult();
@@ -924,7 +972,7 @@ public class UserService : IUserService
                 DisplayName = user.DisplayName,
                 IsActive = user.IsActive,
                 CreatedDate = user.CreatedDate,
-                ModifiedDate = user.ModifiedDate,
+                ModifiedDate = user.ModifiedDate ?? user.CreatedDate,
                 LastLoginDate = user.LastLoginDate,
                 LastLoginIpAddress = user.LastLoginIpAddress,
                 AccessFailedCount = user.AccessFailedCount,

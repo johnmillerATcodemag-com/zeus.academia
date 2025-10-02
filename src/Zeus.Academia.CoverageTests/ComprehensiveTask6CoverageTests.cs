@@ -5,6 +5,7 @@ using Moq;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Infrastructure.Entities;
 using Zeus.Academia.Infrastructure.Repositories;
+using Zeus.Academia.Infrastructure.Repositories.Interfaces;
 using Xunit;
 
 namespace Zeus.Academia.CoverageTests;
@@ -324,7 +325,12 @@ public class ComprehensiveTask6CoverageTests
         var departmentRepo = new DepartmentRepository(context, departmentLogger);
         var subjectRepo = new SubjectRepository(context, subjectLogger);
 
-        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo);
+        var mockUserRepository = Mock.Of<IUserRepository>();
+        var mockRoleRepository = Mock.Of<IRoleRepository>();
+        var mockRefreshTokenRepository = Mock.Of<IRefreshTokenRepository>();
+
+        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo,
+            mockUserRepository, mockRoleRepository, mockRefreshTokenRepository);
 
         // Add data through unit of work
         var professor = new Professor

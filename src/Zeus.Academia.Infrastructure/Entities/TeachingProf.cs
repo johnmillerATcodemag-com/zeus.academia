@@ -65,6 +65,11 @@ public class TeachingProf : Academic
     public virtual Department? Department { get; set; }
 
     /// <summary>
+    /// Gets the department ID from the associated department.
+    /// </summary>
+    public override int? DepartmentId => Department?.Id;
+
+    /// <summary>
     /// Navigation property to the rank.
     /// </summary>
     public virtual Rank? Rank { get; set; }

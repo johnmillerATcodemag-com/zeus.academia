@@ -42,12 +42,19 @@ public class UnitOfWorkTests : IDisposable
         _mockDepartmentRepository = new Mock<IDepartmentRepository>();
         _mockSubjectRepository = new Mock<ISubjectRepository>();
 
+        var mockUserRepository = new Mock<IUserRepository>();
+        var mockRoleRepository = new Mock<IRoleRepository>();
+        var mockRefreshTokenRepository = new Mock<IRefreshTokenRepository>();
+
         _unitOfWork = new UnitOfWork(
             _context,
             _mockLogger.Object,
             _mockAcademicRepository.Object,
             _mockDepartmentRepository.Object,
-            _mockSubjectRepository.Object);
+            _mockSubjectRepository.Object,
+            mockUserRepository.Object,
+            mockRoleRepository.Object,
+            mockRefreshTokenRepository.Object);
     }
 
     [Fact]
@@ -347,36 +354,57 @@ public class UnitOfWorkTests : IDisposable
     public void Constructor_WithNullContext_ShouldThrowArgumentNullException()
     {
         // Act & Assert
+        var mockUserRepository = new Mock<IUserRepository>();
+        var mockRoleRepository = new Mock<IRoleRepository>();
+        var mockRefreshTokenRepository = new Mock<IRefreshTokenRepository>();
+
         Assert.Throws<ArgumentNullException>(() => new UnitOfWork(
             null!,
             _mockLogger.Object,
             _mockAcademicRepository.Object,
             _mockDepartmentRepository.Object,
-            _mockSubjectRepository.Object));
+            _mockSubjectRepository.Object,
+            mockUserRepository.Object,
+            mockRoleRepository.Object,
+            mockRefreshTokenRepository.Object));
     }
 
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
+        var mockUserRepository = new Mock<IUserRepository>();
+        var mockRoleRepository = new Mock<IRoleRepository>();
+        var mockRefreshTokenRepository = new Mock<IRefreshTokenRepository>();
+
         Assert.Throws<ArgumentNullException>(() => new UnitOfWork(
             _context,
             null!,
             _mockAcademicRepository.Object,
             _mockDepartmentRepository.Object,
-            _mockSubjectRepository.Object));
+            _mockSubjectRepository.Object,
+            mockUserRepository.Object,
+            mockRoleRepository.Object,
+            mockRefreshTokenRepository.Object));
     }
 
     [Fact]
     public void Constructor_WithNullAcademicRepository_ShouldThrowArgumentNullException()
     {
         // Act & Assert
+        var mockUserRepository = new Mock<IUserRepository>();
+        var mockRoleRepository = new Mock<IRoleRepository>();
+        var mockRefreshTokenRepository = new Mock<IRefreshTokenRepository>();
+
         Assert.Throws<ArgumentNullException>(() => new UnitOfWork(
             _context,
             _mockLogger.Object,
             null!,
             _mockDepartmentRepository.Object,
-            _mockSubjectRepository.Object));
+            _mockSubjectRepository.Object,
+            mockUserRepository.Object,
+            mockRoleRepository.Object,
+            mockRefreshTokenRepository.Object));
     }
 
     [Fact]

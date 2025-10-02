@@ -109,6 +109,8 @@ public class AuthenticationController : ControllerBase
                 .Include(ur => ur.Role)
                 .Where(ur => ur.UserId == user.Id && ur.IsCurrentlyEffective())
                 .Select(ur => ur.Role.Name)
+                .Where(name => name != null)
+                .Cast<string>()
                 .ToListAsync();
 
             // Generate JWT token
@@ -190,6 +192,8 @@ public class AuthenticationController : ControllerBase
                 .Include(ur => ur.Role)
                 .Where(ur => ur.UserId == user.Id && ur.IsCurrentlyEffective())
                 .Select(ur => ur.Role.Name)
+                .Where(name => name != null)
+                .Cast<string>()
                 .ToListAsync();
 
             // Generate new JWT token
@@ -311,6 +315,8 @@ public class AuthenticationController : ControllerBase
                 .Include(ur => ur.Role)
                 .Where(ur => ur.UserId == user.Id && ur.IsCurrentlyEffective())
                 .Select(ur => ur.Role.Name)
+                .Where(name => name != null)
+                .Cast<string>()
                 .ToListAsync();
 
             return Ok(new UserInfo

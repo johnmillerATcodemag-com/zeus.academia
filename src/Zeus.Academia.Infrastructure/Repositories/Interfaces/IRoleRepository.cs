@@ -4,10 +4,53 @@ namespace Zeus.Academia.Infrastructure.Repositories.Interfaces;
 
 /// <summary>
 /// Repository interface for role management operations.
-/// Extends the generic repository with role-specific functionality.
+/// Provides role-specific functionality for Identity roles.
 /// </summary>
-public interface IRoleRepository : IRepository<AcademiaRole>
+public interface IRoleRepository
 {
+    #region Basic CRUD Operations
+
+    /// <summary>
+    /// Gets all roles asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Collection of all roles</returns>
+    Task<IEnumerable<AcademiaRole>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a role by ID asynchronously.
+    /// </summary>
+    /// <param name="id">The role ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The role if found, otherwise null</returns>
+    Task<AcademiaRole?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a new role asynchronously.
+    /// </summary>
+    /// <param name="role">The role to add</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The added role</returns>
+    Task<AcademiaRole> AddAsync(AcademiaRole role, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates an existing role asynchronously.
+    /// </summary>
+    /// <param name="role">The role to update</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The updated role</returns>
+    Task<AcademiaRole> UpdateAsync(AcademiaRole role, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a role asynchronously.
+    /// </summary>
+    /// <param name="role">The role to remove</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if removed successfully</returns>
+    Task<bool> RemoveAsync(AcademiaRole role, CancellationToken cancellationToken = default);
+
+    #endregion
+
     #region Role Queries
 
     /// <summary>

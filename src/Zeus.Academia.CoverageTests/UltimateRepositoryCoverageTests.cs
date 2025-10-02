@@ -481,7 +481,11 @@ public class UltimateRepositoryCoverageTests
         var academicRepo = new AcademicRepository(context, _mockAcademicLogger.Object);
         var departmentRepo = new DepartmentRepository(context, _mockDepartmentLogger.Object);
         var subjectRepo = new SubjectRepository(context, _mockSubjectLogger.Object);
-        var unitOfWork = new UnitOfWork(context, _mockUnitOfWorkLogger.Object, academicRepo, departmentRepo, subjectRepo);
+        var mockUserRepository = Mock.Of<IUserRepository>();
+        var mockRoleRepository = Mock.Of<IRoleRepository>();
+        var mockRefreshTokenRepository = Mock.Of<IRefreshTokenRepository>();
+        var unitOfWork = new UnitOfWork(context, _mockUnitOfWorkLogger.Object, academicRepo, departmentRepo, subjectRepo,
+            mockUserRepository, mockRoleRepository, mockRefreshTokenRepository);
 
         // Create complex related data
         var department = new Department

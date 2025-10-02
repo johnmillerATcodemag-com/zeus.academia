@@ -152,8 +152,13 @@ public class Task6ValidationTests : IDisposable
         var departmentRepo = new DepartmentRepository(_context, _mockDepartmentLogger.Object);
         var subjectRepo = new SubjectRepository(_context, _mockSubjectLogger.Object);
 
+        var mockUserRepository = Mock.Of<IUserRepository>();
+        var mockRoleRepository = Mock.Of<IRoleRepository>();
+        var mockRefreshTokenRepository = Mock.Of<IRefreshTokenRepository>();
+
         var unitOfWork = new UnitOfWork(_context, _mockUnitOfWorkLogger.Object,
-            academicRepo, departmentRepo, subjectRepo);
+            academicRepo, departmentRepo, subjectRepo,
+            mockUserRepository, mockRoleRepository, mockRefreshTokenRepository);
 
         // Act & Assert - Repository access
         Assert.NotNull(unitOfWork.Academics);

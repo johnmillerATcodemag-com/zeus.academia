@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Zeus.Academia.Infrastructure.Entities;
@@ -6,9 +8,9 @@ using Zeus.Academia.Infrastructure.Identity;
 namespace Zeus.Academia.Infrastructure.Data;
 
 /// <summary>
-/// Entity Framework DbContext for the Zeus Academia System
+/// Entity Framework DbContext for the Zeus Academia System with Identity integration
 /// </summary>
-public class AcademiaDbContext : DbContext
+public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, int, IdentityUserClaim<int>, AcademiaUserRole, IdentityUserLogin<int>, IdentityRoleClaim<int>, IdentityUserToken<int>>
 {
     private readonly IConfiguration _configuration;
 
@@ -47,10 +49,8 @@ public class AcademiaDbContext : DbContext
     public DbSet<AccessLevel> AccessLevels { get; set; } = null!;
     public DbSet<StudentEnrollment> StudentEnrollments { get; set; } = null!;
 
-    // Identity Entities (Task 1 & 2)
-    public DbSet<AcademiaUser> Users { get; set; } = null!;
-    public DbSet<AcademiaRole> Roles { get; set; } = null!;
-    public DbSet<AcademiaUserRole> UserRoles { get; set; } = null!;
+    // Additional Identity Entities (beyond the inherited ones)
+    // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 using Zeus.Academia.Infrastructure.Entities;
 
 namespace Zeus.Academia.Infrastructure.Identity;
@@ -7,17 +8,36 @@ namespace Zeus.Academia.Infrastructure.Identity;
 /// Represents the many-to-many relationship between users and roles in the Zeus Academia System.
 /// This entity tracks role assignments, including context and audit information.
 /// </summary>
-public class AcademiaUserRole : BaseEntity
+public class AcademiaUserRole : IdentityUserRole<int>
 {
-    /// <summary>
-    /// Gets or sets the ID of the user who has been assigned the role.
-    /// </summary>
-    public int UserId { get; set; }
+    // UserId and RoleId are inherited from IdentityUserRole<int>
 
     /// <summary>
-    /// Gets or sets the ID of the role that has been assigned to the user.
+    /// Gets or sets the unique identifier for this user role assignment.
     /// </summary>
-    public int RoleId { get; set; }
+    public int Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date when the entity was created.
+    /// </summary>
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the identifier of the user who created the entity.
+    /// </summary>
+    [MaxLength(50)]
+    public string? CreatedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date when the entity was last modified.
+    /// </summary>
+    public DateTime ModifiedDate { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the identifier of the user who last modified the entity.
+    /// </summary>
+    [MaxLength(50)]
+    public string? ModifiedBy { get; set; }
 
     /// <summary>
     /// Gets or sets when this role assignment becomes effective.

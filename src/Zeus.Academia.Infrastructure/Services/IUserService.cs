@@ -50,6 +50,27 @@ public interface IUserService
     Task<UserProfile?> GetUserProfileAsync(int userId);
 
     /// <summary>
+    /// Get user with roles for authorization purposes
+    /// </summary>
+    /// <param name="userId">User ID</param>
+    /// <returns>User with roles information</returns>
+    Task<AcademiaUser?> GetUserWithRolesAsync(int userId);
+
+    /// <summary>
+    /// Get user with academic information for authorization purposes
+    /// </summary>
+    /// <param name="userId">User ID</param>
+    /// <returns>User with academic information</returns>
+    Task<AcademiaUser?> GetUserWithAcademicAsync(int userId);
+
+    /// <summary>
+    /// Get user with both academic and roles for authorization purposes
+    /// </summary>
+    /// <param name="userId">User ID</param>
+    /// <returns>User with academic and roles information</returns>
+    Task<AcademiaUser?> GetUserWithAcademicAndRolesAsync(int userId);
+
+    /// <summary>
     /// Update user profile information
     /// </summary>
     /// <param name="userId">User ID</param>

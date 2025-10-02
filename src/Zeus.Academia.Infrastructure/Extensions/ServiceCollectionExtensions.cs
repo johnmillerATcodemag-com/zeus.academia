@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Infrastructure.Identity;
 using Zeus.Academia.Infrastructure.Services;
@@ -63,8 +65,7 @@ public static class ServiceCollectionExtensions
             }
         });
 
-        // Configure Identity services
-        ConfigureIdentityServices(services, configuration);
+        // Identity configuration will be handled in the API project
 
         // Repository pattern services will be registered here in Task 6
 
@@ -72,15 +73,16 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Configures Identity services for the Zeus Academia System
+    /// Adds additional Infrastructure services to the dependency injection container
     /// </summary>
     /// <param name="services">The service collection</param>
     /// <param name="configuration">The configuration instance</param>
-    private static void ConfigureIdentityServices(
-        IServiceCollection services,
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddInfrastructureIdentityServices(
+        this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Get Identity options from configuration
+        // Get Identity options from configuration for custom services
         var identityOptions = configuration.GetSection("Identity");
         var passwordOptions = identityOptions.GetSection("Password");
         var lockoutOptions = identityOptions.GetSection("Lockout");
@@ -128,12 +130,16 @@ public static class ServiceCollectionExtensions
         // Register User Management services (Task 4)
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<ICourseService, CourseService>();
 
         // Register Identity Repositories (Task 5)
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
-        // Note: Authentication and Authorization services will be configured in the API project
+        // Register Security and Audit services (Task 6)
+        services.AddScoped<IAuditService, AuditService>();
+
+        return services;
     }
 }

@@ -37,6 +37,11 @@ public class Teacher : Academic
     public virtual Department? Department { get; set; }
 
     /// <summary>
+    /// Gets the department ID from the associated department.
+    /// </summary>
+    public override int? DepartmentId => Department?.Id;
+
+    /// <summary>
     /// Navigation property for subjects this teacher teaches.
     /// </summary>
     public virtual ICollection<Teaching> Teachings { get; set; } = new List<Teaching>();

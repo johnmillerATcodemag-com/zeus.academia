@@ -34,6 +34,20 @@ public abstract class Academic : BaseEntity
     public decimal? Salary { get; set; }
 
     /// <summary>
+    /// Gets the department ID from the associated department (if available).
+    /// This property provides a way to access the department's integer ID for authorization purposes.
+    /// The actual foreign key relationship uses DepartmentName in derived classes.
+    /// </summary>
+    public virtual int? DepartmentId
+    {
+        get
+        {
+            // This will be overridden in derived classes that have Department navigation properties
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Navigation property for relationships and derived types.
     /// </summary>
     public virtual ICollection<AcademicDegree> AcademicDegrees { get; set; } = new List<AcademicDegree>();

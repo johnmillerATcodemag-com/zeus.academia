@@ -5,6 +5,7 @@ using Moq;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Infrastructure.Entities;
 using Zeus.Academia.Infrastructure.Repositories;
+using Zeus.Academia.Infrastructure.Repositories.Interfaces;
 using Xunit;
 
 namespace Zeus.Academia.CoverageTests;
@@ -21,18 +22,23 @@ public class Task6RepositoryPatternCoverageTests
         return new AcademiaDbContext(options, mockConfig.Object);
     }
 
-    [Fact(Skip = "Professor entity inheritance configuration issue in test - main functionality tested in other tests")]
+    [Fact]
     public async Task ProfessorRepository_BasicCrudOperations_Success()
     {
         using var context = CreateInMemoryContext();
         var logger = Mock.Of<ILogger<AcademicRepository>>();
         var repository = new AcademicRepository(context, logger);
 
+        // Ensure database is created
+        await context.Database.EnsureCreatedAsync();
+
         // Create a Department first (required)
         var department = new Department
         {
             Name = "Computer Science",
-            CreatedDate = DateTime.UtcNow
+            FullName = "Computer Science Department",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
         };
         context.Departments.Add(department);
         await context.SaveChangesAsync();
@@ -52,17 +58,18 @@ public class Task6RepositoryPatternCoverageTests
         await repository.AddAsync(professor);
         await context.SaveChangesAsync();
 
-        // Read - use GetByIdAsync instead of GetSingleAsync
-        var found = await repository.GetByIdAsync(professor.Id);
+        // Read - Academic entities use EmpNr as primary key
+        var found = await repository.GetByIdAsync(professor.EmpNr);
         Assert.NotNull(found);
         Assert.Equal("Dr. John Doe", found.Name);
+        Assert.Equal(12345, found.EmpNr);
 
         // Update
         found.Name = "Dr. Jane Doe";
         await repository.UpdateAsync(found);
         await context.SaveChangesAsync();
 
-        var updated = await repository.GetByIdAsync(professor.Id);
+        var updated = await repository.GetByIdAsync(professor.EmpNr);
         Assert.NotNull(updated);
         Assert.Equal("Dr. Jane Doe", updated.Name);
 
@@ -70,7 +77,7 @@ public class Task6RepositoryPatternCoverageTests
         await repository.RemoveAsync(found);
         await context.SaveChangesAsync();
 
-        var deleted = await repository.GetByIdAsync(professor.Id);
+        var deleted = await repository.GetByIdAsync(professor.EmpNr);
         Assert.Null(deleted);
     }
 
@@ -161,7 +168,7 @@ public class Task6RepositoryPatternCoverageTests
         Assert.Null(deleted);
     }
 
-    [Fact(Skip = "In-memory database doesn't support transactions")]
+    [Fact]
     public async Task UnitOfWork_TransactionManagement_Success()
     {
         using var context = CreateInMemoryContext();
@@ -173,16 +180,37 @@ public class Task6RepositoryPatternCoverageTests
         var academicRepo = new AcademicRepository(context, academicLogger);
         var departmentRepo = new DepartmentRepository(context, departmentLogger);
         var subjectRepo = new SubjectRepository(context, subjectLogger);
+        var mockUserRepository = Mock.Of<IUserRepository>();
+        var mockRoleRepository = Mock.Of<IRoleRepository>();
+        var mockRefreshTokenRepository = Mock.Of<IRefreshTokenRepository>();
 
-        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo);
+        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo,
+            mockUserRepository, mockRoleRepository, mockRefreshTokenRepository);
 
-        // Test SaveChangesAsync (transactions not supported in in-memory database)
+        // Ensure database is created
+        await context.Database.EnsureCreatedAsync();
+
+        // Create a Department first (required)
+        var department = new Department
+        {
+            Name = "Engineering",
+            FullName = "Engineering Department",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
+        await unitOfWork.Departments.AddAsync(department);
+        await unitOfWork.SaveChangesAsync();
+
+        // Test UnitOfWork SaveChangesAsync and repository coordination
         var professor = new Professor
         {
             EmpNr = 54321,
             Name = "Dr. Alice Smith",
             PhoneNumber = "555-5678",
-            Salary = 80000
+            Salary = 80000,
+            DepartmentName = department.Name,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
         };
 
         await unitOfWork.Academics.AddAsync(professor);
@@ -190,9 +218,33 @@ public class Task6RepositoryPatternCoverageTests
         Assert.True(changesSaved > 0);
 
         // Verify the professor was saved
-        var saved = await unitOfWork.Academics.GetByIdAsync(professor.Id);
+        var saved = await unitOfWork.Academics.GetByIdAsync(professor.EmpNr);
         Assert.NotNull(saved);
         Assert.Equal("Dr. Alice Smith", saved.Name);
+
+        // Test coordinated operations across multiple repositories
+        var subject = new Subject
+        {
+            Code = "ENG101",
+            Title = "Introduction to Engineering",
+            CreditHours = 3,
+            DepartmentName = department.Name,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
+
+        await unitOfWork.Subjects.AddAsync(subject);
+        var moreChangesSaved = await unitOfWork.SaveChangesAsync();
+        Assert.True(moreChangesSaved > 0);
+
+        // Verify both entities exist and are properly coordinated
+        var savedSubject = await unitOfWork.Subjects.GetSingleAsync(s => s.Code == "ENG101");
+        Assert.NotNull(savedSubject);
+        Assert.Equal(department.Name, savedSubject.DepartmentName);
+
+        var savedProfessor = await unitOfWork.Academics.GetByIdAsync(professor.EmpNr);
+        Assert.NotNull(savedProfessor);
+        Assert.Equal(department.Name, ((Professor)savedProfessor).DepartmentName);
     }
 
     [Fact]
@@ -323,8 +375,12 @@ public class Task6RepositoryPatternCoverageTests
         var academicRepo = new AcademicRepository(context, academicLogger);
         var departmentRepo = new DepartmentRepository(context, departmentLogger);
         var subjectRepo = new SubjectRepository(context, subjectLogger);
+        var mockUserRepository = Mock.Of<IUserRepository>();
+        var mockRoleRepository = Mock.Of<IRoleRepository>();
+        var mockRefreshTokenRepository = Mock.Of<IRefreshTokenRepository>();
 
-        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo);
+        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo,
+            mockUserRepository, mockRoleRepository, mockRefreshTokenRepository);
 
         // This should not throw
         unitOfWork.Dispose();

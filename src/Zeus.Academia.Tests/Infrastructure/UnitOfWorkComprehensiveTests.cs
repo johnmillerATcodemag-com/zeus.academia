@@ -55,6 +55,7 @@ public class TestLogger<T> : ILogger<T>
 
     public UnitOfWorkComprehensiveTests()
     {
+        // TODO: InMemory database provider not available due to package source restrictions
         // Setup in-memory database
         var options = new DbContextOptionsBuilder<AcademiaDbContext>()
             .UseInMemoryDatabase(databaseName: $"UnitOfWorkTestDb_{Guid.NewGuid()}")

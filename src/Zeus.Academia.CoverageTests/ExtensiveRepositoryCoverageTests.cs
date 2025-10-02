@@ -5,6 +5,7 @@ using Moq;
 using Zeus.Academia.Infrastructure.Data;
 using Zeus.Academia.Infrastructure.Entities;
 using Zeus.Academia.Infrastructure.Repositories;
+using Zeus.Academia.Infrastructure.Repositories.Interfaces;
 using Xunit;
 
 namespace Zeus.Academia.CoverageTests;
@@ -309,8 +310,12 @@ public class ExtensiveRepositoryCoverageTests
         var academicRepo = new AcademicRepository(context, academicLogger);
         var departmentRepo = new DepartmentRepository(context, departmentLogger);
         var subjectRepo = new SubjectRepository(context, subjectLogger);
+        var mockUserRepository = Mock.Of<IUserRepository>();
+        var mockRoleRepository = Mock.Of<IRoleRepository>();
+        var mockRefreshTokenRepository = Mock.Of<IRefreshTokenRepository>();
 
-        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo);
+        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo,
+            mockUserRepository, mockRoleRepository, mockRefreshTokenRepository);
 
         // Create department
         var department = new Department { Name = "ENG", FullName = "Engineering Department" };
@@ -366,8 +371,12 @@ public class ExtensiveRepositoryCoverageTests
         var academicRepo = new AcademicRepository(context, academicLogger);
         var departmentRepo = new DepartmentRepository(context, departmentLogger);
         var subjectRepo = new SubjectRepository(context, subjectLogger);
+        var mockUserRepository = Mock.Of<IUserRepository>();
+        var mockRoleRepository = Mock.Of<IRoleRepository>();
+        var mockRefreshTokenRepository = Mock.Of<IRefreshTokenRepository>();
 
-        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo);
+        var unitOfWork = new UnitOfWork(context, logger, academicRepo, departmentRepo, subjectRepo,
+            mockUserRepository, mockRoleRepository, mockRefreshTokenRepository);
 
         // Test property accessors
         Assert.NotNull(unitOfWork.Academics);
