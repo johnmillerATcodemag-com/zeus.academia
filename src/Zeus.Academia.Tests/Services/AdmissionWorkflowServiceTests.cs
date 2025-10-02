@@ -372,7 +372,7 @@ public class AdmissionWorkflowServiceTests : IDisposable
 
         // Assert
         Assert.False(result.IsReadyForDecision);
-        Assert.Contains("has not been reviewed yet", result.Issues);
+        Assert.Contains("Application has not been reviewed yet", result.Issues);
     }
 
     [Fact]
@@ -400,7 +400,7 @@ public class AdmissionWorkflowServiceTests : IDisposable
 
         // Assert
         Assert.False(result.IsReadyForDecision);
-        Assert.Contains("Not all required documents", result.Issues);
+        Assert.Contains("Not all required documents have been submitted and verified", result.Issues);
         Assert.False(result.AllDocumentsSubmitted);
     }
 

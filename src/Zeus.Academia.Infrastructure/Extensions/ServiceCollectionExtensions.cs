@@ -147,6 +147,9 @@ public static class ServiceCollectionExtensions
         // Register Student Profile Management services (Prompt 4 Task 3)
         services.AddScoped<IStudentProfileService, StudentProfileService>();
 
+        // Register Academic Record Management services (Prompt 4 Task 4)
+        services.AddScoped<IAcademicRecordService, AcademicRecordService>();
+
         return services;
     }
 }

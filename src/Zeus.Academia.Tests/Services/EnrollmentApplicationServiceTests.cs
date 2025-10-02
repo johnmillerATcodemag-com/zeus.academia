@@ -35,14 +35,23 @@ public class EnrollmentApplicationServiceTests : IDisposable
 
     private void SeedTestData()
     {
-        var department = new Department
+        var csDepartment = new Department
         {
             Id = 1,
             Name = "Computer Science",
             CreatedBy = "Test",
             ModifiedBy = "Test"
         };
-        _context.Departments.Add(department);
+
+        var eeDepartment = new Department
+        {
+            Id = 2,
+            Name = "Electrical Engineering",
+            CreatedBy = "Test",
+            ModifiedBy = "Test"
+        };
+
+        _context.Departments.AddRange(csDepartment, eeDepartment);
 
         var applications = new[]
         {

@@ -498,14 +498,9 @@ public class StudentService : IStudentService
             student.EnrollmentStatus,
             null,
             $"Application submitted for program {programCode}",
-            createdApplication.Id.ToString());
-
-        // Update student status if currently Applied
-        if (student.EnrollmentStatus == EnrollmentStatus.Applied)
-        {
-            await UpdateEnrollmentStatusAsync(studentId, EnrollmentStatus.Applied,
-                "Application status updated - new application submitted");
-        }
+            null,
+            null,
+            createdApplication.Id);
 
         _logger.LogInformation("Successfully submitted application {ApplicationId} for student {StudentId}",
             createdApplication.Id, studentId);
@@ -547,6 +542,9 @@ public class StudentService : IStudentService
             return false;
         }
 
+        // Capture the original status before any updates
+        var originalStatus = student.EnrollmentStatus;
+
         // Update student enrollment status based on decision
         var newStatus = decision switch
         {
@@ -579,10 +577,11 @@ public class StudentService : IStudentService
                 application.ApplicantEmpNr.Value,
                 eventType,
                 newStatus,
-                student.EnrollmentStatus,
+                originalStatus,
                 $"Admission decision: {decision} - {decisionReason}",
-                applicationId.ToString(),
-                decisionMadeBy);
+                null,
+                decisionMadeBy,
+                applicationId);
         }
 
         _logger.LogInformation("Successfully processed admission decision {Decision} for application {ApplicationId}",

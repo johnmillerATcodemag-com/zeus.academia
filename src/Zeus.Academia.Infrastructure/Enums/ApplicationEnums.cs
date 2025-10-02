@@ -363,3 +363,210 @@ public enum AdvisorType
     /// </summary>
     International = 6
 }
+
+/// <summary>
+/// Enumeration for course enrollment status (distinct from student enrollment status)
+/// </summary>
+public enum CourseEnrollmentStatus
+{
+    /// <summary>
+    /// Student is currently enrolled in the course
+    /// </summary>
+    Enrolled = 0,
+
+    /// <summary>
+    /// Student has successfully completed the course
+    /// </summary>
+    Completed = 1,
+
+    /// <summary>
+    /// Student has dropped the course
+    /// </summary>
+    Dropped = 2,
+
+    /// <summary>
+    /// Student has withdrawn from the course
+    /// </summary>
+    Withdrawn = 3,
+
+    /// <summary>
+    /// Student failed to complete the course
+    /// </summary>
+    Incomplete = 4,
+
+    /// <summary>
+    /// Student is auditing the course (no grade)
+    /// </summary>
+    Audit = 5,
+
+    /// <summary>
+    /// Student received a pass/no pass grade
+    /// </summary>
+    PassNoPass = 6
+}
+
+/// <summary>
+/// Enumeration for grade types
+/// </summary>
+public enum GradeType
+{
+    /// <summary>
+    /// Final course grade
+    /// </summary>
+    Final = 0,
+
+    /// <summary>
+    /// Midterm grade
+    /// </summary>
+    Midterm = 1,
+
+    /// <summary>
+    /// Assignment or homework grade
+    /// </summary>
+    Assignment = 2,
+
+    /// <summary>
+    /// Quiz grade
+    /// </summary>
+    Quiz = 3,
+
+    /// <summary>
+    /// Exam grade
+    /// </summary>
+    Exam = 4,
+
+    /// <summary>
+    /// Project grade
+    /// </summary>
+    Project = 5,
+
+    /// <summary>
+    /// Participation grade
+    /// </summary>
+    Participation = 6,
+
+    /// <summary>
+    /// Extra credit grade
+    /// </summary>
+    ExtraCredit = 7
+}
+
+/// <summary>
+/// Enumeration for grade status
+/// </summary>
+public enum GradeStatus
+{
+    /// <summary>
+    /// Grade has been entered but not yet posted
+    /// </summary>
+    Entered = 0,
+
+    /// <summary>
+    /// Grade has been posted and is visible to student
+    /// </summary>
+    Posted = 1,
+
+    /// <summary>
+    /// Grade is under review or disputed
+    /// </summary>
+    UnderReview = 2,
+
+    /// <summary>
+    /// Grade has been changed after posting
+    /// </summary>
+    Changed = 3,
+
+    /// <summary>
+    /// Grade is incomplete pending additional work
+    /// </summary>
+    Incomplete = 4,
+
+    /// <summary>
+    /// Grade has been withdrawn or voided
+    /// </summary>
+    Voided = 5
+}
+
+
+
+/// <summary>
+/// Enumeration for honor types
+/// </summary>
+public enum HonorType
+{
+    /// <summary>
+    /// Dean's List recognition
+    /// </summary>
+    DeansList = 0,
+
+    /// <summary>
+    /// President's List recognition
+    /// </summary>
+    PresidentsList = 1,
+
+    /// <summary>
+    /// Academic honor society membership
+    /// </summary>
+    HonorSociety = 2,
+
+    /// <summary>
+    /// Graduation with honors (cum laude, magna cum laude, summa cum laude)
+    /// </summary>
+    GraduationHonors = 3,
+
+    /// <summary>
+    /// Academic achievement award
+    /// </summary>
+    AchievementAward = 4,
+
+    /// <summary>
+    /// Scholarship recipient
+    /// </summary>
+    Scholarship = 5,
+
+    /// <summary>
+    /// Research recognition
+    /// </summary>
+    ResearchHonor = 6
+}
+
+/// <summary>
+/// Enumeration for award types
+/// </summary>
+public enum AwardType
+{
+    /// <summary>
+    /// Academic excellence award
+    /// </summary>
+    AcademicExcellence = 0,
+
+    /// <summary>
+    /// Leadership award
+    /// </summary>
+    Leadership = 1,
+
+    /// <summary>
+    /// Service award
+    /// </summary>
+    Service = 2,
+
+    /// <summary>
+    /// Research award
+    /// </summary>
+    Research = 3,
+
+    /// <summary>
+    /// Athletic achievement
+    /// </summary>
+    Athletic = 4,
+
+    /// <summary>
+    /// Community involvement award
+    /// </summary>
+    Community = 5,
+
+    /// <summary>
+    /// Outstanding student award
+    /// </summary>
+    OutstandingStudent = 6
+}

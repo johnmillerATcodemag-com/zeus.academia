@@ -62,6 +62,13 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<AcademicAdvisor> AcademicAdvisors { get; set; } = null!;
     public DbSet<StudentAdvisorAssignment> StudentAdvisorAssignments { get; set; } = null!;
 
+    // Academic Record Management Entities (Prompt 4 Task 4)
+    public DbSet<CourseEnrollment> CourseEnrollments { get; set; } = null!;
+    public DbSet<Grade> Grades { get; set; } = null!;
+    public DbSet<AcademicHonor> AcademicHonors { get; set; } = null!;
+    public DbSet<Award> Awards { get; set; } = null!;
+    public DbSet<DegreeProgress> DegreeProgresses { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
@@ -1281,6 +1288,357 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
 
             entity.HasIndex(saa => new { saa.AdvisorId, saa.IsActive })
                 .HasDatabaseName("IX_StudentAdvisorAssignments_Advisor_Active");
+        });
+
+        // Configure CourseEnrollment relationships and constraints (Task 4)
+        modelBuilder.Entity<CourseEnrollment>(entity =>
+        {
+            entity.HasKey(ce => ce.Id);
+
+            entity.HasOne(ce => ce.Student)
+                .WithMany()
+                .HasForeignKey(ce => ce.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ce => ce.Subject)
+                .WithMany()
+                .HasForeignKey(ce => ce.SubjectCode)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(ce => ce.AcademicTerm)
+                .WithMany()
+                .HasForeignKey(ce => ce.AcademicTermId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // String length constraints
+            entity.Property(ce => ce.SubjectCode)
+                .IsRequired()
+                .HasMaxLength(10);
+
+            entity.Property(ce => ce.SectionId)
+                .HasMaxLength(10);
+
+            entity.Property(ce => ce.Semester)
+                .HasMaxLength(20);
+
+            entity.Property(ce => ce.Notes)
+                .HasMaxLength(500);
+
+            // Enum conversions
+            entity.Property(ce => ce.Status)
+                .HasConversion<int>();
+
+            // Decimal precision
+            entity.Property(ce => ce.CreditHours)
+                .HasPrecision(4, 1);
+
+            // Boolean defaults
+            entity.Property(ce => ce.IsAudit)
+                .HasDefaultValue(false);
+
+            entity.Property(ce => ce.CountsTowardDegree)
+                .HasDefaultValue(true);
+
+            // DateTime configurations
+            entity.Property(ce => ce.EnrollmentDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(ce => ce.DropDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(ce => ce.WithdrawalDate)
+                .HasColumnType("datetime2");
+
+            // Indexes
+            entity.HasIndex(ce => ce.StudentEmpNr)
+                .HasDatabaseName("IX_CourseEnrollments_StudentEmpNr");
+
+            entity.HasIndex(ce => ce.SubjectCode)
+                .HasDatabaseName("IX_CourseEnrollments_SubjectCode");
+
+            entity.HasIndex(ce => new { ce.StudentEmpNr, ce.AcademicYear, ce.Semester })
+                .HasDatabaseName("IX_CourseEnrollments_Student_Term");
+        });
+
+        // Configure Grade relationships and constraints (Task 4)
+        modelBuilder.Entity<Grade>(entity =>
+        {
+            entity.HasKey(g => g.Id);
+
+            entity.HasOne(g => g.CourseEnrollment)
+                .WithMany(ce => ce.Grades)
+                .HasForeignKey(g => g.CourseEnrollmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(g => g.ReplacedGrade)
+                .WithMany()
+                .HasForeignKey(g => g.ReplacedGradeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // String length constraints
+            entity.Property(g => g.LetterGrade)
+                .HasMaxLength(5);
+
+            entity.Property(g => g.GradedBy)
+                .HasMaxLength(100);
+
+            entity.Property(g => g.Comments)
+                .HasMaxLength(500);
+
+            // Enum conversions
+            entity.Property(g => g.GradeType)
+                .HasConversion<int>();
+
+            entity.Property(g => g.Status)
+                .HasConversion<int>();
+
+            // Decimal precision
+            entity.Property(g => g.NumericGrade)
+                .HasPrecision(5, 2);
+
+            entity.Property(g => g.GradePoints)
+                .HasPrecision(3, 2);
+
+            entity.Property(g => g.CreditHours)
+                .HasPrecision(4, 1);
+
+            entity.Property(g => g.QualityPoints)
+                .HasPrecision(6, 2);
+
+            // Boolean defaults
+            entity.Property(g => g.IsFinal)
+                .HasDefaultValue(false);
+
+            entity.Property(g => g.IsMakeup)
+                .HasDefaultValue(false);
+
+            entity.Property(g => g.IsReplacement)
+                .HasDefaultValue(false);
+
+            // DateTime configurations
+            entity.Property(g => g.GradeDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(g => g.PostedDate)
+                .HasColumnType("datetime2");
+
+            // Indexes
+            entity.HasIndex(g => g.CourseEnrollmentId)
+                .HasDatabaseName("IX_Grades_CourseEnrollmentId");
+
+            entity.HasIndex(g => new { g.CourseEnrollmentId, g.IsFinal })
+                .HasDatabaseName("IX_Grades_Enrollment_Final");
+        });
+
+        // Configure AcademicHonor relationships and constraints (Task 4)
+        modelBuilder.Entity<AcademicHonor>(entity =>
+        {
+            entity.HasKey(ah => ah.Id);
+
+            entity.HasOne(ah => ah.Student)
+                .WithMany()
+                .HasForeignKey(ah => ah.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ah => ah.AcademicTerm)
+                .WithMany()
+                .HasForeignKey(ah => ah.AcademicTermId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // String length constraints
+            entity.Property(ah => ah.Title)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(ah => ah.Description)
+                .HasMaxLength(500);
+
+            entity.Property(ah => ah.Semester)
+                .HasMaxLength(20);
+
+            entity.Property(ah => ah.AwardingOrganization)
+                .HasMaxLength(100);
+
+            entity.Property(ah => ah.Notes)
+                .HasMaxLength(500);
+
+            // Enum conversions
+            entity.Property(ah => ah.HonorType)
+                .HasConversion<int>();
+
+            // Decimal precision
+            entity.Property(ah => ah.RequiredGPA)
+                .HasPrecision(3, 2);
+
+            entity.Property(ah => ah.StudentGPA)
+                .HasPrecision(3, 2);
+
+            // Boolean defaults
+            entity.Property(ah => ah.AppearsOnTranscript)
+                .HasDefaultValue(true);
+
+            entity.Property(ah => ah.IsActive)
+                .HasDefaultValue(true);
+
+            // DateTime configurations
+            entity.Property(ah => ah.AwardDate)
+                .HasColumnType("datetime2");
+
+            // Indexes
+            entity.HasIndex(ah => ah.StudentEmpNr)
+                .HasDatabaseName("IX_AcademicHonors_StudentEmpNr");
+
+            entity.HasIndex(ah => new { ah.StudentEmpNr, ah.AcademicYear })
+                .HasDatabaseName("IX_AcademicHonors_Student_Year");
+        });
+
+        // Configure Award relationships and constraints (Task 4)
+        modelBuilder.Entity<Award>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+
+            entity.HasOne(a => a.Student)
+                .WithMany()
+                .HasForeignKey(a => a.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(a => a.AcademicTerm)
+                .WithMany()
+                .HasForeignKey(a => a.AcademicTermId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // String length constraints
+            entity.Property(a => a.Name)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(a => a.Description)
+                .HasMaxLength(1000);
+
+            entity.Property(a => a.Currency)
+                .HasMaxLength(3)
+                .HasDefaultValue("USD");
+
+            entity.Property(a => a.AwardingOrganization)
+                .HasMaxLength(150);
+
+            entity.Property(a => a.Criteria)
+                .HasMaxLength(500);
+
+            entity.Property(a => a.RecurrenceFrequency)
+                .HasMaxLength(50);
+
+            entity.Property(a => a.CertificateNumber)
+                .HasMaxLength(50);
+
+            entity.Property(a => a.Notes)
+                .HasMaxLength(500);
+
+            // Enum conversions
+            entity.Property(a => a.AwardType)
+                .HasConversion<int>();
+
+            // Decimal precision
+            entity.Property(a => a.MonetaryValue)
+                .HasPrecision(10, 2);
+
+            // Boolean defaults
+            entity.Property(a => a.AppearsOnTranscript)
+                .HasDefaultValue(true);
+
+            entity.Property(a => a.IsRecurring)
+                .HasDefaultValue(false);
+
+            entity.Property(a => a.IsActive)
+                .HasDefaultValue(true);
+
+            // DateTime configurations
+            entity.Property(a => a.AwardDate)
+                .HasColumnType("datetime2");
+
+            // Indexes
+            entity.HasIndex(a => a.StudentEmpNr)
+                .HasDatabaseName("IX_Awards_StudentEmpNr");
+
+            entity.HasIndex(a => new { a.StudentEmpNr, a.AcademicYear })
+                .HasDatabaseName("IX_Awards_Student_Year");
+        });
+
+        // Configure DegreeProgress relationships and constraints (Task 4)
+        modelBuilder.Entity<DegreeProgress>(entity =>
+        {
+            entity.HasKey(dp => dp.Id);
+
+            entity.HasOne(dp => dp.Student)
+                .WithMany()
+                .HasForeignKey(dp => dp.StudentEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(dp => dp.Degree)
+                .WithMany()
+                .HasForeignKey(dp => dp.DegreeCode)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // String length constraints
+            entity.Property(dp => dp.ProjectedGraduationTerm)
+                .HasMaxLength(20);
+
+            entity.Property(dp => dp.AdditionalRequirements)
+                .HasMaxLength(1000);
+
+            entity.Property(dp => dp.UpdatedBy)
+                .HasMaxLength(100);
+
+            entity.Property(dp => dp.Notes)
+                .HasMaxLength(1000);
+
+            // Decimal precision
+            entity.Property(dp => dp.CompletedCreditHours)
+                .HasPrecision(6, 1);
+
+            entity.Property(dp => dp.RemainingCreditHours)
+                .HasPrecision(6, 1);
+
+            entity.Property(dp => dp.CompletionPercentage)
+                .HasPrecision(5, 2);
+
+            entity.Property(dp => dp.CumulativeGPA)
+                .HasPrecision(3, 2);
+
+            entity.Property(dp => dp.MajorGPA)
+                .HasPrecision(3, 2);
+
+            entity.Property(dp => dp.RequiredGPA)
+                .HasPrecision(3, 2)
+                .HasDefaultValue(2.0m);
+
+            // Boolean defaults
+            entity.Property(dp => dp.MeetsGPARequirement)
+                .HasDefaultValue(false);
+
+            entity.Property(dp => dp.PrerequisitesMet)
+                .HasDefaultValue(false);
+
+            entity.Property(dp => dp.CapstoneCompleted)
+                .HasDefaultValue(false);
+
+            // DateTime configurations
+            entity.Property(dp => dp.ExpectedGraduationDate)
+                .HasColumnType("datetime2");
+
+            entity.Property(dp => dp.LastUpdated)
+                .HasColumnType("datetime2");
+
+            // Indexes
+            entity.HasIndex(dp => dp.StudentEmpNr)
+                .IsUnique()
+                .HasDatabaseName("IX_DegreeProgress_StudentEmpNr");
+
+            entity.HasIndex(dp => dp.DegreeCode)
+                .HasDatabaseName("IX_DegreeProgress_DegreeCode");
+
+            entity.HasIndex(dp => dp.ExpectedGraduationDate)
+                .HasDatabaseName("IX_DegreeProgress_ExpectedGraduation");
         });
     }
 }
