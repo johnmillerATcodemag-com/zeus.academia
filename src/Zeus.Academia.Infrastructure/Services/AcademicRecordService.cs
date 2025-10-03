@@ -910,14 +910,14 @@ public class AcademicRecordService : IAcademicRecordService
         }
     }
 
-    public async Task<DegreeRequirements> GetRemainingRequirementsAsync(int studentEmpNr)
+    public async Task<Zeus.Academia.Infrastructure.Services.Interfaces.DegreeRequirements> GetRemainingRequirementsAsync(int studentEmpNr)
     {
         try
         {
             var progress = await GetDegreeProgressAsync(studentEmpNr);
             if (progress == null)
             {
-                return new DegreeRequirements
+                return new Zeus.Academia.Infrastructure.Services.Interfaces.DegreeRequirements
                 {
                     StudentEmpNr = studentEmpNr,
                     DegreeCode = string.Empty,
@@ -937,7 +937,7 @@ public class AcademicRecordService : IAcademicRecordService
                 remainingCore.Add($"{progress.RemainingCreditHours} credit hours remaining");
             }
 
-            return new DegreeRequirements
+            return new Zeus.Academia.Infrastructure.Services.Interfaces.DegreeRequirements
             {
                 StudentEmpNr = studentEmpNr,
                 DegreeCode = progress.DegreeCode,

@@ -856,3 +856,117 @@ public enum ApprovalStepStatus
     /// </summary>
     OnHold = 5
 }
+
+/// <summary>
+/// Course waitlist priority levels
+/// </summary>
+public enum WaitlistPriority
+{
+    /// <summary>
+    /// Low priority waitlist placement
+    /// </summary>
+    Low = 1,
+
+    /// <summary>
+    /// Normal priority waitlist placement
+    /// </summary>
+    Normal = 2,
+
+    /// <summary>
+    /// High priority waitlist placement
+    /// </summary>
+    High = 3,
+
+    /// <summary>
+    /// Emergency priority (graduating students, etc.)
+    /// </summary>
+    Emergency = 4
+}
+
+/// <summary>
+/// Course waitlist status
+/// </summary>
+public enum WaitlistStatus
+{
+    /// <summary>
+    /// Active on waitlist
+    /// </summary>
+    Active = 1,
+
+    /// <summary>
+    /// Inactive/paused waitlist entry
+    /// </summary>
+    Inactive = 2,
+
+    /// <summary>
+    /// Successfully enrolled from waitlist
+    /// </summary>
+    Enrolled = 3,
+
+    /// <summary>
+    /// Waitlist entry expired
+    /// </summary>
+    Expired = 4,
+
+    /// <summary>
+    /// Removed from waitlist
+    /// </summary>
+    Removed = 5
+}
+
+/// <summary>
+/// Types of course notifications
+/// </summary>
+public enum NotificationType
+{
+    /// <summary>
+    /// Seat became available
+    /// </summary>
+    SeatAvailable = 1,
+
+    /// <summary>
+    /// Waitlist position changed
+    /// </summary>
+    PositionChanged = 2,
+
+    /// <summary>
+    /// Course information updated
+    /// </summary>
+    CourseUpdate = 3,
+
+    /// <summary>
+    /// Enrollment deadline reminder
+    /// </summary>
+    EnrollmentReminder = 4,
+
+    /// <summary>
+    /// Waitlist expired
+    /// </summary>
+    WaitlistExpired = 5
+}
+
+/// <summary>
+/// Notification timing preferences
+/// </summary>
+public enum NotificationTiming
+{
+    /// <summary>
+    /// Send notification immediately
+    /// </summary>
+    Immediate = 1,
+
+    /// <summary>
+    /// Send daily digest
+    /// </summary>
+    Daily = 2,
+
+    /// <summary>
+    /// Send weekly digest
+    /// </summary>
+    Weekly = 3,
+
+    /// <summary>
+    /// Send only critical notifications
+    /// </summary>
+    CriticalOnly = 4
+}
