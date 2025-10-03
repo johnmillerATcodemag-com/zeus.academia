@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Zeus.Academia.Infrastructure.Enums;
 
 namespace Zeus.Academia.Infrastructure.Entities;
 
@@ -76,15 +77,81 @@ public class Subject : BaseEntity
     [Range(1, 500, ErrorMessage = "Maximum enrollment must be between 1 and 500")]
     public int? MaxEnrollment { get; set; }
 
+    // Task 1: Hierarchical categorization and enhanced properties
+
+    /// <summary>
+    /// Gets or sets the subject type for hierarchical categorization.
+    /// </summary>
+    [Required]
+    public SubjectType SubjectType { get; set; } = SubjectType.Course;
+
+    /// <summary>
+    /// Gets or sets the parent subject code for hierarchical relationships.
+    /// </summary>
+    [MaxLength(10)]
+    public string? ParentSubjectCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the corequisites as a comma-separated list of subject codes.
+    /// </summary>
+    [MaxLength(200, ErrorMessage = "Corequisites cannot exceed 200 characters")]
+    public string? Corequisites { get; set; }
+
+    /// <summary>
+    /// Gets or sets the learning outcomes for this subject.
+    /// </summary>
+    public List<string> LearningOutcomes { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the delivery methods available for this subject.
+    /// </summary>
+    public List<DeliveryMethod> DeliveryMethods { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the assessment methods used in this subject.
+    /// </summary>
+    public List<AssessmentMethod> AssessmentMethods { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the catalog year when this subject was last updated.
+    /// </summary>
+    public int? CatalogYear { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this subject can be repeated for credit.
+    /// </summary>
+    public bool CanRepeat { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the maximum number of times this subject can be repeated.
+    /// </summary>
+    public int? MaxRepeats { get; set; }
+
     /// <summary>
     /// Navigation property to the department.
     /// </summary>
     public virtual Department? Department { get; set; }
 
     /// <summary>
+    /// Navigation property to the parent subject.
+    /// </summary>
+    [ForeignKey(nameof(ParentSubjectCode))]
+    public virtual Subject? ParentSubject { get; set; }
+
+    /// <summary>
+    /// Navigation property to child subjects.
+    /// </summary>
+    public virtual ICollection<Subject> ChildSubjects { get; set; } = new List<Subject>();
+
+    /// <summary>
     /// Navigation property for teaching records of this subject.
     /// </summary>
     public virtual ICollection<Teaching> Teachings { get; set; } = new List<Teaching>();
+
+    /// <summary>
+    /// Navigation property for courses that reference this subject.
+    /// </summary>
+    public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
 }
 
 /// <summary>

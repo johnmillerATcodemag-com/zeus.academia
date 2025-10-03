@@ -32,6 +32,15 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<Department> Departments { get; set; } = null!;
     public DbSet<Subject> Subjects { get; set; } = null!;
     public DbSet<Degree> Degrees { get; set; } = null!;
+
+    // Course Catalog and Subject Management Entities (Prompt 6 Task 1)
+    public DbSet<Course> Courses { get; set; } = null!;
+    public DbSet<CoursePrerequisite> CoursePrerequisites { get; set; } = null!;
+    public DbSet<CourseCorequisite> CourseCorequisites { get; set; } = null!;
+    public DbSet<CourseRestriction> CourseRestrictions { get; set; } = null!;
+    public DbSet<CreditType> CreditTypes { get; set; } = null!;
+    public DbSet<CourseStatusHistory> CourseStatusHistory { get; set; } = null!;
+    public DbSet<CourseOffering> CourseOfferings { get; set; } = null!;
     public DbSet<University> Universities { get; set; } = null!;
     public DbSet<Rank> Ranks { get; set; } = null!;
     public DbSet<Chair> Chairs { get; set; } = null!;
@@ -226,6 +235,68 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
             .HasOne(s => s.Department)
             .WithMany(d => d.Subjects)
             .HasForeignKey(s => s.DepartmentName)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure Subject hierarchical relationships (Task 1)
+        modelBuilder.Entity<Subject>()
+            .HasOne(s => s.ParentSubject)
+            .WithMany(s => s.ChildSubjects)
+            .HasForeignKey(s => s.ParentSubjectCode)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure Course relationships (Task 1)
+        modelBuilder.Entity<Course>()
+            .HasOne(c => c.Subject)
+            .WithMany(s => s.Courses)
+            .HasForeignKey(c => c.SubjectCode)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure CoursePrerequisite relationships
+        modelBuilder.Entity<CoursePrerequisite>()
+            .HasOne(cp => cp.Course)
+            .WithMany(c => c.Prerequisites)
+            .HasForeignKey(cp => cp.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure CourseCorequisite relationships
+        modelBuilder.Entity<CourseCorequisite>()
+            .HasOne(cc => cc.Course)
+            .WithMany(c => c.Corequisites)
+            .HasForeignKey(cc => cc.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure CourseRestriction relationships
+        modelBuilder.Entity<CourseRestriction>()
+            .HasOne(cr => cr.Course)
+            .WithMany(c => c.Restrictions)
+            .HasForeignKey(cr => cr.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure CreditType relationships
+        modelBuilder.Entity<CreditType>()
+            .HasOne(ct => ct.Course)
+            .WithMany(c => c.CreditBreakdown)
+            .HasForeignKey(ct => ct.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure CourseStatusHistory relationships
+        modelBuilder.Entity<CourseStatusHistory>()
+            .HasOne(csh => csh.Course)
+            .WithMany(c => c.StatusHistory)
+            .HasForeignKey(csh => csh.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure CourseOffering relationships
+        modelBuilder.Entity<CourseOffering>()
+            .HasOne(co => co.Course)
+            .WithMany(c => c.Offerings)
+            .HasForeignKey(co => co.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CourseOffering>()
+            .HasOne(co => co.Instructor)
+            .WithMany()
+            .HasForeignKey(co => co.InstructorEmpNr)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Configure Teaching relationships
@@ -1249,7 +1320,7 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
                 "MaxStudentLoad >= 1 OR MaxStudentLoad IS NULL"));
 
             entity.ToTable(t => t.HasCheckConstraint("CK_AcademicAdvisors_CurrentLoad",
-                "CurrentStudentLoad >= 0"));
+                "CurrentStudentCount >= 0"));
 
             // Indexes
             entity.HasIndex(aa => aa.FacultyEmpNr)

@@ -49,7 +49,7 @@ public class AcademicAdvisor : BaseEntity
     /// Gets or sets the department the advisor belongs to.
     /// </summary>
     [Required]
-    [MaxLength(100)]
+    [MaxLength(15)]
     public string DepartmentName { get; set; } = string.Empty;
 
     /// <summary>

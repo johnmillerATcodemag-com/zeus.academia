@@ -435,7 +435,7 @@ namespace Zeus.Academia.Infrastructure.Migrations
                     Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     OfficeLocation = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    DepartmentName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    DepartmentName = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Specializations = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     MaxStudentLoad = table.Column<int>(type: "int", nullable: true),
@@ -456,7 +456,7 @@ namespace Zeus.Academia.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_AcademicAdvisors", x => x.Id);
                     table.CheckConstraint("CK_AcademicAdvisors_Capacity", "MaxStudentLoad >= 1 OR MaxStudentLoad IS NULL");
-                    table.CheckConstraint("CK_AcademicAdvisors_CurrentLoad", "CurrentStudentLoad >= 0");
+                    table.CheckConstraint("CK_AcademicAdvisors_CurrentLoad", "CurrentStudentCount >= 0");
                     table.ForeignKey(
                         name: "FK_AcademicAdvisors_Academics_FacultyEmpNr",
                         column: x => x.FacultyEmpNr,
