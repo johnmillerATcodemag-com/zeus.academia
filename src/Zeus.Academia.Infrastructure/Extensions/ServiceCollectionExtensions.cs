@@ -150,6 +150,12 @@ public static class ServiceCollectionExtensions
         // Register Academic Record Management services (Prompt 4 Task 4)
         services.AddScoped<IAcademicRecordService, AcademicRecordService>();
 
+        // Register Student Management services (Prompt 4 Task 5)
+        services.AddScoped<IStudentService, StudentService>();
+
+        // Register Faculty Management services (Prompt 5 Task 5)
+        services.AddScoped<IFacultyService, FacultyService>();
+
         return services;
     }
 }

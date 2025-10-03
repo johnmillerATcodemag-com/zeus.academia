@@ -9,8 +9,9 @@ using Zeus.Academia.Api.Mapping;
 using Zeus.Academia.Api.Models.Common;
 using Zeus.Academia.Api.Models.Requests;
 using Zeus.Academia.Api.Models.Responses;
-using Zeus.Academia.Domain.Services.Interfaces;
+using Zeus.Academia.Infrastructure.Services.Interfaces;
 using Zeus.Academia.Infrastructure;
+using Zeus.Academia.Infrastructure.Entities;
 using Zeus.Academia.Infrastructure.Enums;
 
 namespace Zeus.Academia.Api.UnitTests.Controllers.V1;
@@ -55,8 +56,8 @@ public class StudentsControllerTests
         var students = CreateTestStudents();
         var pagedStudents = new PagedList<Student>(students, students.Count, 1, 10);
 
-        _mockStudentService.Setup(x => x.GetAllStudentsAsync(1, 10))
-            .ReturnsAsync(pagedStudents);
+        _mockStudentService.Setup(x => x.GetStudentsAsync(1, 10))
+            .ReturnsAsync((students, students.Count));
 
         // Act
         var result = await _controller.GetStudents(1, 10);
@@ -75,7 +76,7 @@ public class StudentsControllerTests
     {
         // Arrange
         var student = CreateTestStudent();
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(1))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(1))
             .ReturnsAsync(student);
 
         // Act
@@ -93,7 +94,7 @@ public class StudentsControllerTests
     public async Task GetStudent_NonExistentStudent_ReturnsNotFound()
     {
         // Arrange
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(999))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(999))
             .ReturnsAsync((Student?)null);
 
         // Act
@@ -138,7 +139,7 @@ public class StudentsControllerTests
             Gender = "Female",
             Nationality = "American",
             Address = "123 Main St",
-            DepartmentId = 1,
+            DepartmentName = "Computer Science",
             DegreeCode = "CS",
             Program = "Computer Science",
             AcademicYear = 2024,
@@ -150,42 +151,27 @@ public class StudentsControllerTests
             EmpNr = 3,
             StudentId = request.StudentId,
             Name = request.Name,
-            Email = request.Email,
             PhoneNumber = request.PhoneNumber,
-            DateOfBirth = request.DateOfBirth,
-            Gender = request.Gender,
-            Nationality = request.Nationality,
-            Address = request.Address,
             DegreeCode = request.DegreeCode,
+            DepartmentName = request.DepartmentName,
             Program = request.Program,
-            AcademicYear = request.AcademicYear,
             ExpectedGraduationDate = request.ExpectedGraduationDate,
             EnrollmentStatus = EnrollmentStatus.Pending,
             AcademicStanding = AcademicStanding.Good,
             IsActive = true,
+            YearOfStudy = 1,
+            GPA = 0.0m,
+            EnrollmentDate = DateTime.UtcNow,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedBy = "System",
             ModifiedBy = "System"
         };
 
-        _mockStudentService.Setup(x => x.GetStudentByStudentIdAsync(request.StudentId))
+        _mockStudentService.Setup(x => x.GetStudentByStudentNumberAsync(request.StudentId))
             .ReturnsAsync((Student?)null);
 
-        _mockStudentService.Setup(x => x.CreateStudentAsync(
-                request.StudentId,
-                request.Name,
-                request.Email,
-                request.PhoneNumber,
-                request.DateOfBirth,
-                request.Gender,
-                request.Nationality,
-                request.Address,
-                request.DepartmentId,
-                request.DegreeCode,
-                request.Program,
-                request.AcademicYear,
-                request.ExpectedGraduationDate))
+        _mockStudentService.Setup(x => x.CreateStudentAsync(It.IsAny<Student>()))
             .ReturnsAsync(createdStudent);
 
         // Act
@@ -211,7 +197,7 @@ public class StudentsControllerTests
         };
 
         var existingStudent = CreateTestStudent();
-        _mockStudentService.Setup(x => x.GetStudentByStudentIdAsync("STU001"))
+        _mockStudentService.Setup(x => x.GetStudentByStudentNumberAsync("STU001"))
             .ReturnsAsync(existingStudent);
 
         // Act
@@ -238,25 +224,12 @@ public class StudentsControllerTests
         var existingStudent = CreateTestStudent();
         var updatedStudent = CreateTestStudent();
         updatedStudent.Name = request.Name;
-        updatedStudent.Email = request.Email;
         updatedStudent.PhoneNumber = request.PhoneNumber;
 
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(1))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(1))
             .ReturnsAsync(existingStudent);
 
-        _mockStudentService.Setup(x => x.UpdateStudentAsync(
-                1,
-                request.Name,
-                request.Email,
-                request.PhoneNumber,
-                request.DateOfBirth,
-                request.Gender,
-                request.Nationality,
-                request.Address,
-                request.DepartmentId,
-                request.DegreeCode,
-                request.Program,
-                request.ExpectedGraduationDate))
+        _mockStudentService.Setup(x => x.UpdateStudentAsync(It.IsAny<Student>()))
             .ReturnsAsync(updatedStudent);
 
         // Act
@@ -267,7 +240,7 @@ public class StudentsControllerTests
         var response = Assert.IsType<ApiResponse<StudentDetailsResponse>>(okResult.Value);
         Assert.True(response.Success);
         Assert.Equal("John Updated", response.Data?.Name);
-        Assert.Equal("john.updated@academia.com", response.Data?.Email);
+        Assert.Equal("987-654-3210", response.Data?.PhoneNumber);
     }
 
     [Fact]
@@ -280,7 +253,7 @@ public class StudentsControllerTests
             Email = "john.updated@academia.com"
         };
 
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(999))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(999))
             .ReturnsAsync((Student?)null);
 
         // Act
@@ -298,11 +271,11 @@ public class StudentsControllerTests
     {
         // Arrange
         var existingStudent = CreateTestStudent();
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(1))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(1))
             .ReturnsAsync(existingStudent);
 
-        _mockStudentService.Setup(x => x.DeactivateStudentAsync(1))
-            .Returns(Task.CompletedTask);
+        _mockStudentService.Setup(x => x.DeleteStudentAsync(1))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _controller.DeleteStudent(1);
@@ -332,17 +305,13 @@ public class StudentsControllerTests
 
         _mockStudentService.Setup(x => x.SearchStudentsAsync(
                 request.SearchTerm,
-                request.DepartmentId,
-                request.Program,
+                null, // departmentName - request.DepartmentId is int, but service expects string
                 request.EnrollmentStatus,
                 request.AcademicStanding,
-                request.MinGPA,
-                request.MaxGPA,
-                request.AcademicYear,
-                request.IsActive,
+                request.Program,
                 request.PageNumber,
                 request.PageSize))
-            .ReturnsAsync(pagedStudents);
+            .ReturnsAsync((students, students.Count));
 
         // Act
         var result = await _controller.SearchStudents(request);
@@ -366,16 +335,14 @@ public class StudentsControllerTests
         };
 
         var existingStudent = CreateTestStudent();
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(1))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(1))
             .ReturnsAsync(existingStudent);
 
         _mockStudentService.Setup(x => x.UpdateEnrollmentStatusAsync(
                 1,
                 request.NewStatus,
-                request.Reason,
-                request.Notes,
-                request.EffectiveDate))
-            .Returns(Task.CompletedTask);
+                request.Reason))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _controller.UpdateEnrollmentStatus(1, request);
@@ -399,16 +366,14 @@ public class StudentsControllerTests
         };
 
         var existingStudent = CreateTestStudent();
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(1))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(1))
             .ReturnsAsync(existingStudent);
 
         _mockStudentService.Setup(x => x.UpdateAcademicStandingAsync(
                 1,
                 request.NewStanding,
-                request.Reason,
-                request.Notes,
-                request.ReviewDate))
-            .Returns(Task.CompletedTask);
+                request.Reason))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _controller.UpdateAcademicStanding(1, request);
@@ -426,36 +391,28 @@ public class StudentsControllerTests
         // Arrange
         var request = new SubmitApplicationRequest
         {
-            ApplicantEmpNr = 1,
+            ApplicantEmpNr = "1", // String as expected by SubmitApplicationRequest
             Program = "Computer Science",
             DepartmentId = 1,
             ApplicationDate = DateTime.UtcNow,
-            Priority = ApplicationPriority.Normal,
+            Priority = "Normal", // String as expected by SubmitApplicationRequest
             PersonalStatement = "I am passionate about computer science..."
         };
 
-        var application = new EnrollmentApplication
+        var application = new Zeus.Academia.Infrastructure.Entities.EnrollmentApplication
         {
             Id = 1,
-            ApplicantEmpNr = request.ApplicantEmpNr,
+            ApplicantEmpNr = int.TryParse(request.ApplicantEmpNr, out var empNr) ? empNr : null, // Convert string to int?
+            ApplicantName = "John Doe",
             Program = request.Program,
-            DepartmentId = request.DepartmentId,
-            ApplicationDate = request.ApplicationDate,
-            Priority = request.Priority,
+            DepartmentName = "Computer Science", // Using DepartmentName instead of DepartmentId
+            ApplicationDate = request.ApplicationDate ?? DateTime.UtcNow, // Handle nullable DateTime
+            Priority = Enum.TryParse<ApplicationPriority>(request.Priority, out var priority) ? priority : ApplicationPriority.Normal, // Convert string to enum
             Status = ApplicationStatus.Submitted,
             Email = "john.doe@academia.com"
         };
 
-        _mockStudentService.Setup(x => x.SubmitEnrollmentApplicationAsync(
-                request.ApplicantEmpNr,
-                request.Program,
-                request.DepartmentId,
-                request.ApplicationDate,
-                request.Priority,
-                request.PersonalStatement,
-                request.AcademicHistory,
-                request.References,
-                request.AdditionalDocuments))
+        _mockStudentService.Setup(x => x.SubmitEnrollmentApplicationAsync(It.IsAny<Zeus.Academia.Infrastructure.Entities.EnrollmentApplication>()))
             .ReturnsAsync(application);
 
         // Act
@@ -474,7 +431,7 @@ public class StudentsControllerTests
     {
         // Arrange
         var existingStudent = CreateTestStudent();
-        var history = new List<EnrollmentHistory>
+        var history = new List<Zeus.Academia.Infrastructure.Entities.EnrollmentHistory>
         {
             new()
             {
@@ -487,7 +444,7 @@ public class StudentsControllerTests
             }
         };
 
-        _mockStudentService.Setup(x => x.GetStudentByEmpNrAsync(1))
+        _mockStudentService.Setup(x => x.GetStudentByIdAsync(1))
             .ReturnsAsync(existingStudent);
 
         _mockStudentService.Setup(x => x.GetEnrollmentHistoryAsync(1))
@@ -511,20 +468,19 @@ public class StudentsControllerTests
             EmpNr = 1,
             StudentId = "STU001",
             Name = "John Doe",
-            Email = "john.doe@academia.com",
             PhoneNumber = "123-456-7890",
-            DateOfBirth = new DateTime(1995, 1, 15),
-            Gender = "Male",
-            Nationality = "American",
-            Address = "123 Main St",
             DegreeCode = "CS",
+            DepartmentName = "Computer Science",
             Program = "Computer Science",
+            YearOfStudy = 2,
+            GPA = 3.5m,
+            EnrollmentDate = DateTime.UtcNow.AddMonths(-6),
+            ExpectedGraduationDate = new DateTime(2026, 5, 15),
             EnrollmentStatus = EnrollmentStatus.Enrolled,
             AcademicStanding = AcademicStanding.Good,
             CumulativeGPA = 3.5m,
-            CreditHoursCompleted = 60,
-            AcademicYear = 2024,
-            ExpectedGraduationDate = new DateTime(2026, 5, 15),
+            TotalCreditHoursAttempted = 60,
+            TotalCreditHoursEarned = 60,
             IsActive = true,
             CreatedDate = DateTime.UtcNow.AddMonths(-6),
             ModifiedDate = DateTime.UtcNow,
@@ -543,20 +499,19 @@ public class StudentsControllerTests
                 EmpNr = 2,
                 StudentId = "STU002",
                 Name = "Jane Smith",
-                Email = "jane.smith@academia.com",
                 PhoneNumber = "987-654-3210",
-                DateOfBirth = new DateTime(1996, 3, 20),
-                Gender = "Female",
-                Nationality = "Canadian",
-                Address = "456 Oak Ave",
                 DegreeCode = "EE",
+                DepartmentName = "Electrical Engineering",
                 Program = "Electrical Engineering",
+                YearOfStudy = 3,
+                GPA = 3.8m,
+                EnrollmentDate = DateTime.UtcNow.AddMonths(-4),
+                ExpectedGraduationDate = new DateTime(2027, 5, 15),
                 EnrollmentStatus = EnrollmentStatus.Enrolled,
                 AcademicStanding = AcademicStanding.Good,
                 CumulativeGPA = 3.8m,
-                CreditHoursCompleted = 45,
-                AcademicYear = 2024,
-                ExpectedGraduationDate = new DateTime(2027, 5, 15),
+                TotalCreditHoursAttempted = 45,
+                TotalCreditHoursEarned = 45,
                 IsActive = true,
                 CreatedDate = DateTime.UtcNow.AddMonths(-4),
                 ModifiedDate = DateTime.UtcNow,

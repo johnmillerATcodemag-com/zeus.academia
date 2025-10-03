@@ -1,0 +1,849 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using Zeus.Academia.Api.Controllers.Base;
+using Zeus.Academia.Api.Models.Common;
+using Zeus.Academia.Api.Models.Requests;
+using Zeus.Academia.Api.Models.Responses;
+using Zeus.Academia.Infrastructure.Services.Interfaces;
+using Zeus.Academia.Infrastructure.Entities;
+using AutoMapper;
+
+namespace Zeus.Academia.Api.Controllers.V1;
+
+/// <summary>
+/// Controller for managing faculty operations.
+/// </summary>
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Authorize]
+public class FacultyController : BaseApiController
+{
+    private readonly IFacultyService _facultyService;
+    private readonly IMapper _mapper;
+    private readonly ILogger<FacultyController> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the FacultyController.
+    /// </summary>
+    public FacultyController(
+        IFacultyService facultyService,
+        IMapper mapper,
+        ILogger<FacultyController> logger)
+    {
+        _facultyService = facultyService ?? throw new ArgumentNullException(nameof(facultyService));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Retrieves a paginated list of faculty.
+    /// </summary>
+    /// <param name="pageNumber">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
+    /// <returns>A paginated list of faculty.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResponse<FacultySummaryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResponse<FacultySummaryResponse>>> GetFaculty(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var facultyResult = await _facultyService.GetFacultyAsync(pageNumber, pageSize);
+            var facultyResponses = _mapper.Map<IEnumerable<FacultySummaryResponse>>(facultyResult.Faculty);
+
+            var totalPages = (int)Math.Ceiling((double)facultyResult.TotalCount / pageSize);
+
+            var response = new PagedResponse<FacultySummaryResponse>
+            {
+                Data = facultyResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = facultyResult.TotalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = pageNumber > 1,
+                HasNextPage = pageNumber < totalPages
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving faculty");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving faculty"));
+        }
+    }
+
+    /// <summary>
+    /// Searches for faculty based on criteria.
+    /// </summary>
+    /// <param name="request">The search criteria.</param>
+    /// <returns>A paginated list of matching faculty.</returns>
+    [HttpPost("search")]
+    [ProducesResponseType(typeof(PagedResponse<FacultySummaryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResponse<FacultySummaryResponse>>> SearchFaculty(
+        [FromBody] FacultySearchRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            var facultyResult = await _facultyService.SearchFacultyAsync(
+                request.SearchTerm,
+                request.DepartmentName,
+                request.RankCode,
+                request.HasTenure,
+                request.ResearchArea,
+                request.FacultyType,
+                request.Page,
+                request.PageSize);
+
+            var facultyResponses = _mapper.Map<IEnumerable<FacultySummaryResponse>>(facultyResult.Faculty);
+
+            var totalPages = (int)Math.Ceiling((double)facultyResult.TotalCount / request.PageSize);
+
+            var response = new PagedResponse<FacultySummaryResponse>
+            {
+                Data = facultyResponses,
+                PageNumber = request.Page,
+                PageSize = request.PageSize,
+                TotalCount = facultyResult.TotalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = request.Page > 1,
+                HasNextPage = request.Page < totalPages
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching faculty with criteria: {@SearchCriteria}", request);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while searching faculty"));
+        }
+    }
+
+    /// <summary>
+    /// Retrieves a specific faculty member by employee number.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <returns>The faculty member details.</returns>
+    [HttpGet("{empNr:int}")]
+    [ProducesResponseType(typeof(ApiResponse<FacultyDetailsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<FacultyDetailsResponse>>> GetFaculty(int empNr)
+    {
+        try
+        {
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            var facultyResponse = _mapper.Map<FacultyDetailsResponse>(faculty);
+            return Ok(CreateSuccessResponse(facultyResponse));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving faculty member with employee number {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving the faculty member"));
+        }
+    }
+
+    /// <summary>
+    /// Creates a new faculty member.
+    /// </summary>
+    /// <param name="request">The faculty creation data.</param>
+    /// <returns>The created faculty member details.</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<FacultyDetailsResponse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<FacultyDetailsResponse>>> CreateFaculty(
+        [FromBody] CreateFacultyRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            // Check if faculty member already exists
+            var existingFaculty = await _facultyService.GetFacultyByEmpNrAsync(request.EmpNr);
+            if (existingFaculty != null)
+            {
+                return Conflict(CreateErrorResponse($"A faculty member with employee number {request.EmpNr} already exists"));
+            }
+
+            Academic newFaculty;
+
+            // Create the appropriate faculty type
+            switch (request.FacultyType)
+            {
+                case FacultyType.Professor:
+                    newFaculty = new Professor
+                    {
+                        EmpNr = request.EmpNr,
+                        Name = request.Name,
+                        PhoneNumber = request.PhoneNumber,
+                        Salary = request.Salary,
+                        RankCode = request.RankCode,
+                        DepartmentName = request.DepartmentName,
+                        HasTenure = request.HasTenure,
+                        ResearchArea = request.ResearchArea
+                    };
+                    break;
+                case FacultyType.TeachingProf:
+                    newFaculty = new TeachingProf
+                    {
+                        EmpNr = request.EmpNr,
+                        Name = request.Name,
+                        PhoneNumber = request.PhoneNumber,
+                        Salary = request.Salary,
+                        RankCode = request.RankCode,
+                        DepartmentName = request.DepartmentName,
+                        HasTenure = request.HasTenure,
+                        ResearchArea = request.ResearchArea
+                    };
+                    break;
+                default:
+                    return BadRequest(CreateErrorResponse("Invalid faculty type specified"));
+            }
+
+            var faculty = await _facultyService.CreateFacultyAsync(newFaculty);
+
+            var facultyResponse = _mapper.Map<FacultyDetailsResponse>(faculty);
+
+            _logger.LogInformation("Faculty member created successfully with employee number {EmpNr}",
+                faculty.EmpNr);
+
+            return CreatedAtAction(
+                nameof(GetFaculty),
+                new { empNr = faculty.EmpNr },
+                CreateSuccessResponse(facultyResponse, "Faculty member created successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation while creating faculty member: {Message}", ex.Message);
+            return BadRequest(CreateErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating faculty member with employee number {EmpNr}", request.EmpNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while creating the faculty member"));
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing faculty member.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <param name="request">The updated faculty data.</param>
+    /// <returns>The updated faculty member details.</returns>
+    [HttpPut("{empNr:int}")]
+    [ProducesResponseType(typeof(ApiResponse<FacultyDetailsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<FacultyDetailsResponse>>> UpdateFaculty(
+        int empNr,
+        [FromBody] UpdateFacultyRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            var existingFaculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (existingFaculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            // Update the existing faculty object with new values
+            existingFaculty.Name = request.Name;
+            existingFaculty.PhoneNumber = request.PhoneNumber;
+            existingFaculty.Salary = request.Salary;
+
+            // Update specific fields based on type
+            if (existingFaculty is Professor professor)
+            {
+                professor.RankCode = request.RankCode;
+                professor.DepartmentName = request.DepartmentName;
+                professor.HasTenure = request.HasTenure;
+                professor.ResearchArea = request.ResearchArea;
+            }
+            else if (existingFaculty is TeachingProf teachingProf)
+            {
+                teachingProf.RankCode = request.RankCode;
+                teachingProf.DepartmentName = request.DepartmentName;
+                teachingProf.HasTenure = request.HasTenure;
+                teachingProf.ResearchArea = request.ResearchArea;
+            }
+
+            var updatedFaculty = await _facultyService.UpdateFacultyAsync(existingFaculty);
+
+            var facultyResponse = _mapper.Map<FacultyDetailsResponse>(updatedFaculty);
+
+            _logger.LogInformation("Faculty member updated successfully with employee number {EmpNr}", empNr);
+
+            return Ok(CreateSuccessResponse(facultyResponse, "Faculty member updated successfully"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation while updating faculty member: {Message}", ex.Message);
+            return BadRequest(CreateErrorResponse(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating faculty member with employee number {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while updating the faculty member"));
+        }
+    }
+
+    /// <summary>
+    /// Deletes a faculty member.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <returns>Success or failure status.</returns>
+    [HttpDelete("{empNr:int}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse>> DeleteFaculty(int empNr)
+    {
+        try
+        {
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            var deleted = await _facultyService.DeleteFacultyAsync(empNr);
+            if (!deleted)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    CreateErrorResponse("Failed to delete faculty member"));
+            }
+
+            _logger.LogInformation("Faculty member deleted successfully with employee number {EmpNr}", empNr);
+
+            return Ok(CreateSuccessResponse("Faculty member deleted successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting faculty member with employee number {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while deleting the faculty member"));
+        }
+    }
+
+    /// <summary>
+    /// Gets all professors.
+    /// </summary>
+    /// <param name="pageNumber">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
+    /// <returns>A paginated list of professors.</returns>
+    [HttpGet("professors")]
+    [ProducesResponseType(typeof(PagedResponse<FacultySummaryResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<FacultySummaryResponse>>> GetProfessors(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var professorsResult = await _facultyService.GetProfessorsAsync(pageNumber, pageSize);
+            var professorResponses = _mapper.Map<IEnumerable<FacultySummaryResponse>>(professorsResult.Professors);
+
+            var totalPages = (int)Math.Ceiling((double)professorsResult.TotalCount / pageSize);
+
+            var response = new PagedResponse<FacultySummaryResponse>
+            {
+                Data = professorResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = professorsResult.TotalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = pageNumber > 1,
+                HasNextPage = pageNumber < totalPages
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving professors");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving professors"));
+        }
+    }
+
+    /// <summary>
+    /// Gets all teaching professors.
+    /// </summary>
+    /// <param name="pageNumber">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
+    /// <returns>A paginated list of teaching professors.</returns>
+    [HttpGet("teaching-professors")]
+    [ProducesResponseType(typeof(PagedResponse<FacultySummaryResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<FacultySummaryResponse>>> GetTeachingProfessors(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var teachingProfsResult = await _facultyService.GetTeachingProfsAsync(pageNumber, pageSize);
+            var teachingProfResponses = _mapper.Map<IEnumerable<FacultySummaryResponse>>(teachingProfsResult.TeachingProfs);
+
+            var totalPages = (int)Math.Ceiling((double)teachingProfsResult.TotalCount / pageSize);
+
+            var response = new PagedResponse<FacultySummaryResponse>
+            {
+                Data = teachingProfResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = teachingProfsResult.TotalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = pageNumber > 1,
+                HasNextPage = pageNumber < totalPages
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving teaching professors");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving teaching professors"));
+        }
+    }
+
+    /// <summary>
+    /// Gets faculty by department.
+    /// </summary>
+    /// <param name="departmentName">The department name.</param>
+    /// <param name="pageNumber">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
+    /// <returns>A paginated list of faculty in the department.</returns>
+    [HttpGet("by-department/{departmentName}")]
+    [ProducesResponseType(typeof(PagedResponse<FacultySummaryResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<FacultySummaryResponse>>> GetFacultyByDepartment(
+        string departmentName,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var facultyResult = await _facultyService.GetFacultyByDepartmentAsync(departmentName, pageNumber, pageSize);
+            var facultyResponses = _mapper.Map<IEnumerable<FacultySummaryResponse>>(facultyResult.Faculty);
+
+            var totalPages = (int)Math.Ceiling((double)facultyResult.TotalCount / pageSize);
+
+            var response = new PagedResponse<FacultySummaryResponse>
+            {
+                Data = facultyResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = facultyResult.TotalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = pageNumber > 1,
+                HasNextPage = pageNumber < totalPages
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving faculty by department {DepartmentName}", departmentName);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving faculty by department"));
+        }
+    }
+
+    /// <summary>
+    /// Gets tenured faculty.
+    /// </summary>
+    /// <param name="pageNumber">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
+    /// <returns>A paginated list of tenured faculty.</returns>
+    [HttpGet("tenured")]
+    [ProducesResponseType(typeof(PagedResponse<FacultySummaryResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<FacultySummaryResponse>>> GetTenuredFaculty(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var facultyResult = await _facultyService.GetTenuredFacultyAsync(pageNumber, pageSize);
+            var facultyResponses = _mapper.Map<IEnumerable<FacultySummaryResponse>>(facultyResult.Faculty);
+
+            var totalPages = (int)Math.Ceiling((double)facultyResult.TotalCount / pageSize);
+
+            var response = new PagedResponse<FacultySummaryResponse>
+            {
+                Data = facultyResponses,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = facultyResult.TotalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = pageNumber > 1,
+                HasNextPage = pageNumber < totalPages
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving tenured faculty");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving tenured faculty"));
+        }
+    }
+
+    /// <summary>
+    /// Updates tenure status for a faculty member.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <param name="request">The tenure status update data.</param>
+    /// <returns>Success or failure status.</returns>
+    [HttpPut("{empNr:int}/tenure")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse>> UpdateTenureStatus(
+        int empNr,
+        [FromBody] UpdateTenureStatusRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            var updated = await _facultyService.UpdateTenureStatusAsync(empNr, request.HasTenure, request.Notes);
+            if (!updated)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    CreateErrorResponse("Failed to update tenure status"));
+            }
+
+            _logger.LogInformation("Tenure status updated successfully for faculty member {EmpNr}", empNr);
+
+            return Ok(CreateSuccessResponse("Tenure status updated successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating tenure status for faculty member {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while updating tenure status"));
+        }
+    }
+
+    /// <summary>
+    /// Updates rank for a faculty member.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <param name="request">The rank update data.</param>
+    /// <returns>Success or failure status.</returns>
+    [HttpPut("{empNr:int}/rank")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse>> UpdateRank(
+        int empNr,
+        [FromBody] UpdateRankRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            var updated = await _facultyService.UpdateRankAsync(empNr, request.RankCode, request.EffectiveDate, request.Notes);
+            if (!updated)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    CreateErrorResponse("Failed to update rank"));
+            }
+
+            _logger.LogInformation("Rank updated successfully for faculty member {EmpNr}", empNr);
+
+            return Ok(CreateSuccessResponse("Rank updated successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating rank for faculty member {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while updating rank"));
+        }
+    }
+
+    /// <summary>
+    /// Gets faculty profile.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <returns>The faculty profile.</returns>
+    [HttpGet("{empNr:int}/profile")]
+    [ProducesResponseType(typeof(ApiResponse<FacultyProfileResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<FacultyProfileResponse>>> GetFacultyProfile(int empNr)
+    {
+        try
+        {
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            var profile = await _facultyService.GetFacultyProfileAsync(empNr);
+            if (profile == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty profile for employee number {empNr} not found"));
+            }
+
+            var profileResponse = _mapper.Map<FacultyProfileResponse>(profile);
+            return Ok(CreateSuccessResponse(profileResponse));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving faculty profile for {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving the faculty profile"));
+        }
+    }
+
+    /// <summary>
+    /// Creates or updates faculty profile.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <param name="request">The profile data.</param>
+    /// <returns>The saved faculty profile.</returns>
+    [HttpPut("{empNr:int}/profile")]
+    [ProducesResponseType(typeof(ApiResponse<FacultyProfileResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<FacultyProfileResponse>>> SaveFacultyProfile(
+        int empNr,
+        [FromBody] SaveFacultyProfileRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            var profile = new FacultyProfile
+            {
+                AcademicEmpNr = empNr,
+                ProfessionalTitle = request.ProfessionalTitle,
+                PreferredName = request.PreferredName,
+                ProfessionalEmail = request.ProfessionalEmail,
+                WebsiteUrl = request.ProfessionalWebsite,
+                Biography = request.Biography,
+                ResearchInterests = request.ResearchInterests,
+                TeachingPhilosophy = request.TeachingPhilosophy,
+                AwardsHonors = request.Awards,
+                ProfessionalMemberships = request.ProfessionalMemberships,
+                CurrentResearchProjects = request.CurrentResearchProjects,
+                ConsultationAvailability = request.ConsultationAvailability,
+                OfficeHours = request.OfficeHours,
+                IsPublicProfile = request.IsPublicProfile
+            };
+
+            var savedProfile = await _facultyService.SaveFacultyProfileAsync(profile);
+            var profileResponse = _mapper.Map<FacultyProfileResponse>(savedProfile);
+
+            _logger.LogInformation("Faculty profile saved successfully for employee number {EmpNr}", empNr);
+
+            return Ok(CreateSuccessResponse(profileResponse, "Faculty profile saved successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving faculty profile for {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while saving the faculty profile"));
+        }
+    }
+
+    /// <summary>
+    /// Gets faculty statistics.
+    /// </summary>
+    /// <returns>Faculty statistics.</returns>
+    [HttpGet("statistics")]
+    [ProducesResponseType(typeof(ApiResponse<FacultyStatisticsResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<FacultyStatisticsResponse>>> GetFacultyStatistics()
+    {
+        try
+        {
+            var statistics = await _facultyService.GetFacultyStatisticsAsync();
+            var statisticsResponse = _mapper.Map<FacultyStatisticsResponse>(statistics);
+
+            return Ok(CreateSuccessResponse(statisticsResponse));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving faculty statistics");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while retrieving faculty statistics"));
+        }
+    }
+
+    /// <summary>
+    /// Uploads a document for a faculty member.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <param name="request">The document upload data.</param>
+    /// <returns>Upload result.</returns>
+    [HttpPost("{empNr:int}/documents")]
+    [ProducesResponseType(typeof(ApiResponse<FileUploadResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<FileUploadResponse>>> UploadDocument(
+        int empNr,
+        [FromBody] UploadFacultyDocumentRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            // Convert base64 to byte array
+            byte[] fileContent;
+            try
+            {
+                fileContent = Convert.FromBase64String(request.FileContent);
+            }
+            catch (FormatException)
+            {
+                return BadRequest(CreateErrorResponse("Invalid file content format"));
+            }
+
+            var result = await _facultyService.UploadDocumentAsync(
+                empNr,
+                request.DocumentType,
+                request.FileName,
+                fileContent);
+
+            var uploadResponse = new FileUploadResponse
+            {
+                Success = true,
+                FileName = request.FileName,
+                FileSize = fileContent.Length,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            _logger.LogInformation("Document uploaded successfully for faculty member {EmpNr}", empNr);
+
+            return Ok(CreateSuccessResponse(uploadResponse, "Document uploaded successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading document for faculty member {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while uploading the document"));
+        }
+    }
+
+    /// <summary>
+    /// Uploads a photo for a faculty member.
+    /// </summary>
+    /// <param name="empNr">The faculty member's employee number.</param>
+    /// <param name="request">The photo upload data.</param>
+    /// <returns>Upload result.</returns>
+    [HttpPost("{empNr:int}/photo")]
+    [ProducesResponseType(typeof(ApiResponse<FileUploadResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<FileUploadResponse>>> UploadPhoto(
+        int empNr,
+        [FromBody] UploadFacultyPhotoRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(CreateValidationErrorResponse(ModelState));
+            }
+
+            var faculty = await _facultyService.GetFacultyByEmpNrAsync(empNr);
+            if (faculty == null)
+            {
+                return NotFound(CreateErrorResponse($"Faculty member with employee number {empNr} not found"));
+            }
+
+            // Convert base64 to byte array
+            byte[] photoContent;
+            try
+            {
+                photoContent = Convert.FromBase64String(request.PhotoContent);
+            }
+            catch (FormatException)
+            {
+                return BadRequest(CreateErrorResponse("Invalid photo content format"));
+            }
+
+            var result = await _facultyService.UploadPhotoAsync(empNr, request.FileName, photoContent);
+
+            var uploadResponse = new FileUploadResponse
+            {
+                Success = true,
+                FileName = request.FileName,
+                FileSize = photoContent.Length,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            _logger.LogInformation("Photo uploaded successfully for faculty member {EmpNr}", empNr);
+
+            return Ok(CreateSuccessResponse(uploadResponse, "Photo uploaded successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading photo for faculty member {EmpNr}", empNr);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                CreateErrorResponse("An error occurred while uploading the photo"));
+        }
+    }
+}

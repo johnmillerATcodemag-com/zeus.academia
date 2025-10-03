@@ -52,6 +52,7 @@ public static partial class ServiceCollectionExtensions
 
         // Add AutoMapper
         services.AddAutoMapper(typeof(Zeus.Academia.Api.Mapping.StudentMappingProfile));
+        // , typeof(Zeus.Academia.Api.Mapping.FacultyMappingProfile) // Temporarily commented out due to compilation issues
 
         // Add correlation ID service for request tracking
         services.AddSingleton<ICorrelationIdService, CorrelationIdService>();

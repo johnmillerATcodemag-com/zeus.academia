@@ -1,0 +1,936 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Zeus.Academia.Infrastructure.Data;
+using Zeus.Academia.Infrastructure.Entities;
+using Zeus.Academia.Infrastructure.Enums;
+using Zeus.Academia.Infrastructure.Services.Interfaces;
+
+namespace Zeus.Academia.Infrastructure.Services;
+
+/// <summary>
+/// Service for managing faculty with comprehensive business logic - MINIMAL IMPLEMENTATION FOR TESTING
+/// </summary>
+public class FacultyService : IFacultyService
+{
+    private readonly AcademiaDbContext _context;
+    private readonly ILogger<FacultyService> _logger;
+
+    public FacultyService(
+        AcademiaDbContext context,
+        ILogger<FacultyService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    // Basic CRUD Operations
+
+    public async Task<Academic?> GetFacultyByEmpNrAsync(int empNr)
+    {
+        _logger.LogDebug("Getting faculty by employee number: {EmpNr}", empNr);
+
+        return await _context.Academics
+            .Include(a => a.DepartmentChairAssignments)
+            .Include(a => a.CommitteeChairAssignments)
+            .Include(a => a.CommitteeMemberAssignments)
+            .Where(a => a is Professor || a is TeachingProf || a is Teacher)
+            .FirstOrDefaultAsync(a => a.EmpNr == empNr);
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetFacultyAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        _logger.LogDebug("Getting faculty - Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var query = _context.Academics
+            .Where(a => a is Professor || a is TeachingProf || a is Teacher)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+
+        var faculty = await query
+            .OrderBy(a => a.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (faculty, totalCount);
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> SearchFacultyAsync(
+        string? searchTerm = null,
+        string? departmentName = null,
+        string? rankCode = null,
+        bool? hasTenure = null,
+        string? researchArea = null,
+        FacultyType? facultyType = null,
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        _logger.LogDebug("Searching faculty with criteria");
+
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var query = _context.Academics
+            .Where(a => a is Professor || a is TeachingProf || a is Teacher)
+            .AsQueryable();
+
+        // Apply search term filter
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearchTerm = searchTerm.ToLower();
+            query = query.Where(a =>
+                a.Name.ToLower().Contains(lowerSearchTerm) ||
+                (a is Professor && ((Professor)a).ResearchArea != null && 
+                 ((Professor)a).ResearchArea!.ToLower().Contains(lowerSearchTerm)) ||
+                (a is TeachingProf && ((TeachingProf)a).ResearchArea != null && 
+                 ((TeachingProf)a).ResearchArea!.ToLower().Contains(lowerSearchTerm)));
+        }
+
+        // Apply filters
+        if (!string.IsNullOrWhiteSpace(departmentName))
+        {
+            query = query.Where(a =>
+                (a is Professor && ((Professor)a).DepartmentName != null &&
+                 ((Professor)a).DepartmentName!.ToLower().Contains(departmentName.ToLower())) ||
+                (a is TeachingProf && ((TeachingProf)a).DepartmentName != null &&
+                 ((TeachingProf)a).DepartmentName!.ToLower().Contains(departmentName.ToLower())));
+        }
+
+        if (!string.IsNullOrWhiteSpace(rankCode))
+        {
+            query = query.Where(a =>
+                (a is Professor && ((Professor)a).RankCode == rankCode) ||
+                (a is TeachingProf && ((TeachingProf)a).RankCode == rankCode));
+        }
+
+        if (hasTenure.HasValue)
+        {
+            query = query.Where(a =>
+                (a is Professor && ((Professor)a).HasTenure == hasTenure.Value) ||
+                (a is TeachingProf && ((TeachingProf)a).HasTenure == hasTenure.Value));
+        }
+
+        if (!string.IsNullOrWhiteSpace(researchArea))
+        {
+            query = query.Where(a =>
+                (a is Professor && ((Professor)a).ResearchArea != null &&
+                 ((Professor)a).ResearchArea!.ToLower().Contains(researchArea.ToLower())) ||
+                (a is TeachingProf && ((TeachingProf)a).ResearchArea != null &&
+                 ((TeachingProf)a).ResearchArea!.ToLower().Contains(researchArea.ToLower())));
+        }
+
+        if (facultyType.HasValue && facultyType.Value != FacultyType.All)
+        {
+            switch (facultyType.Value)
+            {
+                case FacultyType.Professor:
+                    query = query.Where(a => a is Professor);
+                    break;
+                case FacultyType.TeachingProf:
+                    query = query.Where(a => a is TeachingProf);
+                    break;
+            }
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var faculty = await query
+            .OrderBy(a => a.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (faculty, totalCount);
+    }
+
+    public async Task<Academic> CreateFacultyAsync(Academic faculty)
+    {
+        if (faculty == null)
+            throw new ArgumentNullException(nameof(faculty));
+
+        _logger.LogInformation("Creating new faculty: {Name}", faculty.Name);
+
+        ValidateFacultyData(faculty);
+
+        // Check for duplicate employee number
+        var existingFaculty = await GetFacultyByEmpNrAsync(faculty.EmpNr);
+        if (existingFaculty != null)
+        {
+            throw new InvalidOperationException($"Faculty with employee number {faculty.EmpNr} already exists");
+        }
+
+        // Set defaults
+        faculty.CreatedBy = "System";
+        faculty.ModifiedBy = "System";
+
+        _context.Academics.Add(faculty);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Successfully created faculty with employee number: {EmpNr}", faculty.EmpNr);
+        return faculty;
+    }
+
+    public async Task<Academic> UpdateFacultyAsync(Academic faculty)
+    {
+        if (faculty == null)
+            throw new ArgumentNullException(nameof(faculty));
+
+        var existing = await GetFacultyByEmpNrAsync(faculty.EmpNr);
+        if (existing == null)
+        {
+            throw new InvalidOperationException($"Faculty with employee number {faculty.EmpNr} not found");
+        }
+
+        ValidateFacultyData(faculty);
+
+        // Update basic fields
+        existing.Name = faculty.Name;
+        existing.PhoneNumber = faculty.PhoneNumber;
+        existing.Salary = faculty.Salary;
+        existing.ModifiedBy = "System";
+        existing.ModifiedAt = DateTime.UtcNow;
+
+        // Update specific fields based on type
+        if (existing is Professor existingProf && faculty is Professor newProf)
+        {
+            existingProf.RankCode = newProf.RankCode;
+            existingProf.DepartmentName = newProf.DepartmentName;
+            existingProf.HasTenure = newProf.HasTenure;
+            existingProf.ResearchArea = newProf.ResearchArea;
+        }
+        else if (existing is TeachingProf existingTP && faculty is TeachingProf newTP)
+        {
+            existingTP.RankCode = newTP.RankCode;
+            existingTP.DepartmentName = newTP.DepartmentName;
+            existingTP.HasTenure = newTP.HasTenure;
+            existingTP.ResearchArea = newTP.ResearchArea;
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Successfully updated faculty with employee number: {EmpNr}", faculty.EmpNr);
+        return existing;
+    }
+
+    public async Task<bool> DeleteFacultyAsync(int empNr)
+    {
+        var faculty = await GetFacultyByEmpNrAsync(empNr);
+        if (faculty == null)
+        {
+            _logger.LogWarning("Attempted to delete non-existent faculty: {EmpNr}", empNr);
+            return false;
+        }
+
+        _logger.LogInformation("Deleting faculty: {Name} ({EmpNr})", faculty.Name, empNr);
+
+        _context.Academics.Remove(faculty);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    // Faculty-Specific Operations
+
+    public async Task<(IEnumerable<Professor> Professors, int TotalCount)> GetProfessorsAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        _logger.LogDebug("Getting professors - Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var query = _context.Professors
+            .Include(p => p.Department)
+            .Include(p => p.Rank)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+
+        var professors = await query
+            .OrderBy(p => p.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (professors, totalCount);
+    }
+
+    public async Task<(IEnumerable<TeachingProf> TeachingProfs, int TotalCount)> GetTeachingProfsAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        _logger.LogDebug("Getting teaching professors - Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var query = _context.TeachingProfs
+            .Include(tp => tp.Department)
+            .Include(tp => tp.Rank)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+
+        var teachingProfs = await query
+            .OrderBy(tp => tp.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (teachingProfs, totalCount);
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetFacultyByDepartmentAsync(
+        string departmentName,
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        if (string.IsNullOrWhiteSpace(departmentName))
+            throw new ArgumentException("Department name cannot be null or empty", nameof(departmentName));
+
+        return await SearchFacultyAsync(
+            departmentName: departmentName,
+            pageNumber: pageNumber,
+            pageSize: pageSize);
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetFacultyByRankAsync(
+        string rankCode,
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        if (string.IsNullOrWhiteSpace(rankCode))
+            throw new ArgumentException("Rank code cannot be null or empty", nameof(rankCode));
+
+        return await SearchFacultyAsync(
+            rankCode: rankCode,
+            pageNumber: pageNumber,
+            pageSize: pageSize);
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetTenuredFacultyAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        return await SearchFacultyAsync(
+            hasTenure: true,
+            pageNumber: pageNumber,
+            pageSize: pageSize);
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetNonTenuredFacultyAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        return await SearchFacultyAsync(
+            hasTenure: false,
+            pageNumber: pageNumber,
+            pageSize: pageSize);
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetFacultyByResearchAreaAsync(
+        string researchArea,
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        if (string.IsNullOrWhiteSpace(researchArea))
+            throw new ArgumentException("Research area cannot be null or empty", nameof(researchArea));
+
+        return await SearchFacultyAsync(
+            researchArea: researchArea,
+            pageNumber: pageNumber,
+            pageSize: pageSize);
+    }
+
+    // Tenure Management
+
+    public async Task<bool> UpdateTenureStatusAsync(int empNr, bool hasTenure, string? notes = null)
+    {
+        var faculty = await GetFacultyByEmpNrAsync(empNr);
+        if (faculty == null)
+        {
+            _logger.LogWarning("Attempted to update tenure status for non-existent faculty: {EmpNr}", empNr);
+            return false;
+        }
+
+        _logger.LogInformation("Updating tenure status for faculty: {Name} ({EmpNr}) to {HasTenure}", 
+            faculty.Name, empNr, hasTenure);
+
+        if (faculty is Professor professor)
+        {
+            professor.HasTenure = hasTenure;
+        }
+        else if (faculty is TeachingProf teachingProf)
+        {
+            teachingProf.HasTenure = hasTenure;
+        }
+        else
+        {
+            _logger.LogWarning("Cannot update tenure status for faculty type: {Type}", faculty.GetType().Name);
+            return false;
+        }
+
+        faculty.ModifiedBy = "System";
+        faculty.ModifiedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetFacultyEligibleForTenureReviewAsync(
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        _logger.LogDebug("Getting faculty eligible for tenure review");
+
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        // Get faculty who don't have tenure and have tenure track records
+        var query = _context.Academics
+            .Where(a => (a is Professor && ((Professor)a).HasTenure != true) ||
+                       (a is TeachingProf && ((TeachingProf)a).HasTenure != true))
+            .Where(a => a.TenureTracks.Any(tt => tt.IsApproachingTenureReview))
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+
+        var faculty = await query
+            .Include(a => a.TenureTracks)
+            .OrderBy(a => a.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (faculty, totalCount);
+    }
+
+    public async Task<TenureTrack?> GetTenureTrackAsync(int empNr)
+    {
+        _logger.LogDebug("Getting tenure track for faculty: {EmpNr}", empNr);
+
+        return await _context.TenureTracks
+            .Include(tt => tt.Academic)
+            .FirstOrDefaultAsync(tt => tt.AcademicEmpNr == empNr);
+    }
+
+    // Promotion Management
+
+    public async Task<bool> UpdateRankAsync(int empNr, string newRankCode, DateTime effectiveDate, string? notes = null)
+    {
+        if (string.IsNullOrWhiteSpace(newRankCode))
+            throw new ArgumentException("Rank code cannot be null or empty", nameof(newRankCode));
+
+        var faculty = await GetFacultyByEmpNrAsync(empNr);
+        if (faculty == null)
+        {
+            _logger.LogWarning("Attempted to update rank for non-existent faculty: {EmpNr}", empNr);
+            return false;
+        }
+
+        string? currentRankCode = null;
+
+        if (faculty is Professor professor)
+        {
+            currentRankCode = professor.RankCode;
+            professor.RankCode = newRankCode;
+        }
+        else if (faculty is TeachingProf teachingProf)
+        {
+            currentRankCode = teachingProf.RankCode;
+            teachingProf.RankCode = newRankCode;
+        }
+        else
+        {
+            _logger.LogWarning("Cannot update rank for faculty type: {Type}", faculty.GetType().Name);
+            return false;
+        }
+
+        if (!IsValidRankTransition(currentRankCode, newRankCode))
+        {
+            _logger.LogWarning("Invalid rank transition from {CurrentRank} to {NewRank} for faculty: {EmpNr}", 
+                currentRankCode, newRankCode, empNr);
+            return false;
+        }
+
+        _logger.LogInformation("Updating rank for faculty: {Name} ({EmpNr}) from {CurrentRank} to {NewRank}", 
+            faculty.Name, empNr, currentRankCode, newRankCode);
+
+        faculty.ModifiedBy = "System";
+        faculty.ModifiedAt = DateTime.UtcNow;
+
+        // Create promotion record
+        var promotion = new FacultyPromotion
+        {
+            AcademicEmpNr = empNr,
+            FromRankCode = currentRankCode,
+            ToRankCode = newRankCode,
+            PromotionDate = effectiveDate,
+            PromotionNotes = notes,
+            CreatedBy = "System",
+            ModifiedBy = "System"
+        };
+
+        _context.FacultyPromotions.Add(promotion);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<(IEnumerable<Academic> Faculty, int TotalCount)> GetFacultyEligibleForPromotionAsync(
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        _logger.LogDebug("Getting faculty eligible for promotion");
+
+        if (pageNumber < 1) pageNumber = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        // This is a simplified implementation - in practice, promotion eligibility
+        // would involve complex business rules based on years in rank, performance, etc.
+        var query = _context.Academics
+            .Where(a => a is Professor || a is TeachingProf)
+            .Where(a => a.TenureTracks.Any(tt => tt.IsInGoodStanding))
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+
+        var faculty = await query
+            .Include(a => a.TenureTracks)
+            .OrderBy(a => a.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (faculty, totalCount);
+    }
+
+    public async Task<IEnumerable<FacultyPromotion>> GetPromotionHistoryAsync(int empNr)
+    {
+        _logger.LogDebug("Getting promotion history for faculty: {EmpNr}", empNr);
+
+        return await _context.FacultyPromotions
+            .Where(fp => fp.AcademicEmpNr == empNr)
+            .OrderByDescending(fp => fp.EffectiveDate)
+            .ToListAsync();
+    }
+
+    // Profile Management
+
+    public async Task<FacultyProfile?> GetFacultyProfileAsync(int empNr)
+    {
+        _logger.LogDebug("Getting faculty profile for: {EmpNr}", empNr);
+
+        return await _context.FacultyProfiles
+            .Include(fp => fp.Academic)
+            .Include(fp => fp.Documents)
+            .Include(fp => fp.Publications)
+            .Include(fp => fp.OfficeAssignments)
+            .FirstOrDefaultAsync(fp => fp.AcademicEmpNr == empNr);
+    }
+
+    public async Task<FacultyProfile> SaveFacultyProfileAsync(FacultyProfile profile)
+    {
+        if (profile == null)
+            throw new ArgumentNullException(nameof(profile));
+
+        _logger.LogInformation("Saving faculty profile for: {EmpNr}", profile.AcademicEmpNr);
+
+        var existing = await GetFacultyProfileAsync(profile.AcademicEmpNr);
+
+        if (existing == null)
+        {
+            profile.CreatedBy = "System";
+            profile.ModifiedBy = "System";
+            _context.FacultyProfiles.Add(profile);
+        }
+        else
+        {
+            // Update existing profile
+            existing.ProfessionalTitle = profile.ProfessionalTitle;
+            existing.PreferredName = profile.PreferredName;
+            existing.ProfessionalEmail = profile.ProfessionalEmail;
+            existing.ProfessionalWebsite = profile.ProfessionalWebsite;
+            existing.Biography = profile.Biography;
+            existing.ResearchInterests = profile.ResearchInterests;
+            existing.TeachingPhilosophy = profile.TeachingPhilosophy;
+            existing.Awards = profile.Awards;
+            existing.ProfessionalMemberships = profile.ProfessionalMemberships;
+            existing.CurrentResearchProjects = profile.CurrentResearchProjects;
+            existing.ConsultationAvailability = profile.ConsultationAvailability;
+            existing.OfficeHours = profile.OfficeHours;
+            existing.IsPublicProfile = profile.IsPublicProfile;
+            existing.ModifiedBy = "System";
+            existing.ModifiedAt = DateTime.UtcNow;
+
+            profile = existing;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return profile;
+    }
+
+    public async Task<IEnumerable<FacultyDocument>> GetFacultyDocumentsAsync(int empNr, string? documentType = null)
+    {
+        _logger.LogDebug("Getting faculty documents for: {EmpNr}", empNr);
+
+        var query = _context.FacultyDocuments
+            .Where(fd => fd.AcademicEmpNr == empNr)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(documentType))
+        {
+            query = query.Where(fd => fd.DocumentType == documentType);
+        }
+
+        return await query
+            .OrderByDescending(fd => fd.UploadDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<FacultyPublication>> GetFacultyPublicationsAsync(int empNr, string? publicationType = null)
+    {
+        _logger.LogDebug("Getting faculty publications for: {EmpNr}", empNr);
+
+        var query = _context.FacultyPublications
+            .Where(fp => fp.AcademicId == empNr)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(publicationType))
+        {
+            query = query.Where(fp => fp.PublicationType == publicationType);
+        }
+
+        return await query
+            .OrderByDescending(fp => fp.PublicationYear)
+            .ThenBy(fp => fp.Title)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<OfficeAssignment>> GetOfficeAssignmentsAsync(int empNr)
+    {
+        _logger.LogDebug("Getting office assignments for: {EmpNr}", empNr);
+
+        return await _context.OfficeAssignments
+            .Where(oa => oa.AcademicId == empNr)
+            .OrderByDescending(oa => oa.AssignmentStartDate)
+            .ToListAsync();
+    }
+
+    // Research Management
+
+    public async Task<IEnumerable<FacultyExpertise>> GetResearchExpertiseAsync(int empNr)
+    {
+        _logger.LogDebug("Getting research expertise for: {EmpNr}", empNr);
+
+        return await _context.FacultyExpertise
+            .Include(fe => fe.ResearchArea)
+            .Where(fe => fe.AcademicEmpNr == empNr)
+            .OrderBy(fe => fe.ResearchArea.Name)
+            .ToListAsync();
+    }
+
+    public async Task<FacultyExpertise> AddResearchExpertiseAsync(int empNr, int researchAreaId, string expertiseLevel, int? yearsOfExperience = null)
+    {
+        if (string.IsNullOrWhiteSpace(expertiseLevel))
+            throw new ArgumentException("Expertise level cannot be null or empty", nameof(expertiseLevel));
+
+        _logger.LogInformation("Adding research expertise for faculty: {EmpNr}", empNr);
+
+        var expertise = new FacultyExpertise
+        {
+            AcademicEmpNr = empNr,
+            ResearchAreaId = researchAreaId,
+            ExpertiseLevel = expertiseLevel,
+            YearsOfExperience = yearsOfExperience,
+            CreatedBy = "System",
+            ModifiedBy = "System"
+        };
+
+        _context.FacultyExpertise.Add(expertise);
+        await _context.SaveChangesAsync();
+
+        return expertise;
+    }
+
+    public async Task<bool> RemoveResearchExpertiseAsync(int empNr, int expertiseId)
+    {
+        var expertise = await _context.FacultyExpertise
+            .FirstOrDefaultAsync(fe => fe.Id == expertiseId && fe.AcademicEmpNr == empNr);
+
+        if (expertise == null)
+        {
+            _logger.LogWarning("Attempted to remove non-existent expertise: {ExpertiseId} for faculty: {EmpNr}", 
+                expertiseId, empNr);
+            return false;
+        }
+
+        _logger.LogInformation("Removing research expertise: {ExpertiseId} for faculty: {EmpNr}", 
+            expertiseId, empNr);
+
+        _context.FacultyExpertise.Remove(expertise);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    // Service Management
+
+    public async Task<IEnumerable<FacultyServiceRecord>> GetServiceRecordsAsync(int empNr, string? serviceType = null)
+    {
+        _logger.LogDebug("Getting service records for: {EmpNr}", empNr);
+
+        var query = _context.FacultyServiceRecords
+            .Where(fsr => fsr.AcademicEmpNr == empNr)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(serviceType))
+        {
+            query = query.Where(fsr => fsr.ServiceType == serviceType);
+        }
+
+        return await query
+            .OrderByDescending(fsr => fsr.StartDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<CommitteeMemberAssignment>> GetCommitteeAssignmentsAsync(int empNr, bool activeOnly = true)
+    {
+        _logger.LogDebug("Getting committee assignments for: {EmpNr}", empNr);
+
+        var query = _context.CommitteeMemberAssignments
+            .Where(cma => cma.AcademicEmpNr == empNr)
+            .AsQueryable();
+
+        if (activeOnly)
+        {
+            query = query.Where(cma => cma.AssignmentStatus == "Active");
+        }
+
+        return await query
+            .OrderByDescending(cma => cma.AssignmentStartDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<AdministrativeAssignment>> GetAdministrativeAssignmentsAsync(int empNr, bool activeOnly = true)
+    {
+        _logger.LogDebug("Getting administrative assignments for: {EmpNr}", empNr);
+
+        var query = _context.AdministrativeAssignments
+            .Where(aa => aa.AcademicEmpNr == empNr)
+            .AsQueryable();
+
+        if (activeOnly)
+        {
+            query = query.Where(aa => aa.AssignmentStatus == "Active");
+        }
+
+        return await query
+            .OrderByDescending(aa => aa.AssignmentStartDate)
+            .ToListAsync();
+    }
+
+    // Statistics and Reporting
+
+    public async Task<object> GetFacultyStatisticsAsync()
+    {
+        _logger.LogDebug("Getting faculty statistics");
+
+        var totalFaculty = await _context.Academics
+            .Where(a => a is Professor || a is TeachingProf || a is Teacher)
+            .CountAsync();
+
+        var totalProfessors = await _context.Professors.CountAsync();
+        var totalTeachingProfs = await _context.TeachingProfs.CountAsync();
+        var totalTeachers = await _context.Teachers.CountAsync();
+
+        var tenuredCount = await _context.Academics
+            .Where(a => (a is Professor && ((Professor)a).HasTenure == true) ||
+                       (a is TeachingProf && ((TeachingProf)a).HasTenure == true))
+            .CountAsync();
+
+        return new
+        {
+            TotalFaculty = totalFaculty,
+            TotalProfessors = totalProfessors,
+            TotalTeachingProfs = totalTeachingProfs,
+            TotalTeachers = totalTeachers,
+            TenuredCount = tenuredCount,
+            NonTenuredCount = totalFaculty - tenuredCount
+        };
+    }
+
+    public async Task<object> GetDepartmentFacultyStatisticsAsync(string departmentName)
+    {
+        if (string.IsNullOrWhiteSpace(departmentName))
+            throw new ArgumentException("Department name cannot be null or empty", nameof(departmentName));
+
+        _logger.LogDebug("Getting faculty statistics for department: {DepartmentName}", departmentName);
+
+        var departmentFaculty = await _context.Academics
+            .Where(a => (a is Professor && ((Professor)a).DepartmentName == departmentName) ||
+                       (a is TeachingProf && ((TeachingProf)a).DepartmentName == departmentName))
+            .CountAsync();
+
+        var departmentProfessors = await _context.Professors
+            .Where(p => p.DepartmentName == departmentName)
+            .CountAsync();
+
+        var departmentTeachingProfs = await _context.TeachingProfs
+            .Where(tp => tp.DepartmentName == departmentName)
+            .CountAsync();
+
+        var departmentTenured = await _context.Academics
+            .Where(a => ((a is Professor && ((Professor)a).DepartmentName == departmentName && ((Professor)a).HasTenure == true) ||
+                        (a is TeachingProf && ((TeachingProf)a).DepartmentName == departmentName && ((TeachingProf)a).HasTenure == true)))
+            .CountAsync();
+
+        return new
+        {
+            DepartmentName = departmentName,
+            TotalFaculty = departmentFaculty,
+            TotalProfessors = departmentProfessors,
+            TotalTeachingProfs = departmentTeachingProfs,
+            TenuredCount = departmentTenured,
+            NonTenuredCount = departmentFaculty - departmentTenured
+        };
+    }
+
+    // Utility Methods
+
+    public async Task<bool> FacultyExistsAsync(int empNr)
+    {
+        return await _context.Academics
+            .Where(a => a is Professor || a is TeachingProf || a is Teacher)
+            .AnyAsync(a => a.EmpNr == empNr);
+    }
+
+    public async Task<int> GetTotalFacultyCountAsync()
+    {
+        return await _context.Academics
+            .Where(a => a is Professor || a is TeachingProf || a is Teacher)
+            .CountAsync();
+    }
+
+    public bool IsValidRankTransition(string? currentRankCode, string newRankCode)
+    {
+        // Simplified validation - in practice, this would involve complex business rules
+        if (string.IsNullOrWhiteSpace(newRankCode))
+            return false;
+
+        // Allow any transition for now - this should be enhanced with actual business rules
+        return true;
+    }
+
+    public async Task<IEnumerable<Academic>> GetAllFacultyAsync()
+    {
+        return await _context.Academics
+            .Where(a => a is Professor || a is TeachingProf || a is Teacher)
+            .OrderBy(a => a.Name)
+            .ToListAsync();
+    }
+
+    public async Task<bool> DeactivateFacultyAsync(int empNr)
+    {
+        var faculty = await GetFacultyByEmpNrAsync(empNr);
+        if (faculty == null)
+        {
+            _logger.LogWarning("Attempted to deactivate non-existent faculty: {EmpNr}", empNr);
+            return false;
+        }
+
+        _logger.LogInformation("Deactivating faculty: {Name} ({EmpNr})", faculty.Name, empNr);
+
+        // In practice, this might set an IsActive flag rather than deleting
+        faculty.ModifiedBy = "System";
+        faculty.ModifiedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<object> UploadDocumentAsync(int empNr, string documentType, string fileName, byte[] fileContent)
+    {
+        if (string.IsNullOrWhiteSpace(documentType))
+            throw new ArgumentException("Document type cannot be null or empty", nameof(documentType));
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+        if (fileContent == null || fileContent.Length == 0)
+            throw new ArgumentException("File content cannot be null or empty", nameof(fileContent));
+
+        var faculty = await GetFacultyByEmpNrAsync(empNr);
+        if (faculty == null)
+            throw new InvalidOperationException($"Faculty with employee number {empNr} not found");
+
+        _logger.LogInformation("Uploading document for faculty: {EmpNr}", empNr);
+
+        var document = new FacultyDocument
+        {
+            AcademicEmpNr = empNr,
+            DocumentType = documentType,
+            FileName = fileName,
+            FileSize = fileContent.Length,
+            UploadDate = DateTime.UtcNow,
+            IsPublic = false,
+            CreatedBy = "System",
+            ModifiedBy = "System"
+        };
+
+        _context.FacultyDocuments.Add(document);
+        await _context.SaveChangesAsync();
+
+        // In practice, you would save the file content to a storage service
+        return new { DocumentId = document.Id, Message = "Document uploaded successfully" };
+    }
+
+    public async Task<object> UploadPhotoAsync(int empNr, string fileName, byte[] fileContent)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+        if (fileContent == null || fileContent.Length == 0)
+            throw new ArgumentException("File content cannot be null or empty", nameof(fileContent));
+
+        var faculty = await GetFacultyByEmpNrAsync(empNr);
+        if (faculty == null)
+            throw new InvalidOperationException($"Faculty with employee number {empNr} not found");
+
+        _logger.LogInformation("Uploading photo for faculty: {EmpNr}", empNr);
+
+        // In practice, you would save the photo to a storage service and update the faculty profile
+        var profile = await GetFacultyProfileAsync(empNr);
+        if (profile == null)
+        {
+            profile = new FacultyProfile
+            {
+                AcademicEmpNr = empNr,
+                CreatedBy = "System",
+                ModifiedBy = "System"
+            };
+            _context.FacultyProfiles.Add(profile);
+        }
+
+        profile.ModifiedBy = "System";
+        profile.ModifiedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return new { Message = "Photo uploaded successfully" };
+    }
+
+    private void ValidateFacultyData(Academic faculty)
+    {
+        if (string.IsNullOrWhiteSpace(faculty.Name))
+            throw new ArgumentException("Faculty name is required", nameof(faculty.Name));
+
+        if (faculty.EmpNr <= 0)
+            throw new ArgumentException("Valid employee number is required", nameof(faculty.EmpNr));
+
+        // Add more validation as needed
+    }
+}
