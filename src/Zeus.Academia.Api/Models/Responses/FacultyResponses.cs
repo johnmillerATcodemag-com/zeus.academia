@@ -1089,4 +1089,492 @@ public class TeachingLoadStatistics
     public decimal OverloadPercentage { get; set; }
 }
 
+/// <summary>
+/// Response model for workload balancing results.
+/// </summary>
+public class WorkloadBalancingResult
+{
+    /// <summary>
+    /// Total number of faculty affected by balancing.
+    /// </summary>
+    public int TotalFacultyAffected { get; set; }
+
+    /// <summary>
+    /// Number of courses reassigned.
+    /// </summary>
+    public int CoursesReassigned { get; set; }
+
+    /// <summary>
+    /// Average teaching load before balancing.
+    /// </summary>
+    public decimal AverageLoadBefore { get; set; }
+
+    /// <summary>
+    /// Average teaching load after balancing.
+    /// </summary>
+    public decimal AverageLoadAfter { get; set; }
+
+    /// <summary>
+    /// Standard deviation of loads before balancing.
+    /// </summary>
+    public decimal StandardDeviationBefore { get; set; }
+
+    /// <summary>
+    /// Standard deviation of loads after balancing.
+    /// </summary>
+    public decimal StandardDeviationAfter { get; set; }
+
+    /// <summary>
+    /// List of recommended or applied changes.
+    /// </summary>
+    public List<string> RecommendedChanges { get; set; } = new();
+
+    /// <summary>
+    /// Improvement score from balancing.
+    /// </summary>
+    public decimal ImprovementScore { get; set; }
+
+    /// <summary>
+    /// Whether changes were applied or just recommended.
+    /// </summary>
+    public bool ChangesApplied { get; set; }
+}
+
+/// <summary>
+/// Response model for notification results.
+/// </summary>
+public class NotificationResult
+{
+    /// <summary>
+    /// Total number of intended recipients.
+    /// </summary>
+    public int TotalRecipients { get; set; }
+
+    /// <summary>
+    /// Number of successful deliveries.
+    /// </summary>
+    public int SuccessfulDeliveries { get; set; }
+
+    /// <summary>
+    /// Number of failed deliveries.
+    /// </summary>
+    public int FailedDeliveryCount { get; set; }
+
+    /// <summary>
+    /// Unique notification identifier.
+    /// </summary>
+    public string NotificationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Overall delivery status.
+    /// </summary>
+    public string DeliveryStatus { get; set; } = string.Empty;
+
+    /// <summary>
+    /// List of failed recipient details.
+    /// </summary>
+    public List<FailedDeliveryDetail> FailedDeliveries { get; set; } = new();
+
+    /// <summary>
+    /// Timestamp when notification was sent.
+    /// </summary>
+    public DateTime SentAt { get; set; }
+}
+
+/// <summary>
+/// Details about failed notification deliveries.
+/// </summary>
+public class FailedDeliveryDetail
+{
+    /// <summary>
+    /// Faculty member employee number.
+    /// </summary>
+    public int EmpNr { get; set; }
+
+    /// <summary>
+    /// Faculty member name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Reason for delivery failure.
+    /// </summary>
+    public string FailureReason { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether delivery will be retried.
+    /// </summary>
+    public bool WillRetry { get; set; }
+}
+
+/// <summary>
+/// Response model for advanced faculty analytics.
+/// </summary>
+public class AdvancedFacultyAnalyticsResponse
+{
+    /// <summary>
+    /// Workload-related analytics.
+    /// </summary>
+    public WorkloadAnalytics? WorkloadAnalytics { get; set; }
+
+    /// <summary>
+    /// Research-related analytics.
+    /// </summary>
+    public ResearchAnalytics? ResearchAnalytics { get; set; }
+
+    /// <summary>
+    /// Service-related analytics.
+    /// </summary>
+    public ServiceAnalytics? ServiceAnalytics { get; set; }
+
+    /// <summary>
+    /// Tenure-related analytics.
+    /// </summary>
+    public TenureAnalytics? TenureAnalytics { get; set; }
+
+    /// <summary>
+    /// Trend data over multiple years.
+    /// </summary>
+    public List<TrendDataPoint> TrendData { get; set; } = new();
+
+    /// <summary>
+    /// Future projections.
+    /// </summary>
+    public List<ProjectionDataPoint> Projections { get; set; } = new();
+}
+
+/// <summary>
+/// Workload analytics data.
+/// </summary>
+public class WorkloadAnalytics
+{
+    /// <summary>
+    /// Average teaching load across faculty.
+    /// </summary>
+    public decimal AverageTeachingLoad { get; set; }
+
+    /// <summary>
+    /// Variance in teaching loads.
+    /// </summary>
+    public decimal TeachingLoadVariance { get; set; }
+
+    /// <summary>
+    /// Number of faculty with overload.
+    /// </summary>
+    public int OverloadCount { get; set; }
+
+    /// <summary>
+    /// Number of faculty with underload.
+    /// </summary>
+    public int UnderloadCount { get; set; }
+
+    /// <summary>
+    /// Course-to-faculty ratio.
+    /// </summary>
+    public decimal CourseToFacultyRatio { get; set; }
+
+    /// <summary>
+    /// Average class size.
+    /// </summary>
+    public decimal AverageClassSize { get; set; }
+}
+
+/// <summary>
+/// Research analytics data.
+/// </summary>
+public class ResearchAnalytics
+{
+    /// <summary>
+    /// Number of active researchers.
+    /// </summary>
+    public int ActiveResearchers { get; set; }
+
+    /// <summary>
+    /// Average publications per faculty per year.
+    /// </summary>
+    public decimal AveragePublicationsPerYear { get; set; }
+
+    /// <summary>
+    /// Total grant funding amount.
+    /// </summary>
+    public decimal GrantFundingTotal { get; set; }
+
+    /// <summary>
+    /// Number of active grants.
+    /// </summary>
+    public int ActiveGrants { get; set; }
+
+    /// <summary>
+    /// Research collaboration rate.
+    /// </summary>
+    public decimal CollaborationRate { get; set; }
+
+    /// <summary>
+    /// Average research impact score.
+    /// </summary>
+    public decimal AverageImpactScore { get; set; }
+}
+
+/// <summary>
+/// Service analytics data.
+/// </summary>
+public class ServiceAnalytics
+{
+    /// <summary>
+    /// Committee participation rate.
+    /// </summary>
+    public decimal CommitteeParticipation { get; set; }
+
+    /// <summary>
+    /// Average service hours per faculty.
+    /// </summary>
+    public decimal AverageServiceHours { get; set; }
+
+    /// <summary>
+    /// Number of faculty in leadership roles.
+    /// </summary>
+    public int LeadershipRoles { get; set; }
+
+    /// <summary>
+    /// External service participation rate.
+    /// </summary>
+    public decimal ExternalServiceRate { get; set; }
+
+    /// <summary>
+    /// Service load distribution fairness score.
+    /// </summary>
+    public decimal ServiceLoadFairnessScore { get; set; }
+}
+
+/// <summary>
+/// Tenure analytics data.
+/// </summary>
+public class TenureAnalytics
+{
+    /// <summary>
+    /// Overall tenure rate.
+    /// </summary>
+    public decimal TenureRate { get; set; }
+
+    /// <summary>
+    /// Number of faculty eligible for tenure.
+    /// </summary>
+    public int EligibleForTenure { get; set; }
+
+    /// <summary>
+    /// Number of faculty in promotion pipeline.
+    /// </summary>
+    public int PromotionPipeline { get; set; }
+
+    /// <summary>
+    /// Time to tenure (average years).
+    /// </summary>
+    public decimal AverageTimeToTenure { get; set; }
+
+    /// <summary>
+    /// Tenure success rate by department.
+    /// </summary>
+    public Dictionary<string, decimal> TenureRateByDepartment { get; set; } = new();
+}
+
+/// <summary>
+/// Data point for trend analysis.
+/// </summary>
+public class TrendDataPoint
+{
+    /// <summary>
+    /// Year of the data point.
+    /// </summary>
+    public int Year { get; set; }
+
+    /// <summary>
+    /// Metric name.
+    /// </summary>
+    public string MetricName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Metric value.
+    /// </summary>
+    public decimal Value { get; set; }
+
+    /// <summary>
+    /// Change from previous year.
+    /// </summary>
+    public decimal ChangeFromPrevious { get; set; }
+
+    /// <summary>
+    /// Percentage change from previous year.
+    /// </summary>
+    public decimal PercentageChange { get; set; }
+}
+
+/// <summary>
+/// Data point for future projections.
+/// </summary>
+public class ProjectionDataPoint
+{
+    /// <summary>
+    /// Projected year.
+    /// </summary>
+    public int Year { get; set; }
+
+    /// <summary>
+    /// Metric name.
+    /// </summary>
+    public string MetricName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Projected value.
+    /// </summary>
+    public decimal ProjectedValue { get; set; }
+
+    /// <summary>
+    /// Confidence level of projection.
+    /// </summary>
+    public decimal ConfidenceLevel { get; set; }
+
+    /// <summary>
+    /// Projection methodology used.
+    /// </summary>
+    public string Methodology { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Response model for promotion eligibility validation.
+/// </summary>
+public class PromotionEligibilityResult
+{
+    /// <summary>
+    /// Whether the faculty member is eligible for promotion.
+    /// </summary>
+    public bool IsEligible { get; set; }
+
+    /// <summary>
+    /// List of requirements that are met.
+    /// </summary>
+    public List<string> RequirementsMet { get; set; } = new();
+
+    /// <summary>
+    /// List of requirements that are not met.
+    /// </summary>
+    public List<string> RequirementsNotMet { get; set; } = new();
+
+    /// <summary>
+    /// Overall eligibility score (0-100).
+    /// </summary>
+    public decimal EligibilityScore { get; set; }
+
+    /// <summary>
+    /// Recommended actions to improve eligibility.
+    /// </summary>
+    public List<string> RecommendedActions { get; set; } = new();
+
+    /// <summary>
+    /// Estimated time to meet all requirements.
+    /// </summary>
+    public TimeSpan? EstimatedTimeToEligibility { get; set; }
+
+    /// <summary>
+    /// Detailed assessment by category.
+    /// </summary>
+    public Dictionary<string, CategoryAssessment> CategoryAssessments { get; set; } = new();
+}
+
+/// <summary>
+/// Assessment of a specific category for promotion.
+/// </summary>
+public class CategoryAssessment
+{
+    /// <summary>
+    /// Category name.
+    /// </summary>
+    public string CategoryName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Score for this category (0-100).
+    /// </summary>
+    public decimal Score { get; set; }
+
+    /// <summary>
+    /// Weight of this category in overall assessment.
+    /// </summary>
+    public decimal Weight { get; set; }
+
+    /// <summary>
+    /// Whether this category meets minimum requirements.
+    /// </summary>
+    public bool MeetsMinimum { get; set; }
+
+    /// <summary>
+    /// Detailed feedback for this category.
+    /// </summary>
+    public string Feedback { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Response model for advanced report generation.
+/// </summary>
+public class AdvancedReportResult
+{
+    /// <summary>
+    /// Unique report identifier.
+    /// </summary>
+    public string ReportId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Report title.
+    /// </summary>
+    public string ReportTitle { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Date and time the report was generated.
+    /// </summary>
+    public DateTime GeneratedDate { get; set; }
+
+    /// <summary>
+    /// Number of pages in the report.
+    /// </summary>
+    public int PageCount { get; set; }
+
+    /// <summary>
+    /// Number of sections in the report.
+    /// </summary>
+    public int SectionCount { get; set; }
+
+    /// <summary>
+    /// Number of charts included.
+    /// </summary>
+    public int ChartCount { get; set; }
+
+    /// <summary>
+    /// Total number of data points analyzed.
+    /// </summary>
+    public int DataPoints { get; set; }
+
+    /// <summary>
+    /// File path to the generated report.
+    /// </summary>
+    public string FilePath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// File size in bytes.
+    /// </summary>
+    public long FileSize { get; set; }
+
+    /// <summary>
+    /// Report generation status.
+    /// </summary>
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Summary of key findings.
+    /// </summary>
+    public List<string> KeyFindings { get; set; } = new();
+
+    /// <summary>
+    /// Time taken to generate the report.
+    /// </summary>
+    public TimeSpan GenerationTime { get; set; }
+}
+
 // FileUploadResponse is defined in StudentResponses.cs to avoid duplication

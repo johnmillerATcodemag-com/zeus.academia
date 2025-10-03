@@ -679,3 +679,244 @@ public class AdvancedFacultySearchRequest : PaginationParameters
     [StringLength(4, ErrorMessage = "Sort direction must be ASC or DESC")]
     public string SortOrder { get; set; } = "ASC";
 }
+
+/// <summary>
+/// Request model for workload balancing operations.
+/// </summary>
+public class WorkloadBalancingRequest
+{
+    /// <summary>
+    /// The department name for workload balancing.
+    /// </summary>
+    [Required(ErrorMessage = "Department name is required")]
+    [StringLength(100, ErrorMessage = "Department name must not exceed 100 characters")]
+    public string DepartmentName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The academic year for balancing.
+    /// </summary>
+    [Required(ErrorMessage = "Academic year is required")]
+    [Range(2020, 2050, ErrorMessage = "Academic year must be between 2020 and 2050")]
+    public int AcademicYear { get; set; }
+
+    /// <summary>
+    /// The semester/term for balancing.
+    /// </summary>
+    [StringLength(20, ErrorMessage = "Semester must not exceed 20 characters")]
+    public string? Semester { get; set; }
+
+    /// <summary>
+    /// The balancing strategy to use.
+    /// </summary>
+    [Required(ErrorMessage = "Balancing strategy is required")]
+    [StringLength(50, ErrorMessage = "Balancing strategy must not exceed 50 characters")]
+    public string BalancingStrategy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Maximum acceptable teaching load variance.
+    /// </summary>
+    [Range(0.1, 5.0, ErrorMessage = "Max variance must be between 0.1 and 5.0")]
+    public decimal? MaxLoadVariance { get; set; }
+
+    /// <summary>
+    /// Whether to consider faculty preferences during balancing.
+    /// </summary>
+    public bool ConsiderPreferences { get; set; } = true;
+
+    /// <summary>
+    /// Whether to apply changes or just generate recommendations.
+    /// </summary>
+    public bool ApplyChanges { get; set; } = false;
+}
+
+/// <summary>
+/// Request model for faculty notifications.
+/// </summary>
+public class FacultyNotificationRequest
+{
+    /// <summary>
+    /// The notification subject.
+    /// </summary>
+    [Required(ErrorMessage = "Subject is required")]
+    [StringLength(200, ErrorMessage = "Subject must not exceed 200 characters")]
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The notification message.
+    /// </summary>
+    [Required(ErrorMessage = "Message is required")]
+    [StringLength(2000, ErrorMessage = "Message must not exceed 2000 characters")]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The type of notification.
+    /// </summary>
+    [Required(ErrorMessage = "Notification type is required")]
+    [StringLength(50, ErrorMessage = "Notification type must not exceed 50 characters")]
+    public string NotificationType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// List of faculty member employee numbers to notify.
+    /// </summary>
+    [Required(ErrorMessage = "At least one recipient is required")]
+    public List<int> Recipients { get; set; } = new();
+
+    /// <summary>
+    /// The notification priority.
+    /// </summary>
+    [StringLength(20, ErrorMessage = "Priority must not exceed 20 characters")]
+    public string Priority { get; set; } = "Normal";
+
+    /// <summary>
+    /// The delivery method for the notification.
+    /// </summary>
+    [StringLength(20, ErrorMessage = "Delivery method must not exceed 20 characters")]
+    public string DeliveryMethod { get; set; } = "Email";
+
+    /// <summary>
+    /// Whether to send immediately or schedule for later.
+    /// </summary>
+    public bool SendImmediately { get; set; } = true;
+
+    /// <summary>
+    /// Scheduled delivery time (if not sending immediately).
+    /// </summary>
+    public DateTime? ScheduledDeliveryTime { get; set; }
+}
+
+/// <summary>
+/// Request model for advanced faculty analytics.
+/// </summary>
+public class AdvancedAnalyticsRequest
+{
+    /// <summary>
+    /// The academic year for analytics.
+    /// </summary>
+    [Required(ErrorMessage = "Academic year is required")]
+    [Range(2020, 2050, ErrorMessage = "Academic year must be between 2020 and 2050")]
+    public int AcademicYear { get; set; }
+
+    /// <summary>
+    /// Types of analytics to include.
+    /// </summary>
+    [Required(ErrorMessage = "At least one analytics type is required")]
+    public List<string> AnalyticsTypes { get; set; } = new();
+
+    /// <summary>
+    /// Department filter for analytics.
+    /// </summary>
+    [StringLength(100, ErrorMessage = "Department filter must not exceed 100 characters")]
+    public string? DepartmentFilter { get; set; }
+
+    /// <summary>
+    /// Whether to include trend analysis.
+    /// </summary>
+    public bool IncludeTrends { get; set; } = false;
+
+    /// <summary>
+    /// Whether to include projections.
+    /// </summary>
+    public bool IncludeProjections { get; set; } = false;
+
+    /// <summary>
+    /// Number of years for trend analysis.
+    /// </summary>
+    [Range(1, 10, ErrorMessage = "Trend years must be between 1 and 10")]
+    public int TrendYears { get; set; } = 5;
+
+    /// <summary>
+    /// Number of years for projections.
+    /// </summary>
+    [Range(1, 10, ErrorMessage = "Projection years must be between 1 and 10")]
+    public int ProjectionYears { get; set; } = 3;
+}
+
+/// <summary>
+/// Request model for promotion eligibility validation.
+/// </summary>
+public class PromotionEligibilityRequest
+{
+    /// <summary>
+    /// The target rank code for promotion.
+    /// </summary>
+    [Required(ErrorMessage = "Target rank code is required")]
+    [StringLength(20, ErrorMessage = "Rank code must not exceed 20 characters")]
+    public string ToRankCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether to check research requirements.
+    /// </summary>
+    public bool CheckResearchRequirements { get; set; } = true;
+
+    /// <summary>
+    /// Whether to check service requirements.
+    /// </summary>
+    public bool CheckServiceRequirements { get; set; } = true;
+
+    /// <summary>
+    /// Whether to check teaching requirements.
+    /// </summary>
+    public bool CheckTeachingRequirements { get; set; } = true;
+
+    /// <summary>
+    /// Whether to check time-in-rank requirements.
+    /// </summary>
+    public bool CheckTimeInRankRequirements { get; set; } = true;
+
+    /// <summary>
+    /// Whether to provide detailed recommendations.
+    /// </summary>
+    public bool ProvideRecommendations { get; set; } = true;
+}
+
+/// <summary>
+/// Request model for advanced report generation.
+/// </summary>
+public class AdvancedReportRequest
+{
+    /// <summary>
+    /// The type of report to generate.
+    /// </summary>
+    [Required(ErrorMessage = "Report type is required")]
+    [StringLength(50, ErrorMessage = "Report type must not exceed 50 characters")]
+    public string ReportType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The academic year for the report.
+    /// </summary>
+    [Required(ErrorMessage = "Academic year is required")]
+    [Range(2020, 2050, ErrorMessage = "Academic year must be between 2020 and 2050")]
+    public int AcademicYear { get; set; }
+
+    /// <summary>
+    /// Department filter for the report.
+    /// </summary>
+    [StringLength(100, ErrorMessage = "Department filter must not exceed 100 characters")]
+    public string? DepartmentFilter { get; set; }
+
+    /// <summary>
+    /// Sections to include in the report.
+    /// </summary>
+    public List<string> IncludeSections { get; set; } = new();
+
+    /// <summary>
+    /// The output format for the report.
+    /// </summary>
+    [StringLength(10, ErrorMessage = "Format must not exceed 10 characters")]
+    public string Format { get; set; } = "PDF";
+
+    /// <summary>
+    /// Whether to include charts and visualizations.
+    /// </summary>
+    public bool IncludeCharts { get; set; } = true;
+
+    /// <summary>
+    /// Whether to include year-over-year comparisons.
+    /// </summary>
+    public bool IncludeComparisons { get; set; } = false;
+
+    /// <summary>
+    /// Custom parameters for the report.
+    /// </summary>
+    public Dictionary<string, object> CustomParameters { get; set; } = new();
+}

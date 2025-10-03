@@ -559,12 +559,14 @@ public class FacultyControllerTests
     public async Task GetFacultyStatistics_ValidRequest_ReturnsStatistics()
     {
         // Arrange
-        var expectedStats = new
+        var expectedStats = new Zeus.Academia.Api.Mapping.FacultyStatistics
         {
             TotalFaculty = 100,
             TotalProfessors = 60,
             TotalTeachingProfs = 40,
-            FacultyWithTenure = 75,
+            TotalTeachers = 25,
+            TenuredCount = 75,
+            NonTenuredCount = 25,
             FacultyByDepartment = new Dictionary<string, int>
             {
                 ["Computer Science"] = 25,
@@ -576,6 +578,11 @@ public class FacultyControllerTests
                 ["PROF"] = 30,
                 ["ASPR"] = 35,
                 ["ASTP"] = 35
+            },
+            FacultyByTenureStatus = new Dictionary<string, int>
+            {
+                ["Tenured"] = 75,
+                ["Non-Tenured"] = 25
             }
         };
 
@@ -963,6 +970,458 @@ public class FacultyControllerTests
         var response = Assert.IsType<ApiResponse>(badRequestResult.Value);
         Assert.False(response.Success);
         Assert.Contains("Academic year must be between 2020 and 2050", response.Message);
+    }
+
+    #endregion
+
+    #region Task 7 Business Logic Tests
+
+    [Fact]
+    public async Task CreateFaculty_Should_Assign_Appropriate_Rank()
+    {
+        // Arrange
+        var request = new CreateFacultyRequest
+        {
+            FacultyType = FacultyType.Professor,
+            Name = "Dr. Jane Smith",
+            EmpNr = 123,
+            RankCode = "ASST_PROF"
+        };
+
+        var expectedFaculty = CreateTestProfessor();
+        expectedFaculty.Name = "Dr. Jane Smith";
+
+        _mockFacultyService.Setup(x => x.CreateFacultyAsync(It.IsAny<Academic>()))
+            .ReturnsAsync(expectedFaculty);
+
+        // Act
+        var result = await _controller.CreateFaculty(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<FacultyDetailsResponse>>(createdResult.Value);
+        Assert.True(response.Success);
+        Assert.Contains("Faculty member created successfully", response.Message);
+
+        // Verify service was called with appropriate faculty
+        _mockFacultyService.Verify(x => x.CreateFacultyAsync(It.IsAny<Academic>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PromoteFaculty_Should_Update_Rank_And_Notify()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new UpdateRankRequest
+        {
+            RankCode = "ASSOC_PROF",
+            EffectiveDate = DateTime.Today,
+            Notes = "Promotion to Associate Professor with tenure"
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+        existingFaculty.RankCode = "ASST_PROF";
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+        _mockFacultyService.Setup(x => x.UpdateRankAsync(empNr, request.RankCode, request.EffectiveDate, request.Notes))
+            .ReturnsAsync(true);
+        _mockFacultyService.Setup(x => x.SendPromotionNotificationAsync(empNr, request.RankCode))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.UpdateRank(empNr, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.Contains("Rank updated successfully", response.Message);
+
+        // Verify notification was sent
+        _mockFacultyService.Verify(x => x.SendPromotionNotificationAsync(empNr, request.RankCode), Times.Once);
+    }
+
+    [Fact]
+    public async Task AssignCourse_Should_Check_Teaching_Load()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new AssignCourseRequest
+        {
+            CourseId = 101,
+            Semester = "Fall",
+            AcademicYear = 2024,
+            CreditHours = 3
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        var currentWorkload = new FacultyWorkloadResponse
+        {
+            EmpNr = empNr,
+            TotalTeachingLoad = 9.0m, // Already has 9 credit hours
+            WorkloadPercentage = 75.0m,
+            HasOverload = false
+        };
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+        _mockFacultyService.Setup(x => x.GetCurrentWorkloadAsync(empNr, request.AcademicYear, request.Semester))
+            .ReturnsAsync((object)currentWorkload);
+        _mockFacultyService.Setup(x => x.ValidateTeachingLoadAsync(empNr, 12.0m)) // 9 + 3 = 12
+            .ReturnsAsync(true);
+        _mockFacultyService.Setup(x => x.AssignCourseAsync(empNr, request.CourseId, request.Semester, request.AcademicYear, request.CreditHours))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.AssignCourseWithValidation(empNr, request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<CourseAssignmentResponse>>(createdResult.Value);
+        Assert.True(response.Success);
+
+        // Verify workload validation was performed
+        _mockFacultyService.Verify(x => x.ValidateTeachingLoadAsync(empNr, 12.0m), Times.Once);
+    }
+
+    [Fact]
+    public async Task AssignCourse_Should_Reject_If_Overload_Not_Approved()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new AssignCourseRequest
+        {
+            CourseId = 101,
+            Semester = "Fall",
+            AcademicYear = 2024,
+            CreditHours = 6 // This would cause overload
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        var currentWorkload = new FacultyWorkloadResponse
+        {
+            EmpNr = empNr,
+            TotalTeachingLoad = 12.0m, // Already at maximum
+            WorkloadPercentage = 100.0m,
+            HasOverload = false
+        };
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+        _mockFacultyService.Setup(x => x.GetCurrentWorkloadAsync(empNr, request.AcademicYear, request.Semester))
+            .ReturnsAsync((object)currentWorkload);
+        _mockFacultyService.Setup(x => x.ValidateTeachingLoadAsync(empNr, 18.0m)) // 12 + 6 = 18 (overload)
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.AssignCourseWithValidation(empNr, request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse>(badRequestResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("would exceed maximum teaching load", response.Message);
+    }
+
+    [Fact]
+    public async Task BalanceWorkload_Should_Redistribute_Courses()
+    {
+        // Arrange
+        var request = new WorkloadBalancingRequest
+        {
+            DepartmentName = "Computer Science",
+            AcademicYear = 2024,
+            Semester = "Fall",
+            BalancingStrategy = "EquitableDistribution"
+        };
+
+        var balancingResult = new WorkloadBalancingResult
+        {
+            TotalFacultyAffected = 5,
+            CoursesReassigned = 3,
+            AverageLoadBefore = 13.2m,
+            AverageLoadAfter = 12.0m,
+            StandardDeviationBefore = 2.5m,
+            StandardDeviationAfter = 1.1m,
+            RecommendedChanges = new List<string>
+            {
+                "Move CS 301 from Dr. Smith to Dr. Johnson",
+                "Move CS 405 from Dr. Brown to Dr. Davis"
+            }
+        };
+
+        _mockFacultyService.Setup(x => x.BalanceWorkloadAsync(request.DepartmentName, request.AcademicYear, request.Semester, request.BalancingStrategy))
+            .ReturnsAsync((object)balancingResult);
+
+        // Act
+        var result = await _controller.BalanceWorkload(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<WorkloadBalancingResult>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.Equal(5, response.Data.TotalFacultyAffected);
+        Assert.Equal(3, response.Data.CoursesReassigned);
+        Assert.True(response.Data.StandardDeviationAfter < response.Data.StandardDeviationBefore);
+    }
+
+    [Fact]
+    public async Task SendFacultyNotification_Should_Deliver_To_Recipients()
+    {
+        // Arrange
+        var request = new FacultyNotificationRequest
+        {
+            Subject = "Faculty Meeting Notice",
+            Message = "Monthly faculty meeting scheduled for next week",
+            NotificationType = "Meeting",
+            Recipients = new List<int> { 1, 2, 3 },
+            Priority = "High",
+            DeliveryMethod = "Email"
+        };
+
+        var notificationResult = new NotificationResult
+        {
+            TotalRecipients = 3,
+            SuccessfulDeliveries = 3,
+            FailedDeliveryCount = 0,
+            NotificationId = "NOTIF-12345",
+            DeliveryStatus = "Completed"
+        };
+
+        _mockFacultyService.Setup(x => x.SendFacultyNotificationAsync(request.Subject, request.Message, request.Recipients, request.NotificationType))
+            .ReturnsAsync((object)notificationResult);
+
+        // Act
+        var result = await _controller.SendFacultyNotification(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<NotificationResult>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.Equal(3, response.Data.TotalRecipients);
+        Assert.Equal(3, response.Data.SuccessfulDeliveries);
+        Assert.Equal("Completed", response.Data.DeliveryStatus);
+    }
+
+    [Fact]
+    public async Task GetAdvancedFacultyAnalytics_Should_Return_Comprehensive_Data()
+    {
+        // Arrange
+        var request = new AdvancedAnalyticsRequest
+        {
+            AcademicYear = 2024,
+            AnalyticsTypes = new List<string> { "Workload", "Research", "Service", "Tenure" },
+            DepartmentFilter = "Computer Science",
+            IncludeTrends = true,
+            IncludeProjections = true
+        };
+
+        var analyticsResult = new AdvancedFacultyAnalyticsResponse
+        {
+            WorkloadAnalytics = new WorkloadAnalytics
+            {
+                AverageTeachingLoad = 12.0m,
+                TeachingLoadVariance = 1.5m,
+                OverloadCount = 2,
+                UnderloadCount = 1
+            },
+            ResearchAnalytics = new ResearchAnalytics
+            {
+                ActiveResearchers = 15,
+                AveragePublicationsPerYear = 2.3m,
+                GrantFundingTotal = 250000m
+            },
+            ServiceAnalytics = new ServiceAnalytics
+            {
+                CommitteeParticipation = 0.85m,
+                AverageServiceHours = 120m,
+                LeadershipRoles = 8
+            },
+            TenureAnalytics = new TenureAnalytics
+            {
+                TenureRate = 0.78m,
+                EligibleForTenure = 3,
+                PromotionPipeline = 5
+            }
+        };
+
+        _mockFacultyService.Setup(x => x.GetAdvancedFacultyAnalyticsAsync(request.AcademicYear, request.AnalyticsTypes, request.DepartmentFilter))
+            .ReturnsAsync((object)analyticsResult);
+
+        // Act
+        var result = await _controller.GetAdvancedFacultyAnalytics(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<AdvancedFacultyAnalyticsResponse>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data.WorkloadAnalytics);
+        Assert.NotNull(response.Data.ResearchAnalytics);
+        Assert.NotNull(response.Data.ServiceAnalytics);
+        Assert.NotNull(response.Data.TenureAnalytics);
+        Assert.Equal(12.0m, response.Data.WorkloadAnalytics.AverageTeachingLoad);
+    }
+
+    [Fact]
+    public async Task ValidatePromotionEligibility_Should_Check_Requirements()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new PromotionEligibilityRequest
+        {
+            ToRankCode = "ASSOC_PROF",
+            CheckResearchRequirements = true,
+            CheckServiceRequirements = true,
+            CheckTeachingRequirements = true
+        };
+
+        var eligibilityResult = new PromotionEligibilityResult
+        {
+            IsEligible = true,
+            RequirementsMet = new List<string>
+            {
+                "Minimum years in rank: Met (6 years)",
+                "Teaching effectiveness: Met (4.2/5.0 average)",
+                "Research productivity: Met (8 publications, 2 grants)",
+                "Service contribution: Met (Committee chair, editorial board)"
+            },
+            RequirementsNotMet = new List<string>(),
+            EligibilityScore = 85.0m,
+            RecommendedActions = new List<string>()
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+        _mockFacultyService.Setup(x => x.ValidatePromotionEligibilityAsync(empNr, request.ToRankCode, request.CheckResearchRequirements, request.CheckServiceRequirements, request.CheckTeachingRequirements))
+            .ReturnsAsync((object)eligibilityResult);
+
+        // Act
+        var result = await _controller.ValidatePromotionEligibility(empNr, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<PromotionEligibilityResult>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.True(response.Data.IsEligible);
+        Assert.Equal(85.0m, response.Data.EligibilityScore);
+        Assert.Equal(4, response.Data.RequirementsMet.Count);
+        Assert.Empty(response.Data.RequirementsNotMet);
+    }
+
+    [Fact]
+    public async Task ValidatePromotionEligibility_Should_Identify_Missing_Requirements()
+    {
+        // Arrange
+        var empNr = 2;
+        var request = new PromotionEligibilityRequest
+        {
+            ToRankCode = "FULL_PROF",
+            CheckResearchRequirements = true,
+            CheckServiceRequirements = true,
+            CheckTeachingRequirements = true
+        };
+
+        var eligibilityResult = new PromotionEligibilityResult
+        {
+            IsEligible = false,
+            RequirementsMet = new List<string>
+            {
+                "Minimum years in rank: Met (8 years)",
+                "Teaching effectiveness: Met (4.1/5.0 average)"
+            },
+            RequirementsNotMet = new List<string>
+            {
+                "Research productivity: Not met (Need 5 more publications)",
+                "External recognition: Not met (Need external letters)",
+                "Leadership service: Not met (Need major committee chair experience)"
+            },
+            EligibilityScore = 45.0m,
+            RecommendedActions = new List<string>
+            {
+                "Focus on high-impact publications",
+                "Seek external collaboration opportunities",
+                "Accept committee leadership roles"
+            }
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+        _mockFacultyService.Setup(x => x.ValidatePromotionEligibilityAsync(empNr, request.ToRankCode, request.CheckResearchRequirements, request.CheckServiceRequirements, request.CheckTeachingRequirements))
+            .ReturnsAsync((object)eligibilityResult);
+
+        // Act
+        var result = await _controller.ValidatePromotionEligibility(empNr, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<PromotionEligibilityResult>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.False(response.Data.IsEligible);
+        Assert.Equal(45.0m, response.Data.EligibilityScore);
+        Assert.Equal(2, response.Data.RequirementsMet.Count);
+        Assert.Equal(3, response.Data.RequirementsNotMet.Count);
+        Assert.Equal(3, response.Data.RecommendedActions.Count);
+    }
+
+    [Fact]
+    public async Task GenerateAdvancedReport_Should_Create_Comprehensive_Faculty_Report()
+    {
+        // Arrange
+        var request = new AdvancedReportRequest
+        {
+            ReportType = "ComprehensiveFacultyReport",
+            AcademicYear = 2024,
+            DepartmentFilter = "Computer Science",
+            IncludeSections = new List<string>
+            {
+                "Demographics", "Workload", "Research", "Service", "Promotions", "Tenure"
+            },
+            Format = "PDF",
+            IncludeCharts = true,
+            IncludeComparisons = true
+        };
+
+        var reportResult = new AdvancedReportResult
+        {
+            ReportId = "RPT-COMP-CS-2024-001",
+            ReportTitle = "Comprehensive Faculty Report - Computer Science 2024",
+            GeneratedDate = DateTime.UtcNow,
+            PageCount = 45,
+            SectionCount = 6,
+            ChartCount = 12,
+            DataPoints = 847,
+            FilePath = "/reports/comprehensive/cs-2024-001.pdf",
+            FileSize = 2485632, // ~2.4MB
+            Status = "Completed"
+        };
+
+        _mockFacultyService.Setup(x => x.GenerateAdvancedReportAsync(request.ReportType, request.AcademicYear, request.DepartmentFilter, request.IncludeSections))
+            .ReturnsAsync((object)reportResult);
+
+        // Act
+        var result = await _controller.GenerateAdvancedReport(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<AdvancedReportResult>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.Equal("RPT-COMP-CS-2024-001", response.Data.ReportId);
+        Assert.Equal(45, response.Data.PageCount);
+        Assert.Equal(12, response.Data.ChartCount);
+        Assert.Equal("Completed", response.Data.Status);
+        Assert.Contains("pdf", response.Data.FilePath);
     }
 
     #endregion

@@ -356,6 +356,94 @@ public interface IFacultyService
     /// <param name="fileContent">File content</param>
     /// <returns>Upload result</returns>
     Task<object> UploadPhotoAsync(int empNr, string fileName, byte[] fileContent);
+
+    // Task 7 - Business Logic and Advanced Services
+
+    /// <summary>
+    /// Sends a promotion notification to a faculty member
+    /// </summary>
+    /// <param name="empNr">Faculty employee number</param>
+    /// <param name="newRankCode">New rank code</param>
+    /// <returns>True if notification sent successfully</returns>
+    Task<bool> SendPromotionNotificationAsync(int empNr, string newRankCode);
+
+    /// <summary>
+    /// Gets current workload for a faculty member
+    /// </summary>
+    /// <param name="empNr">Faculty employee number</param>
+    /// <param name="academicYear">Academic year</param>
+    /// <param name="semester">Semester</param>
+    /// <returns>Current workload information</returns>
+    Task<object> GetCurrentWorkloadAsync(int empNr, int academicYear, string? semester = null);
+
+    /// <summary>
+    /// Validates if a teaching load is acceptable for a faculty member
+    /// </summary>
+    /// <param name="empNr">Faculty employee number</param>
+    /// <param name="proposedLoad">Proposed teaching load</param>
+    /// <returns>True if load is acceptable</returns>
+    Task<bool> ValidateTeachingLoadAsync(int empNr, decimal proposedLoad);
+
+    /// <summary>
+    /// Assigns a course to a faculty member
+    /// </summary>
+    /// <param name="empNr">Faculty employee number</param>
+    /// <param name="courseId">Course ID</param>
+    /// <param name="semester">Semester</param>
+    /// <param name="academicYear">Academic year</param>
+    /// <param name="creditHours">Credit hours</param>
+    /// <returns>True if assignment successful</returns>
+    Task<bool> AssignCourseAsync(int empNr, int courseId, string semester, int academicYear, decimal creditHours);
+
+    /// <summary>
+    /// Balances workload across faculty in a department
+    /// </summary>
+    /// <param name="departmentName">Department name</param>
+    /// <param name="academicYear">Academic year</param>
+    /// <param name="semester">Semester</param>
+    /// <param name="strategy">Balancing strategy</param>
+    /// <returns>Balancing results</returns>
+    Task<object> BalanceWorkloadAsync(string departmentName, int academicYear, string? semester, string strategy);
+
+    /// <summary>
+    /// Sends notifications to faculty members
+    /// </summary>
+    /// <param name="subject">Notification subject</param>
+    /// <param name="message">Notification message</param>
+    /// <param name="recipients">List of recipient employee numbers</param>
+    /// <param name="notificationType">Type of notification</param>
+    /// <returns>Notification results</returns>
+    Task<object> SendFacultyNotificationAsync(string subject, string message, List<int> recipients, string notificationType);
+
+    /// <summary>
+    /// Gets advanced faculty analytics
+    /// </summary>
+    /// <param name="academicYear">Academic year</param>
+    /// <param name="analyticsTypes">Types of analytics to include</param>
+    /// <param name="departmentFilter">Department filter</param>
+    /// <returns>Advanced analytics data</returns>
+    Task<object> GetAdvancedFacultyAnalyticsAsync(int academicYear, List<string> analyticsTypes, string? departmentFilter = null);
+
+    /// <summary>
+    /// Validates promotion eligibility for a faculty member
+    /// </summary>
+    /// <param name="empNr">Faculty employee number</param>
+    /// <param name="toRankCode">Target rank code</param>
+    /// <param name="checkResearch">Check research requirements</param>
+    /// <param name="checkService">Check service requirements</param>
+    /// <param name="checkTeaching">Check teaching requirements</param>
+    /// <returns>Eligibility validation results</returns>
+    Task<object> ValidatePromotionEligibilityAsync(int empNr, string toRankCode, bool checkResearch = true, bool checkService = true, bool checkTeaching = true);
+
+    /// <summary>
+    /// Generates advanced reports
+    /// </summary>
+    /// <param name="reportType">Type of report</param>
+    /// <param name="academicYear">Academic year</param>
+    /// <param name="departmentFilter">Department filter</param>
+    /// <param name="includeSections">Sections to include</param>
+    /// <returns>Report generation results</returns>
+    Task<object> GenerateAdvancedReportAsync(string reportType, int academicYear, string? departmentFilter, List<string> includeSections);
 }
 
 /// <summary>
