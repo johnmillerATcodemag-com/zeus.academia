@@ -51,6 +51,31 @@ public abstract class Academic : BaseEntity
     /// Navigation property for relationships and derived types.
     /// </summary>
     public virtual ICollection<AcademicDegree> AcademicDegrees { get; set; } = new List<AcademicDegree>();
+
+    /// <summary>
+    /// Navigation property for faculty employment history records.
+    /// </summary>
+    public virtual ICollection<FacultyEmploymentHistory> EmploymentHistory { get; set; } = new List<FacultyEmploymentHistory>();
+
+    /// <summary>
+    /// Navigation property for faculty promotion records.
+    /// </summary>
+    public virtual ICollection<FacultyPromotion> Promotions { get; set; } = new List<FacultyPromotion>();
+
+    /// <summary>
+    /// Navigation property for faculty research expertise.
+    /// </summary>
+    public virtual ICollection<FacultyExpertise> ResearchExpertise { get; set; } = new List<FacultyExpertise>();
+
+    /// <summary>
+    /// Navigation property for faculty service records.
+    /// </summary>
+    public virtual ICollection<FacultyServiceRecord> ServiceRecords { get; set; } = new List<FacultyServiceRecord>();
+
+    /// <summary>
+    /// Navigation property for committee leadership positions.
+    /// </summary>
+    public virtual ICollection<CommitteeLeadership> CommitteeLeaderships { get; set; } = new List<CommitteeLeadership>();
 }
 
 /// <summary>

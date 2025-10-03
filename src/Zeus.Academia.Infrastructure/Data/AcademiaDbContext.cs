@@ -69,6 +69,14 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<Award> Awards { get; set; } = null!;
     public DbSet<DegreeProgress> DegreeProgresses { get; set; } = null!;
 
+    // Faculty Management Entities (Prompt 5 Task 1)
+    public DbSet<FacultyEmploymentHistory> FacultyEmploymentHistory { get; set; } = null!;
+    public DbSet<FacultyPromotion> FacultyPromotions { get; set; } = null!;
+    public DbSet<ResearchArea> ResearchAreas { get; set; } = null!;
+    public DbSet<FacultyExpertise> FacultyExpertise { get; set; } = null!;
+    public DbSet<FacultyServiceRecord> FacultyServiceRecords { get; set; } = null!;
+    public DbSet<CommitteeLeadership> CommitteeLeadership { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
@@ -1639,6 +1647,207 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
 
             entity.HasIndex(dp => dp.ExpectedGraduationDate)
                 .HasDatabaseName("IX_DegreeProgress_ExpectedGraduation");
+        });
+
+        // Configure Faculty Management entities (Prompt 5 Task 1)
+        ConfigureFacultyManagementEntities(modelBuilder);
+    }
+
+    /// <summary>
+    /// Configures Faculty Management entities and their relationships (Prompt 5 Task 1).
+    /// </summary>
+    /// <param name="modelBuilder">The model builder instance.</param>
+    private void ConfigureFacultyManagementEntities(ModelBuilder modelBuilder)
+    {
+        // Configure FacultyEmploymentHistory
+        modelBuilder.Entity<FacultyEmploymentHistory>(entity =>
+        {
+            entity.HasKey(feh => feh.Id);
+
+            // Configure relationships
+            entity.HasOne(feh => feh.Academic)
+                .WithMany(a => a.EmploymentHistory)
+                .HasForeignKey(feh => feh.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(feh => feh.Department)
+                .WithMany()
+                .HasForeignKey(feh => feh.DepartmentName)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure decimal precision
+            entity.Property(feh => feh.AnnualSalary)
+                .HasPrecision(10, 2);
+
+            entity.Property(feh => feh.FtePercentage)
+                .HasPrecision(5, 2);
+
+            entity.Property(feh => feh.TeachingLoadPercentage)
+                .HasPrecision(5, 2);
+
+            entity.Property(feh => feh.ResearchExpectationPercentage)
+                .HasPrecision(5, 2);
+
+            entity.Property(feh => feh.ServiceExpectationPercentage)
+                .HasPrecision(5, 2);
+
+            // Configure indexes
+            entity.HasIndex(feh => feh.AcademicEmpNr)
+                .HasDatabaseName("IX_FacultyEmploymentHistory_Academic");
+
+            entity.HasIndex(feh => feh.IsCurrentPosition)
+                .HasDatabaseName("IX_FacultyEmploymentHistory_Current");
+
+            entity.HasIndex(feh => new { feh.AcademicEmpNr, feh.StartDate })
+                .HasDatabaseName("IX_FacultyEmploymentHistory_Academic_StartDate");
+        });
+
+        // Configure FacultyPromotion
+        modelBuilder.Entity<FacultyPromotion>(entity =>
+        {
+            entity.HasKey(fp => fp.Id);
+
+            // Configure relationships
+            entity.HasOne(fp => fp.Academic)
+                .WithMany(a => a.Promotions)
+                .HasForeignKey(fp => fp.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(fp => fp.FromRank)
+                .WithMany()
+                .HasForeignKey(fp => fp.FromRankCode)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(fp => fp.ToRank)
+                .WithMany()
+                .HasForeignKey(fp => fp.ToRankCode)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure indexes
+            entity.HasIndex(fp => fp.AcademicEmpNr)
+                .HasDatabaseName("IX_FacultyPromotion_Academic");
+
+            entity.HasIndex(fp => fp.Status)
+                .HasDatabaseName("IX_FacultyPromotion_Status");
+
+            entity.HasIndex(fp => fp.EffectiveDate)
+                .HasDatabaseName("IX_FacultyPromotion_EffectiveDate");
+        });
+
+        // Configure ResearchArea
+        modelBuilder.Entity<ResearchArea>(entity =>
+        {
+            entity.HasKey(ra => ra.Code);
+
+            // Configure self-referencing relationship
+            entity.HasOne(ra => ra.ParentArea)
+                .WithMany(ra => ra.ChildAreas)
+                .HasForeignKey(ra => ra.ParentAreaCode)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure indexes
+            entity.HasIndex(ra => ra.IsActive)
+                .HasDatabaseName("IX_ResearchArea_IsActive");
+
+            entity.HasIndex(ra => ra.PrimaryDiscipline)
+                .HasDatabaseName("IX_ResearchArea_Discipline");
+
+            entity.HasIndex(ra => ra.ParentAreaCode)
+                .HasDatabaseName("IX_ResearchArea_Parent");
+        });
+
+        // Configure FacultyExpertise
+        modelBuilder.Entity<FacultyExpertise>(entity =>
+        {
+            entity.HasKey(fe => fe.Id);
+
+            // Configure composite unique constraint
+            entity.HasIndex(fe => new { fe.AcademicEmpNr, fe.ResearchAreaCode })
+                .IsUnique()
+                .HasDatabaseName("IX_FacultyExpertise_Academic_ResearchArea");
+
+            // Configure relationships
+            entity.HasOne(fe => fe.Academic)
+                .WithMany(a => a.ResearchExpertise)
+                .HasForeignKey(fe => fe.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(fe => fe.ResearchArea)
+                .WithMany(ra => ra.FacultyExpertise)
+                .HasForeignKey(fe => fe.ResearchAreaCode)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure indexes
+            entity.HasIndex(fe => fe.AcademicEmpNr)
+                .HasDatabaseName("IX_FacultyExpertise_Academic");
+
+            entity.HasIndex(fe => fe.IsPrimaryExpertise)
+                .HasDatabaseName("IX_FacultyExpertise_Primary");
+
+            entity.HasIndex(fe => fe.ExpertiseLevel)
+                .HasDatabaseName("IX_FacultyExpertise_Level");
+        });
+
+        // Configure FacultyServiceRecord
+        modelBuilder.Entity<FacultyServiceRecord>(entity =>
+        {
+            entity.HasKey(fsr => fsr.Id);
+
+            // Configure relationships
+            entity.HasOne(fsr => fsr.Academic)
+                .WithMany(a => a.ServiceRecords)
+                .HasForeignKey(fsr => fsr.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure decimal precision
+            entity.Property(fsr => fsr.EstimatedHoursPerYear)
+                .HasPrecision(8, 2);
+
+            entity.Property(fsr => fsr.ServiceWeight)
+                .HasPrecision(5, 2);
+
+            // Configure indexes
+            entity.HasIndex(fsr => fsr.AcademicEmpNr)
+                .HasDatabaseName("IX_FacultyServiceRecord_Academic");
+
+            entity.HasIndex(fsr => fsr.IsActive)
+                .HasDatabaseName("IX_FacultyServiceRecord_Active");
+
+            entity.HasIndex(fsr => fsr.ServiceLevel)
+                .HasDatabaseName("IX_FacultyServiceRecord_Level");
+
+            entity.HasIndex(fsr => fsr.IsMajorService)
+                .HasDatabaseName("IX_FacultyServiceRecord_Major");
+        });
+
+        // Configure CommitteeLeadership
+        modelBuilder.Entity<CommitteeLeadership>(entity =>
+        {
+            entity.HasKey(cl => cl.Id);
+
+            // Configure relationships
+            entity.HasOne(cl => cl.Committee)
+                .WithMany()
+                .HasForeignKey(cl => cl.CommitteeName)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(cl => cl.Academic)
+                .WithMany(a => a.CommitteeLeaderships)
+                .HasForeignKey(cl => cl.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure indexes
+            entity.HasIndex(cl => cl.CommitteeName)
+                .HasDatabaseName("IX_CommitteeLeadership_Committee");
+
+            entity.HasIndex(cl => cl.AcademicEmpNr)
+                .HasDatabaseName("IX_CommitteeLeadership_Academic");
+
+            entity.HasIndex(cl => cl.IsCurrent)
+                .HasDatabaseName("IX_CommitteeLeadership_Current");
+
+            entity.HasIndex(cl => new { cl.CommitteeName, cl.Position, cl.IsCurrent })
+                .HasDatabaseName("IX_CommitteeLeadership_Committee_Position_Current");
         });
     }
 }
