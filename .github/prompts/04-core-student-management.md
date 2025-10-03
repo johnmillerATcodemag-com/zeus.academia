@@ -113,25 +113,26 @@ Implement comprehensive student management functionality including student enrol
 - [ ] Academic record access API
 - [ ] Document upload API with proper validation
 
-### Task 6: Student Data Transfer Objects and Validation
+### Task 6: Student Request/Response Models and Validation
 
-**Task Description**: Create DTOs for student operations with comprehensive validation.
+**Task Description**: Create comprehensive Request/Response models for student operations with robust validation following modern ASP.NET Core patterns.
 
 **Technical Requirements**:
 
-- Create student DTOs: `StudentCreateDto`, `StudentUpdateDto`, `StudentDetailsDto`
-- Implement validation rules for all student data
-- Add custom validators for academic rules (GPA ranges, enrollment status)
-- Create mapping profiles between entities and DTOs
-- Add pagination DTOs for student lists
+- Create student request models: `CreateStudentRequest`, `UpdateStudentRequest`
+- Create student response models: `StudentSummaryResponse`, `StudentDetailResponse`
+- Implement comprehensive validation rules using FluentValidation
+- Add custom validators for academic business rules (GPA ranges, enrollment status, date validations)
+- Create AutoMapper profiles for entity-to-response model mapping
+- Implement paginated response models for efficient student data transfer
 
 **Acceptance Criteria**:
 
-- [ ] Complete set of student DTOs created
-- [ ] Comprehensive validation rules implemented
-- [ ] Custom academic validators working
-- [ ] AutoMapper profiles configured
-- [ ] Pagination DTOs for efficient data transfer
+- [x] Complete set of student Request/Response models created
+- [x] Comprehensive validation rules implemented with FluentValidation
+- [x] Custom academic validators working (email uniqueness, phone format, date ranges)
+- [x] AutoMapper profiles configured for Student entity mapping
+- [x] Pagination models integrated with API responses
 
 ### Task 7: Student Notification System
 
