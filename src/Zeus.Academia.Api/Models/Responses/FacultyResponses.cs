@@ -619,4 +619,474 @@ public class DepartmentFacultyStatisticsResponse
     public int NonTenuredCount { get; set; }
 }
 
+/// <summary>
+/// Response model for faculty workload information.
+/// </summary>
+public class FacultyWorkloadResponse
+{
+    /// <summary>
+    /// The faculty member's employee number.
+    /// </summary>
+    public int EmpNr { get; set; }
+
+    /// <summary>
+    /// The faculty member's name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The academic year for this workload.
+    /// </summary>
+    public int AcademicYear { get; set; }
+
+    /// <summary>
+    /// The semester/term for this workload.
+    /// </summary>
+    public string? Semester { get; set; }
+
+    /// <summary>
+    /// Total teaching load in credit hours.
+    /// </summary>
+    public decimal TotalTeachingLoad { get; set; }
+
+    /// <summary>
+    /// Total service load in hours.
+    /// </summary>
+    public decimal TotalServiceLoad { get; set; }
+
+    /// <summary>
+    /// Total research load in hours.
+    /// </summary>
+    public decimal TotalResearchLoad { get; set; }
+
+    /// <summary>
+    /// Total administrative load in hours.
+    /// </summary>
+    public decimal TotalAdministrativeLoad { get; set; }
+
+    /// <summary>
+    /// Overall workload percentage (compared to standard load).
+    /// </summary>
+    public decimal WorkloadPercentage { get; set; }
+
+    /// <summary>
+    /// Whether the faculty member has overload.
+    /// </summary>
+    public bool HasOverload { get; set; }
+
+    /// <summary>
+    /// Course assignments for this period.
+    /// </summary>
+    public List<CourseAssignmentResponse> CourseAssignments { get; set; } = new();
+
+    /// <summary>
+    /// Committee assignments contributing to service load.
+    /// </summary>
+    public List<CommitteeAssignmentResponse> ActiveCommitteeAssignments { get; set; } = new();
+
+    /// <summary>
+    /// Administrative assignments contributing to admin load.
+    /// </summary>
+    public List<AdministrativeAssignmentResponse> ActiveAdministrativeAssignments { get; set; } = new();
+}
+
+/// <summary>
+/// Response model for course assignments.
+/// </summary>
+public class CourseAssignmentResponse
+{
+    /// <summary>
+    /// The assignment ID.
+    /// </summary>
+    public int Id { get; set; }
+
+    /// <summary>
+    /// The course ID.
+    /// </summary>
+    public int CourseId { get; set; }
+
+    /// <summary>
+    /// The course code (e.g., "CS 101").
+    /// </summary>
+    public string CourseCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The course title.
+    /// </summary>
+    public string CourseTitle { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The semester/term.
+    /// </summary>
+    public string Semester { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The academic year.
+    /// </summary>
+    public int AcademicYear { get; set; }
+
+    /// <summary>
+    /// The section number.
+    /// </summary>
+    public string? Section { get; set; }
+
+    /// <summary>
+    /// Credit hours for this assignment.
+    /// </summary>
+    public decimal CreditHours { get; set; }
+
+    /// <summary>
+    /// Teaching modality.
+    /// </summary>
+    public string? TeachingModality { get; set; }
+
+    /// <summary>
+    /// Maximum enrollment.
+    /// </summary>
+    public int? MaxEnrollment { get; set; }
+
+    /// <summary>
+    /// Current enrollment.
+    /// </summary>
+    public int? CurrentEnrollment { get; set; }
+
+    /// <summary>
+    /// Assignment status.
+    /// </summary>
+    public string AssignmentStatus { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Response model for teaching preferences.
+/// </summary>
+public class TeachingPreferencesResponse
+{
+    /// <summary>
+    /// The faculty member's employee number.
+    /// </summary>
+    public int EmpNr { get; set; }
+
+    /// <summary>
+    /// Preferred courses.
+    /// </summary>
+    public List<CoursePreferenceResponse> PreferredCourses { get; set; } = new();
+
+    /// <summary>
+    /// Preferred teaching times.
+    /// </summary>
+    public List<string> PreferredTimes { get; set; } = new();
+
+    /// <summary>
+    /// Preferred teaching days.
+    /// </summary>
+    public List<string> PreferredDays { get; set; } = new();
+
+    /// <summary>
+    /// Maximum preferred teaching load.
+    /// </summary>
+    public decimal? MaxPreferredLoad { get; set; }
+
+    /// <summary>
+    /// Minimum preferred teaching load.
+    /// </summary>
+    public decimal? MinPreferredLoad { get; set; }
+
+    /// <summary>
+    /// Preferred teaching modalities.
+    /// </summary>
+    public List<string> PreferredModalities { get; set; } = new();
+
+    /// <summary>
+    /// Whether willing to teach overload.
+    /// </summary>
+    public bool WillingToTeachOverload { get; set; }
+
+    /// <summary>
+    /// Additional notes.
+    /// </summary>
+    public string? AdditionalNotes { get; set; }
+
+    /// <summary>
+    /// Last updated date.
+    /// </summary>
+    public DateTime? LastUpdated { get; set; }
+}
+
+/// <summary>
+/// Response model for course preferences.
+/// </summary>
+public class CoursePreferenceResponse
+{
+    /// <summary>
+    /// The course ID.
+    /// </summary>
+    public int CourseId { get; set; }
+
+    /// <summary>
+    /// The course code.
+    /// </summary>
+    public string CourseCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The course title.
+    /// </summary>
+    public string CourseTitle { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Preference level (1-5, with 5 being most preferred).
+    /// </summary>
+    public int PreferenceLevel { get; set; }
+
+    /// <summary>
+    /// Whether qualified to teach this course.
+    /// </summary>
+    public bool IsQualified { get; set; }
+
+    /// <summary>
+    /// Notes about this preference.
+    /// </summary>
+    public string? Notes { get; set; }
+}
+
+/// <summary>
+/// Response model for faculty directory entries.
+/// </summary>
+public class FacultyDirectoryResponse
+{
+    /// <summary>
+    /// The faculty member's employee number.
+    /// </summary>
+    public int EmpNr { get; set; }
+
+    /// <summary>
+    /// The faculty member's name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The faculty member's professional title.
+    /// </summary>
+    public string? ProfessionalTitle { get; set; }
+
+    /// <summary>
+    /// The faculty type.
+    /// </summary>
+    public FacultyType FacultyType { get; set; }
+
+    /// <summary>
+    /// The academic rank.
+    /// </summary>
+    public string? RankCode { get; set; }
+
+    /// <summary>
+    /// The rank name.
+    /// </summary>
+    public string? RankName { get; set; }
+
+    /// <summary>
+    /// The department name.
+    /// </summary>
+    public string? DepartmentName { get; set; }
+
+    /// <summary>
+    /// Professional email address.
+    /// </summary>
+    public string? ProfessionalEmail { get; set; }
+
+    /// <summary>
+    /// Phone number.
+    /// </summary>
+    public string? PhoneNumber { get; set; }
+
+    /// <summary>
+    /// Office location.
+    /// </summary>
+    public string? OfficeLocation { get; set; }
+
+    /// <summary>
+    /// Office hours.
+    /// </summary>
+    public string? OfficeHours { get; set; }
+
+    /// <summary>
+    /// Professional website.
+    /// </summary>
+    public string? ProfessionalWebsite { get; set; }
+
+    /// <summary>
+    /// Research areas.
+    /// </summary>
+    public List<string> ResearchAreas { get; set; } = new();
+
+    /// <summary>
+    /// Current administrative roles.
+    /// </summary>
+    public List<string> AdministrativeRoles { get; set; } = new();
+
+    /// <summary>
+    /// Whether the profile is public.
+    /// </summary>
+    public bool IsPublicProfile { get; set; }
+
+    /// <summary>
+    /// Years of service.
+    /// </summary>
+    public int? YearsOfService { get; set; }
+}
+
+/// <summary>
+/// Response model for comprehensive faculty analytics.
+/// </summary>
+public class FacultyAnalyticsResponse
+{
+    /// <summary>
+    /// Overall faculty statistics.
+    /// </summary>
+    public FacultyStatisticsResponse OverallStatistics { get; set; } = new();
+
+    /// <summary>
+    /// Workload distribution by department.
+    /// </summary>
+    public Dictionary<string, FacultyWorkloadSummary> WorkloadByDepartment { get; set; } = new();
+
+    /// <summary>
+    /// Promotion trends over the last 5 years.
+    /// </summary>
+    public List<PromotionTrendResponse> PromotionTrends { get; set; } = new();
+
+    /// <summary>
+    /// Retirement projections for next 10 years.
+    /// </summary>
+    public List<RetirementProjectionResponse> RetirementProjections { get; set; } = new();
+
+    /// <summary>
+    /// Service load distribution.
+    /// </summary>
+    public Dictionary<string, decimal> ServiceLoadDistribution { get; set; } = new();
+
+    /// <summary>
+    /// Teaching load statistics.
+    /// </summary>
+    public TeachingLoadStatistics TeachingLoadStats { get; set; } = new();
+}
+
+/// <summary>
+/// Response model for workload summary by department.
+/// </summary>
+public class FacultyWorkloadSummary
+{
+    /// <summary>
+    /// Average teaching load.
+    /// </summary>
+    public decimal AverageTeachingLoad { get; set; }
+
+    /// <summary>
+    /// Average service load.
+    /// </summary>
+    public decimal AverageServiceLoad { get; set; }
+
+    /// <summary>
+    /// Faculty count with overload.
+    /// </summary>
+    public int FacultyWithOverload { get; set; }
+
+    /// <summary>
+    /// Faculty count under minimum load.
+    /// </summary>
+    public int FacultyUnderMinimum { get; set; }
+
+    /// <summary>
+    /// Total faculty count.
+    /// </summary>
+    public int TotalFaculty { get; set; }
+}
+
+/// <summary>
+/// Response model for promotion trends.
+/// </summary>
+public class PromotionTrendResponse
+{
+    /// <summary>
+    /// The year.
+    /// </summary>
+    public int Year { get; set; }
+
+    /// <summary>
+    /// Number of promotions to Assistant Professor.
+    /// </summary>
+    public int PromotionsToAssistant { get; set; }
+
+    /// <summary>
+    /// Number of promotions to Associate Professor.
+    /// </summary>
+    public int PromotionsToAssociate { get; set; }
+
+    /// <summary>
+    /// Number of promotions to Full Professor.
+    /// </summary>
+    public int PromotionsToFull { get; set; }
+
+    /// <summary>
+    /// Total promotions for the year.
+    /// </summary>
+    public int TotalPromotions { get; set; }
+}
+
+/// <summary>
+/// Response model for retirement projections.
+/// </summary>
+public class RetirementProjectionResponse
+{
+    /// <summary>
+    /// The projected year.
+    /// </summary>
+    public int Year { get; set; }
+
+    /// <summary>
+    /// Number of faculty eligible for retirement.
+    /// </summary>
+    public int EligibleForRetirement { get; set; }
+
+    /// <summary>
+    /// Number of expected retirements.
+    /// </summary>
+    public int ExpectedRetirements { get; set; }
+
+    /// <summary>
+    /// Breakdown by department.
+    /// </summary>
+    public Dictionary<string, int> ByDepartment { get; set; } = new();
+}
+
+/// <summary>
+/// Response model for teaching load statistics.
+/// </summary>
+public class TeachingLoadStatistics
+{
+    /// <summary>
+    /// Average teaching load across all faculty.
+    /// </summary>
+    public decimal AverageLoad { get; set; }
+
+    /// <summary>
+    /// Minimum teaching load.
+    /// </summary>
+    public decimal MinimumLoad { get; set; }
+
+    /// <summary>
+    /// Maximum teaching load.
+    /// </summary>
+    public decimal MaximumLoad { get; set; }
+
+    /// <summary>
+    /// Standard deviation of teaching loads.
+    /// </summary>
+    public decimal StandardDeviation { get; set; }
+
+    /// <summary>
+    /// Percentage of faculty with overload.
+    /// </summary>
+    public decimal OverloadPercentage { get; set; }
+}
+
 // FileUploadResponse is defined in StudentResponses.cs to avoid duplication

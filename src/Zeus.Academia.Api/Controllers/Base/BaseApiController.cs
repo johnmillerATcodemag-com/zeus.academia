@@ -23,7 +23,7 @@ public abstract class BaseApiController : ControllerBase
             Success = true,
             Message = message,
             Timestamp = DateTime.UtcNow,
-            TraceId = HttpContext.TraceIdentifier
+            TraceId = HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString()
         };
     }
 
@@ -42,7 +42,7 @@ public abstract class BaseApiController : ControllerBase
             Message = message,
             Data = data,
             Timestamp = DateTime.UtcNow,
-            TraceId = HttpContext.TraceIdentifier
+            TraceId = HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString()
         };
     }
 
@@ -59,7 +59,7 @@ public abstract class BaseApiController : ControllerBase
             Success = false,
             Message = message,
             Timestamp = DateTime.UtcNow,
-            TraceId = HttpContext.TraceIdentifier
+            TraceId = HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString()
         };
     }
 

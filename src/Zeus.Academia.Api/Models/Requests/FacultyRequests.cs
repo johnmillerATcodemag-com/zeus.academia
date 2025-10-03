@@ -391,3 +391,291 @@ public class UploadFacultyPhotoRequest
     [Required(ErrorMessage = "Photo content is required")]
     public string PhotoContent { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Request model for assigning faculty to administrative positions.
+/// </summary>
+public class AssignAdministrativeRoleRequest
+{
+    /// <summary>
+    /// The administrative role title (Dean, Associate Dean, Department Chair, etc.).
+    /// </summary>
+    [Required(ErrorMessage = "Role title is required")]
+    [StringLength(100, ErrorMessage = "Role title must not exceed 100 characters")]
+    public string RoleTitle { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The department or unit for the assignment.
+    /// </summary>
+    [StringLength(100, ErrorMessage = "Department must not exceed 100 characters")]
+    public string? Department { get; set; }
+
+    /// <summary>
+    /// The start date of the assignment.
+    /// </summary>
+    [Required(ErrorMessage = "Assignment start date is required")]
+    public DateTime AssignmentStartDate { get; set; }
+
+    /// <summary>
+    /// The end date of the assignment (optional for indefinite assignments).
+    /// </summary>
+    public DateTime? AssignmentEndDate { get; set; }
+
+    /// <summary>
+    /// Additional notes about the assignment.
+    /// </summary>
+    [StringLength(500, ErrorMessage = "Notes must not exceed 500 characters")]
+    public string? Notes { get; set; }
+}
+
+/// <summary>
+/// Request model for assigning faculty to committees.
+/// </summary>
+public class AssignCommitteeRequest
+{
+    /// <summary>
+    /// The committee ID.
+    /// </summary>
+    [Required(ErrorMessage = "Committee ID is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Committee ID must be positive")]
+    public int CommitteeId { get; set; }
+
+    /// <summary>
+    /// The role on the committee (Chair, Member, Ex-Officio, etc.).
+    /// </summary>
+    [Required(ErrorMessage = "Committee role is required")]
+    [StringLength(50, ErrorMessage = "Committee role must not exceed 50 characters")]
+    public string CommitteeRole { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The start date of the assignment.
+    /// </summary>
+    [Required(ErrorMessage = "Assignment start date is required")]
+    public DateTime AssignmentStartDate { get; set; }
+
+    /// <summary>
+    /// The end date of the assignment (optional for indefinite assignments).
+    /// </summary>
+    public DateTime? AssignmentEndDate { get; set; }
+
+    /// <summary>
+    /// Whether this is a primary committee assignment.
+    /// </summary>
+    public bool IsPrimaryAssignment { get; set; } = false;
+
+    /// <summary>
+    /// Expected time commitment in hours per week.
+    /// </summary>
+    [Range(0, 40, ErrorMessage = "Time commitment must be between 0 and 40 hours per week")]
+    public decimal? ExpectedTimeCommitment { get; set; }
+}
+
+/// <summary>
+/// Request model for assigning courses to faculty.
+/// </summary>
+public class AssignCourseRequest
+{
+    /// <summary>
+    /// The course ID to assign.
+    /// </summary>
+    [Required(ErrorMessage = "Course ID is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Course ID must be positive")]
+    public int CourseId { get; set; }
+
+    /// <summary>
+    /// The semester/term for the assignment.
+    /// </summary>
+    [Required(ErrorMessage = "Semester/term is required")]
+    [StringLength(20, ErrorMessage = "Semester must not exceed 20 characters")]
+    public string Semester { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The academic year for the assignment.
+    /// </summary>
+    [Required(ErrorMessage = "Academic year is required")]
+    [Range(2020, 2050, ErrorMessage = "Academic year must be between 2020 and 2050")]
+    public int AcademicYear { get; set; }
+
+    /// <summary>
+    /// The section number if applicable.
+    /// </summary>
+    [StringLength(10, ErrorMessage = "Section must not exceed 10 characters")]
+    public string? Section { get; set; }
+
+    /// <summary>
+    /// Credit hours for this course assignment.
+    /// </summary>
+    [Range(0.5, 10.0, ErrorMessage = "Credit hours must be between 0.5 and 10.0")]
+    public decimal CreditHours { get; set; }
+
+    /// <summary>
+    /// Teaching modality (In-Person, Online, Hybrid).
+    /// </summary>
+    [StringLength(20, ErrorMessage = "Teaching modality must not exceed 20 characters")]
+    public string? TeachingModality { get; set; }
+
+    /// <summary>
+    /// Maximum enrollment for this section.
+    /// </summary>
+    [Range(1, 500, ErrorMessage = "Max enrollment must be between 1 and 500")]
+    public int? MaxEnrollment { get; set; }
+}
+
+/// <summary>
+/// Request model for updating faculty teaching preferences.
+/// </summary>
+public class UpdateTeachingPreferencesRequest
+{
+    /// <summary>
+    /// Preferred courses to teach.
+    /// </summary>
+    public List<int> PreferredCourseIds { get; set; } = new();
+
+    /// <summary>
+    /// Preferred teaching times (Morning, Afternoon, Evening).
+    /// </summary>
+    public List<string> PreferredTimes { get; set; } = new();
+
+    /// <summary>
+    /// Preferred teaching days.
+    /// </summary>
+    public List<string> PreferredDays { get; set; } = new();
+
+    /// <summary>
+    /// Maximum preferred teaching load in credit hours.
+    /// </summary>
+    [Range(0, 40, ErrorMessage = "Max teaching load must be between 0 and 40 credit hours")]
+    public decimal? MaxPreferredLoad { get; set; }
+
+    /// <summary>
+    /// Minimum preferred teaching load in credit hours.
+    /// </summary>
+    [Range(0, 40, ErrorMessage = "Min teaching load must be between 0 and 40 credit hours")]
+    public decimal? MinPreferredLoad { get; set; }
+
+    /// <summary>
+    /// Preferred teaching modalities.
+    /// </summary>
+    public List<string> PreferredModalities { get; set; } = new();
+
+    /// <summary>
+    /// Whether willing to teach overload courses.
+    /// </summary>
+    public bool WillingToTeachOverload { get; set; } = false;
+
+    /// <summary>
+    /// Additional notes about teaching preferences.
+    /// </summary>
+    [StringLength(1000, ErrorMessage = "Notes must not exceed 1000 characters")]
+    public string? AdditionalNotes { get; set; }
+}
+
+/// <summary>
+/// Request model for faculty workload analysis.
+/// </summary>
+public class FacultyWorkloadRequest
+{
+    /// <summary>
+    /// The academic year for workload analysis.
+    /// </summary>
+    [Required(ErrorMessage = "Academic year is required")]
+    [Range(2020, 2050, ErrorMessage = "Academic year must be between 2020 and 2050")]
+    public int AcademicYear { get; set; }
+
+    /// <summary>
+    /// The semester/term for analysis (optional, if null returns full year).
+    /// </summary>
+    [StringLength(20, ErrorMessage = "Semester must not exceed 20 characters")]
+    public string? Semester { get; set; }
+
+    /// <summary>
+    /// Whether to include service activities in workload calculation.
+    /// </summary>
+    public bool IncludeServiceActivities { get; set; } = true;
+
+    /// <summary>
+    /// Whether to include research activities in workload calculation.
+    /// </summary>
+    public bool IncludeResearchActivities { get; set; } = true;
+
+    /// <summary>
+    /// Whether to include administrative duties in workload calculation.
+    /// </summary>
+    public bool IncludeAdministrativeDuties { get; set; } = true;
+}
+
+/// <summary>
+/// Request model for advanced faculty search.
+/// </summary>
+public class AdvancedFacultySearchRequest : PaginationParameters
+{
+    /// <summary>
+    /// Search by faculty name or email.
+    /// </summary>
+    [StringLength(100, ErrorMessage = "Name search must not exceed 100 characters")]
+    public string? NameSearch { get; set; }
+
+    /// <summary>
+    /// Filter by multiple departments.
+    /// </summary>
+    public List<string> DepartmentNames { get; set; } = new();
+
+    /// <summary>
+    /// Filter by multiple ranks.
+    /// </summary>
+    public List<string> RankCodes { get; set; } = new();
+
+    /// <summary>
+    /// Filter by tenure status.
+    /// </summary>
+    public bool? HasTenure { get; set; }
+
+    /// <summary>
+    /// Filter by multiple research areas.
+    /// </summary>
+    public List<string> ResearchAreas { get; set; } = new();
+
+    /// <summary>
+    /// Filter by faculty types.
+    /// </summary>
+    public List<FacultyType> FacultyTypes { get; set; } = new();
+
+    /// <summary>
+    /// Filter by administrative roles.
+    /// </summary>
+    public List<string> AdministrativeRoles { get; set; } = new();
+
+    /// <summary>
+    /// Filter by committee memberships.
+    /// </summary>
+    public List<int> CommitteeIds { get; set; } = new();
+
+    /// <summary>
+    /// Filter by minimum years of experience.
+    /// </summary>
+    [Range(0, 50, ErrorMessage = "Min experience must be between 0 and 50 years")]
+    public int? MinYearsExperience { get; set; }
+
+    /// <summary>
+    /// Filter by maximum years of experience.
+    /// </summary>
+    [Range(0, 50, ErrorMessage = "Max experience must be between 0 and 50 years")]
+    public int? MaxYearsExperience { get; set; }
+
+    /// <summary>
+    /// Filter by active status.
+    /// </summary>
+    public bool? IsActive { get; set; }
+
+    /// <summary>
+    /// Sort by field (Name, Rank, Department, YearsOfService).
+    /// </summary>
+    [StringLength(20, ErrorMessage = "Sort by must not exceed 20 characters")]
+    public string? SortByField { get; set; }
+
+    /// <summary>
+    /// Sort direction (ASC or DESC).
+    /// </summary>
+    [StringLength(4, ErrorMessage = "Sort direction must be ASC or DESC")]
+    public string SortOrder { get; set; } = "ASC";
+}

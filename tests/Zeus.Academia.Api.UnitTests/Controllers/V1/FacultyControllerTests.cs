@@ -223,7 +223,7 @@ public class FacultyControllerTests
         var totalCount = 2;
 
         _mockFacultyService.Setup(x => x.SearchFacultyAsync(
-            null, null, null, null, null, null, 1, 10))
+            null, null, null, null, null, null, 1, 20))
             .ReturnsAsync((faculty, totalCount));
 
         // Act
@@ -393,6 +393,13 @@ public class FacultyControllerTests
     {
         // Arrange
         var empNr = 1;
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        // Mock the faculty existence check
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
         _mockFacultyService.Setup(x => x.DeleteFacultyAsync(empNr))
             .ReturnsAsync(true);
 
@@ -400,7 +407,10 @@ public class FacultyControllerTests
         var result = await _controller.DeleteFaculty(empNr);
 
         // Assert
-        Assert.IsType<NoContentResult>(result);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.Contains("Faculty member deleted successfully", response.Message);
     }
 
     [Fact]
@@ -408,14 +418,16 @@ public class FacultyControllerTests
     {
         // Arrange
         var empNr = 999;
-        _mockFacultyService.Setup(x => x.DeleteFacultyAsync(empNr))
-            .ReturnsAsync(false);
+
+        // Mock the faculty existence check to return null (not found)
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync((Academic?)null);
 
         // Act
         var result = await _controller.DeleteFaculty(empNr);
 
         // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse>(notFoundResult.Value);
         Assert.False(response.Success);
         Assert.Contains("Faculty member with employee number 999 not found", response.Message);
@@ -436,8 +448,12 @@ public class FacultyControllerTests
             Notes = "Granted tenure after successful review"
         };
 
-        var updatedFaculty = CreateTestProfessor();
-        updatedFaculty.HasTenure = true;
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        // Mock the faculty existence check
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
 
         _mockFacultyService.Setup(x => x.UpdateTenureStatusAsync(empNr, request.HasTenure, request.Notes))
             .ReturnsAsync(true);
@@ -447,7 +463,7 @@ public class FacultyControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<FacultyDetailsResponse>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse>(okResult.Value);
         Assert.True(response.Success);
         Assert.Contains("Tenure status updated successfully", response.Message);
     }
@@ -491,8 +507,12 @@ public class FacultyControllerTests
             Notes = "Promoted to full professor"
         };
 
-        var updatedFaculty = CreateTestProfessor();
-        updatedFaculty.RankCode = "PROF";
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        // Mock the faculty existence check
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
 
         _mockFacultyService.Setup(x => x.UpdateRankAsync(empNr, request.RankCode, request.EffectiveDate, request.Notes))
             .ReturnsAsync(true);
@@ -502,7 +522,7 @@ public class FacultyControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<FacultyDetailsResponse>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse>(okResult.Value);
         Assert.True(response.Success);
         Assert.Contains("Rank updated successfully", response.Message);
     }
@@ -566,8 +586,7 @@ public class FacultyControllerTests
         var result = await _controller.GetFacultyStatistics();
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<object>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse<FacultyStatisticsResponse>>(result.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
     }
@@ -592,6 +611,358 @@ public class FacultyControllerTests
         var response = Assert.IsType<ApiResponse>(statusResult.Value);
         Assert.False(response.Success);
         Assert.Contains("An error occurred while processing the request", response.Message);
+    }
+
+    #endregion
+
+    #region Task 6 Administrative Role Tests
+
+    [Fact]
+    public async Task AssignAdministrativeRole_ValidRequest_ReturnsCreated()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new AssignAdministrativeRoleRequest
+        {
+            RoleTitle = "Department Chair",
+            Department = "Computer Science",
+            AssignmentStartDate = DateTime.Today,
+            AssignmentEndDate = DateTime.Today.AddYears(2)
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
+        // Act
+        var result = await _controller.AssignAdministrativeRole(empNr, request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<AdministrativeAssignmentResponse>>(createdResult.Value);
+        Assert.True(response.Success);
+        Assert.Contains("Administrative role assigned successfully", response.Message);
+    }
+
+    [Fact]
+    public async Task GetAdministrativeAssignments_ExistingFaculty_ReturnsAssignments()
+    {
+        // Arrange
+        var empNr = 1;
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        var assignments = new List<AdministrativeAssignment>
+        {
+            new AdministrativeAssignment { Id = 1, AssigneeEmpNr = empNr, RoleCode = "DEPT_CHAIR" }
+        };
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+        _mockFacultyService.Setup(x => x.GetAdministrativeAssignmentsAsync(empNr, true))
+            .ReturnsAsync(assignments);
+
+        // Act
+        var result = await _controller.GetAdministrativeAssignments(empNr, true);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<List<AdministrativeAssignmentResponse>>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+    }
+
+    [Fact]
+    public async Task AssignAdministrativeRole_NonExistentFaculty_ReturnsNotFound()
+    {
+        // Arrange
+        var empNr = 999;
+        var request = new AssignAdministrativeRoleRequest
+        {
+            RoleTitle = "Department Chair",
+            Department = "Computer Science"
+        };
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync((Academic?)null);
+
+        // Act
+        var result = await _controller.AssignAdministrativeRole(empNr, request);
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse>(notFoundResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("Faculty member with employee number 999 not found", response.Message);
+    }
+
+    #endregion
+
+    #region Task 6 Committee Management Tests
+
+    [Fact]
+    public async Task AssignToCommittee_ValidRequest_ReturnsCreated()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new AssignCommitteeRequest
+        {
+            CommitteeId = 1,
+            CommitteeRole = "Member",
+            AssignmentStartDate = DateTime.Today,
+            AssignmentEndDate = DateTime.Today.AddYears(1)
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
+        // Act
+        var result = await _controller.AssignToCommittee(empNr, request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<CommitteeAssignmentResponse>>(createdResult.Value);
+        Assert.True(response.Success);
+        Assert.Contains("Committee assignment created successfully", response.Message);
+    }
+
+    [Fact]
+    public async Task GetCommitteeAssignments_ExistingFaculty_ReturnsAssignments()
+    {
+        // Arrange
+        var empNr = 1;
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        var assignments = new List<CommitteeMemberAssignment>
+        {
+            new CommitteeMemberAssignment { Id = 1, MemberEmpNr = empNr, MemberRole = "Chair" }
+        };
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+        _mockFacultyService.Setup(x => x.GetCommitteeAssignmentsAsync(empNr, true))
+            .ReturnsAsync(assignments);
+
+        // Act
+        var result = await _controller.GetCommitteeAssignments(empNr, true);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<List<CommitteeAssignmentResponse>>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+    }
+
+    [Fact]
+    public async Task RemoveFromCommittee_ExistingAssignment_ReturnsSuccess()
+    {
+        // Arrange
+        var empNr = 1;
+        var assignmentId = 1;
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
+        // Act
+        var result = await _controller.RemoveFromCommittee(empNr, assignmentId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.Contains("Committee assignment removed successfully", response.Message);
+    }
+
+    #endregion
+
+    #region Task 6 Teaching Load Tests
+
+    [Fact]
+    public async Task GetFacultyWorkload_ValidRequest_ReturnsWorkload()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new FacultyWorkloadRequest
+        {
+            AcademicYear = 2024,
+            Semester = "Fall"
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
+        // Act
+        var result = await _controller.GetFacultyWorkload(empNr, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<FacultyWorkloadResponse>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+        Assert.Equal(empNr, response.Data.EmpNr);
+    }
+
+    [Fact]
+    public async Task GetCourseAssignments_ExistingFaculty_ReturnsAssignments()
+    {
+        // Arrange
+        var empNr = 1;
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
+        // Act
+        var result = await _controller.GetCourseAssignments(empNr);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<List<CourseAssignmentResponse>>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+    }
+
+    [Fact]
+    public async Task GetTeachingPreferences_ExistingFaculty_ReturnsPreferences()
+    {
+        // Arrange
+        var empNr = 1;
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
+        // Act
+        var result = await _controller.GetTeachingPreferences(empNr);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<TeachingPreferencesResponse>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+        Assert.Equal(empNr, response.Data.EmpNr);
+    }
+
+    [Fact]
+    public async Task UpdateTeachingPreferences_ValidRequest_ReturnsUpdated()
+    {
+        // Arrange
+        var empNr = 1;
+        var request = new UpdateTeachingPreferencesRequest
+        {
+            PreferredTimes = new List<string> { "Morning", "Afternoon" },
+            PreferredDays = new List<string> { "Monday", "Wednesday", "Friday" },
+            MaxPreferredLoad = 4,
+            MinPreferredLoad = 2
+        };
+
+        var existingFaculty = CreateTestProfessor();
+        existingFaculty.EmpNr = empNr;
+
+        _mockFacultyService.Setup(x => x.GetFacultyByEmpNrAsync(empNr))
+            .ReturnsAsync(existingFaculty);
+
+        // Act
+        var result = await _controller.UpdateTeachingPreferences(empNr, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<TeachingPreferencesResponse>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.Contains("Teaching preferences updated successfully", response.Message);
+    }
+
+    #endregion
+
+    #region Task 6 Analytics Tests
+
+    [Fact]
+    public void GetFacultyAnalytics_ValidRequest_ReturnsAnalytics()
+    {
+        // Arrange
+        var academicYear = 2024;
+
+        // Act
+        var result = _controller.GetFacultyAnalytics(academicYear);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse<FacultyAnalyticsResponse>>(okResult.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+        Assert.NotNull(response.Data.OverallStatistics);
+    }
+
+    [Fact]
+    public async Task GetDepartmentAnalytics_ValidDepartment_ReturnsAnalytics()
+    {
+        // Arrange
+        var departmentName = "Computer Science";
+        var academicYear = 2024;
+
+        var departmentStats = new
+        {
+            DepartmentName = departmentName,
+            TotalFaculty = 10,
+            AverageExperience = 8.5,
+            TenuredCount = 6
+        };
+
+        _mockFacultyService.Setup(x => x.GetDepartmentFacultyStatisticsAsync(departmentName))
+            .ReturnsAsync(departmentStats);
+
+        // Act
+        var result = await _controller.GetDepartmentAnalytics(departmentName, academicYear);
+
+        // Assert
+        var response = Assert.IsType<ApiResponse<object>>(result.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+    }
+
+    [Fact]
+    public void GetWorkloadDistribution_ValidYear_ReturnsDistribution()
+    {
+        // Arrange
+        var academicYear = 2024;
+        var semester = "Fall";
+
+        // Act
+        var result = _controller.GetWorkloadDistribution(academicYear, semester);
+
+        // Assert
+        var response = Assert.IsType<ApiResponse<object>>(result.Value);
+        Assert.True(response.Success);
+        Assert.NotNull(response.Data);
+    }
+
+    [Fact]
+    public void GetWorkloadDistribution_InvalidYear_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidYear = 1999;
+
+        // Act
+        var result = _controller.GetWorkloadDistribution(invalidYear);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var response = Assert.IsType<ApiResponse>(badRequestResult.Value);
+        Assert.False(response.Success);
+        Assert.Contains("Academic year must be between 2020 and 2050", response.Message);
     }
 
     #endregion

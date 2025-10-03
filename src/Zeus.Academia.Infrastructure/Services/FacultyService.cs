@@ -501,20 +501,76 @@ public class FacultyService : IFacultyService
         return Task.FromResult(Enumerable.Empty<FacultyServiceRecord>());
     }
 
-    public Task<IEnumerable<CommitteeMemberAssignment>> GetCommitteeAssignmentsAsync(int empNr, bool activeOnly = true)
+    public async Task<IEnumerable<CommitteeMemberAssignment>> GetCommitteeAssignmentsAsync(int empNr, bool activeOnly = true)
     {
-        return Task.FromResult(Enumerable.Empty<CommitteeMemberAssignment>());
+        _logger.LogDebug("Getting committee assignments for faculty {EmpNr}, ActiveOnly: {ActiveOnly}", empNr, activeOnly);
+
+        var query = _context.CommitteeMemberAssignments
+            .Where(c => c.MemberEmpNr == empNr);
+
+        if (activeOnly)
+        {
+            query = query.Where(c => c.IsCurrent &&
+                (c.AppointmentEndDate == null || c.AppointmentEndDate > DateTime.UtcNow));
+        }
+
+        return await query
+            .OrderByDescending(c => c.AppointmentStartDate)
+            .ToListAsync();
     }
 
-    public Task<IEnumerable<AdministrativeAssignment>> GetAdministrativeAssignmentsAsync(int empNr, bool activeOnly = true)
+    public async Task<IEnumerable<AdministrativeAssignment>> GetAdministrativeAssignmentsAsync(int empNr, bool activeOnly = true)
     {
-        return Task.FromResult(Enumerable.Empty<AdministrativeAssignment>());
+        _logger.LogDebug("Getting administrative assignments for faculty {EmpNr}, ActiveOnly: {ActiveOnly}", empNr, activeOnly);
+
+        var query = _context.AdministrativeAssignments
+            .Include(a => a.Role)
+            .Where(a => a.AssigneeEmpNr == empNr);
+
+        if (activeOnly)
+        {
+            query = query.Where(a => a.IsCurrent &&
+                (a.AssignmentEndDate == null || a.AssignmentEndDate > DateTime.UtcNow));
+        }
+
+        return await query
+            .OrderByDescending(a => a.AssignmentStartDate)
+            .ToListAsync();
     }
 
     public async Task<object> GetDepartmentFacultyStatisticsAsync(string departmentName)
     {
+        _logger.LogDebug("Getting department faculty statistics for {DepartmentName}", departmentName);
+
         var (faculty, totalCount) = await SearchFacultyAsync(departmentName: departmentName, pageSize: 1000);
-        return new { DepartmentName = departmentName, TotalFaculty = totalCount };
+
+        // Get more detailed statistics
+        var professorCount = faculty.OfType<Professor>().Count();
+        var teachingProfCount = faculty.OfType<TeachingProf>().Count();
+        var tenuredCount = faculty.OfType<Professor>().Count(f => f.HasTenure == true);
+
+        // Calculate average years of service based on first employment record
+        var facultyWithEmploymentHistory = faculty.Where(f => f.EmploymentHistory.Any()).ToList();
+        var averageYearsService = facultyWithEmploymentHistory.Any()
+            ? facultyWithEmploymentHistory.Average(f =>
+                {
+                    var firstEmployment = f.EmploymentHistory.OrderBy(e => e.StartDate).FirstOrDefault();
+                    return firstEmployment != null
+                        ? (DateTime.UtcNow - firstEmployment.StartDate).TotalDays / 365.25
+                        : 0;
+                })
+            : 0;
+
+        return new
+        {
+            DepartmentName = departmentName,
+            TotalFaculty = totalCount,
+            ProfessorCount = professorCount,
+            TeachingProfCount = teachingProfCount,
+            TenuredCount = tenuredCount,
+            NonTenuredCount = totalCount - tenuredCount,
+            AverageYearsOfService = Math.Round(averageYearsService, 1)
+        };
     }
 
     public async Task<int> GetTotalFacultyCountAsync()
