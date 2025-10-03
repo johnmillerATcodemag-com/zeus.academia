@@ -76,6 +76,46 @@ public abstract class Academic : BaseEntity
     /// Navigation property for committee leadership positions.
     /// </summary>
     public virtual ICollection<CommitteeLeadership> CommitteeLeaderships { get; set; } = new List<CommitteeLeadership>();
+
+    /// <summary>
+    /// Navigation property for academic ranks held by this academic.
+    /// </summary>
+    public virtual ICollection<AcademicRank> AcademicRanks { get; set; } = new List<AcademicRank>();
+
+    /// <summary>
+    /// Navigation property for promotion applications submitted by this academic.
+    /// </summary>
+    public virtual ICollection<PromotionApplication> PromotionApplications { get; set; } = new List<PromotionApplication>();
+
+    /// <summary>
+    /// Navigation property for tenure track records for this academic.
+    /// </summary>
+    public virtual ICollection<TenureTrack> TenureTracks { get; set; } = new List<TenureTrack>();
+
+    /// <summary>
+    /// Navigation property for promotion committees chaired by this academic.
+    /// </summary>
+    public virtual ICollection<PromotionCommittee> ChairedPromotionCommittees { get; set; } = new List<PromotionCommittee>();
+
+    /// <summary>
+    /// Navigation property for promotion committee memberships.
+    /// </summary>
+    public virtual ICollection<PromotionCommitteeMember> PromotionCommitteeMemberships { get; set; } = new List<PromotionCommitteeMember>();
+
+    /// <summary>
+    /// Navigation property for promotion votes cast by this academic.
+    /// </summary>
+    public virtual ICollection<PromotionVote> PromotionVotes { get; set; } = new List<PromotionVote>();
+
+    /// <summary>
+    /// Navigation property for promotion workflow steps assigned to this academic.
+    /// </summary>
+    public virtual ICollection<PromotionWorkflowStep> AssignedPromotionSteps { get; set; } = new List<PromotionWorkflowStep>();
+
+    /// <summary>
+    /// Navigation property for tenure milestones reviewed by this academic.
+    /// </summary>
+    public virtual ICollection<TenureMilestone> ReviewedTenureMilestones { get; set; } = new List<TenureMilestone>();
 }
 
 /// <summary>

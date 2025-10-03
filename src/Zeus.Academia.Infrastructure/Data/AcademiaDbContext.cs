@@ -83,6 +83,16 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<FacultyPublication> FacultyPublications { get; set; } = null!;
     public DbSet<OfficeAssignment> OfficeAssignments { get; set; } = null!;
 
+    // Academic Rank and Promotion System Entities (Prompt 5 Task 3)
+    public DbSet<AcademicRank> AcademicRanks { get; set; } = null!;
+    public DbSet<PromotionApplication> PromotionApplications { get; set; } = null!;
+    public DbSet<TenureTrack> TenureTracks { get; set; } = null!;
+    public DbSet<PromotionCommittee> PromotionCommittees { get; set; } = null!;
+    public DbSet<PromotionCommitteeMember> PromotionCommitteeMembers { get; set; } = null!;
+    public DbSet<PromotionWorkflowStep> PromotionWorkflowSteps { get; set; } = null!;
+    public DbSet<TenureMilestone> TenureMilestones { get; set; } = null!;
+    public DbSet<PromotionVote> PromotionVotes { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
@@ -1974,6 +1984,280 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
 
             entity.HasIndex(oa => new { oa.AcademicId, oa.AssignmentStatus })
                 .HasDatabaseName("IX_OfficeAssignment_Academic_Status");
+        });
+
+        // Configure Academic Rank and Promotion System Entities (Prompt 5 Task 3)
+
+        // Configure AcademicRank
+        modelBuilder.Entity<AcademicRank>(entity =>
+        {
+            entity.HasKey(ar => ar.Id);
+
+            // Foreign key to Academic
+            entity.HasOne(ar => ar.Academic)
+                .WithMany(a => a.AcademicRanks)
+                .HasForeignKey(ar => ar.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to PromotionCommittee (optional)
+            entity.HasOne(ar => ar.PromotionCommittee)
+                .WithMany(pc => pc.ApprovedRanks)
+                .HasForeignKey(ar => ar.PromotionCommitteeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure indexes
+            entity.HasIndex(ar => ar.AcademicEmpNr)
+                .HasDatabaseName("IX_AcademicRank_Academic");
+
+            entity.HasIndex(ar => ar.RankLevel)
+                .HasDatabaseName("IX_AcademicRank_RankLevel");
+
+            entity.HasIndex(ar => ar.TenureStatus)
+                .HasDatabaseName("IX_AcademicRank_TenureStatus");
+
+            entity.HasIndex(ar => new { ar.AcademicEmpNr, ar.IsCurrentRank })
+                .HasDatabaseName("IX_AcademicRank_Academic_Current");
+        });
+
+        // Configure PromotionApplication
+        modelBuilder.Entity<PromotionApplication>(entity =>
+        {
+            entity.HasKey(pa => pa.Id);
+
+            // Foreign key to Academic
+            entity.HasOne(pa => pa.Academic)
+                .WithMany(a => a.PromotionApplications)
+                .HasForeignKey(pa => pa.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to PromotionCommittee (optional)
+            entity.HasOne(pa => pa.PromotionCommittee)
+                .WithMany(pc => pc.PromotionApplications)
+                .HasForeignKey(pa => pa.PromotionCommitteeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure indexes
+            entity.HasIndex(pa => pa.AcademicEmpNr)
+                .HasDatabaseName("IX_PromotionApplication_Academic");
+
+            entity.HasIndex(pa => pa.Status)
+                .HasDatabaseName("IX_PromotionApplication_Status");
+
+            entity.HasIndex(pa => pa.RequestedRank)
+                .HasDatabaseName("IX_PromotionApplication_RequestedRank");
+
+            entity.HasIndex(pa => new { pa.AcademicYear, pa.Status })
+                .HasDatabaseName("IX_PromotionApplication_Year_Status");
+        });
+
+        // Configure TenureTrack
+        modelBuilder.Entity<TenureTrack>(entity =>
+        {
+            entity.HasKey(tt => tt.Id);
+
+            // Foreign key to Academic
+            entity.HasOne(tt => tt.Academic)
+                .WithMany(a => a.TenureTracks)
+                .HasForeignKey(tt => tt.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Note: ProgressPercentage is a computed property and doesn't need configuration
+
+            // Configure indexes
+            entity.HasIndex(tt => tt.AcademicEmpNr)
+                .HasDatabaseName("IX_TenureTrack_Academic");
+
+            entity.HasIndex(tt => tt.TenureStatus)
+                .HasDatabaseName("IX_TenureTrack_Status");
+
+            entity.HasIndex(tt => tt.IsActive)
+                .HasDatabaseName("IX_TenureTrack_Active");
+
+            entity.HasIndex(tt => new { tt.AcademicEmpNr, tt.IsActive })
+                .HasDatabaseName("IX_TenureTrack_Academic_Active");
+        });
+
+        // Configure PromotionCommittee
+        modelBuilder.Entity<PromotionCommittee>(entity =>
+        {
+            entity.HasKey(pc => pc.Id);
+
+            // Foreign key to Academic (Chair)
+            entity.HasOne(pc => pc.Chair)
+                .WithMany(a => a.ChairedPromotionCommittees)
+                .HasForeignKey(pc => pc.ChairEmpNr)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure decimal precision
+            entity.Property(pc => pc.VotingThreshold)
+                .HasPrecision(5, 2);
+
+            // Configure indexes
+            entity.HasIndex(pc => pc.ChairEmpNr)
+                .HasDatabaseName("IX_PromotionCommittee_Chair");
+
+            entity.HasIndex(pc => pc.CommitteeType)
+                .HasDatabaseName("IX_PromotionCommittee_Type");
+
+            entity.HasIndex(pc => pc.IsActive)
+                .HasDatabaseName("IX_PromotionCommittee_Active");
+
+            entity.HasIndex(pc => new { pc.AcademicYear, pc.IsActive })
+                .HasDatabaseName("IX_PromotionCommittee_Year_Active");
+        });
+
+        // Configure PromotionCommitteeMember
+        modelBuilder.Entity<PromotionCommitteeMember>(entity =>
+        {
+            entity.HasKey(pcm => pcm.Id);
+
+            // Foreign key to PromotionCommittee
+            entity.HasOne(pcm => pcm.PromotionCommittee)
+                .WithMany(pc => pc.Members)
+                .HasForeignKey(pcm => pcm.PromotionCommitteeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to Academic
+            entity.HasOne(pcm => pcm.Academic)
+                .WithMany(a => a.PromotionCommitteeMemberships)
+                .HasForeignKey(pcm => pcm.EmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure decimal precision
+            entity.Property(pcm => pcm.AttendanceRate)
+                .HasPrecision(5, 2);
+
+            // Configure indexes
+            entity.HasIndex(pcm => pcm.PromotionCommitteeId)
+                .HasDatabaseName("IX_PromotionCommitteeMember_Committee");
+
+            entity.HasIndex(pcm => pcm.EmpNr)
+                .HasDatabaseName("IX_PromotionCommitteeMember_Academic");
+
+            entity.HasIndex(pcm => pcm.IsActive)
+                .HasDatabaseName("IX_PromotionCommitteeMember_Active");
+
+            entity.HasIndex(pcm => new { pcm.PromotionCommitteeId, pcm.IsActive })
+                .HasDatabaseName("IX_PromotionCommitteeMember_Committee_Active");
+        });
+
+        // Configure PromotionWorkflowStep
+        modelBuilder.Entity<PromotionWorkflowStep>(entity =>
+        {
+            entity.HasKey(pws => pws.Id);
+
+            // Foreign key to PromotionApplication
+            entity.HasOne(pws => pws.PromotionApplication)
+                .WithMany(pa => pa.WorkflowSteps)
+                .HasForeignKey(pws => pws.PromotionApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to PromotionCommittee (optional)
+            entity.HasOne(pws => pws.PromotionCommittee)
+                .WithMany()
+                .HasForeignKey(pws => pws.PromotionCommitteeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Foreign key to Academic (AssignedReviewer, optional)
+            entity.HasOne(pws => pws.AssignedReviewer)
+                .WithMany(a => a.AssignedPromotionSteps)
+                .HasForeignKey(pws => pws.AssignedReviewerEmpNr)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure decimal precision
+            entity.Property(pws => pws.CompletionPercentage)
+                .HasPrecision(5, 2);
+
+            // Configure indexes
+            entity.HasIndex(pws => pws.PromotionApplicationId)
+                .HasDatabaseName("IX_PromotionWorkflowStep_Application");
+
+            entity.HasIndex(pws => pws.Status)
+                .HasDatabaseName("IX_PromotionWorkflowStep_Status");
+
+            entity.HasIndex(pws => pws.StepOrder)
+                .HasDatabaseName("IX_PromotionWorkflowStep_Order");
+
+            entity.HasIndex(pws => new { pws.PromotionApplicationId, pws.StepOrder })
+                .HasDatabaseName("IX_PromotionWorkflowStep_Application_Order");
+        });
+
+        // Configure TenureMilestone
+        modelBuilder.Entity<TenureMilestone>(entity =>
+        {
+            entity.HasKey(tm => tm.Id);
+
+            // Foreign key to TenureTrack
+            entity.HasOne(tm => tm.TenureTrack)
+                .WithMany(tt => tt.Milestones)
+                .HasForeignKey(tm => tm.TenureTrackId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to Academic (Reviewer, optional)
+            entity.HasOne(tm => tm.Reviewer)
+                .WithMany(a => a.ReviewedTenureMilestones)
+                .HasForeignKey(tm => tm.ReviewerEmpNr)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure indexes
+            entity.HasIndex(tm => tm.TenureTrackId)
+                .HasDatabaseName("IX_TenureMilestone_TenureTrack");
+
+            entity.HasIndex(tm => tm.Status)
+                .HasDatabaseName("IX_TenureMilestone_Status");
+
+            entity.HasIndex(tm => tm.TenureYear)
+                .HasDatabaseName("IX_TenureMilestone_Year");
+
+            entity.HasIndex(tm => new { tm.TenureTrackId, tm.MilestoneOrder })
+                .HasDatabaseName("IX_TenureMilestone_Track_Order");
+        });
+
+        // Configure PromotionVote
+        modelBuilder.Entity<PromotionVote>(entity =>
+        {
+            entity.HasKey(pv => pv.Id);
+
+            // Foreign key to PromotionApplication
+            entity.HasOne(pv => pv.PromotionApplication)
+                .WithMany(pa => pa.Votes)
+                .HasForeignKey(pv => pv.PromotionApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to PromotionCommitteeMember
+            entity.HasOne(pv => pv.PromotionCommitteeMember)
+                .WithMany(pcm => pcm.Votes)
+                .HasForeignKey(pv => pv.PromotionCommitteeMemberId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to Academic (Voter)
+            entity.HasOne(pv => pv.Voter)
+                .WithMany(a => a.PromotionVotes)
+                .HasForeignKey(pv => pv.VoterEmpNr)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure decimal precision
+            entity.Property(pv => pv.VoteWeight)
+                .HasPrecision(3, 2);
+
+            entity.Property(pv => pv.OverallScore)
+                .HasPrecision(4, 2);
+
+            entity.Property(pv => pv.ReviewTimeHours)
+                .HasPrecision(5, 2);
+
+            // Configure indexes
+            entity.HasIndex(pv => pv.PromotionApplicationId)
+                .HasDatabaseName("IX_PromotionVote_Application");
+
+            entity.HasIndex(pv => pv.VoterEmpNr)
+                .HasDatabaseName("IX_PromotionVote_Voter");
+
+            entity.HasIndex(pv => pv.Vote)
+                .HasDatabaseName("IX_PromotionVote_Vote");
+
+            entity.HasIndex(pv => new { pv.PromotionApplicationId, pv.Vote })
+                .HasDatabaseName("IX_PromotionVote_Application_Vote");
         });
     }
 }
