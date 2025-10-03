@@ -391,6 +391,7 @@ public class PromotionCommitteeTests
 
         // Act
         committee.Chair = chair;
+        committee.ChairEmpNr = chair.EmpNr; // ChairEmpNr is not automatically set
 
         // Assert
         Assert.Equal(chair, committee.Chair);

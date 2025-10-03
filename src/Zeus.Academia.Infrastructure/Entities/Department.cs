@@ -111,4 +111,26 @@ public class Department : BaseEntity
     /// Navigation property for subjects offered by this department.
     /// </summary>
     public virtual ICollection<Subject> Subjects { get; set; } = new List<Subject>();
+
+    // ========== Prompt 5 Task 4: Department Assignment and Administration Navigation Properties ==========
+
+    /// <summary>
+    /// Navigation property for department chair assignments in this department.
+    /// </summary>
+    public virtual ICollection<DepartmentChair> DepartmentChairs { get; set; } = new List<DepartmentChair>();
+
+    /// <summary>
+    /// Navigation property for faculty search committees in this department.
+    /// </summary>
+    public virtual ICollection<FacultySearchCommittee> FacultySearchCommittees { get; set; } = new List<FacultySearchCommittee>();
+
+    /// <summary>
+    /// Navigation property for departmental services offered by this department.
+    /// </summary>
+    public virtual ICollection<DepartmentalService> DepartmentalServices { get; set; } = new List<DepartmentalService>();
+
+    /// <summary>
+    /// Navigation property for service load summaries in this department.
+    /// </summary>
+    public virtual ICollection<ServiceLoadSummary> ServiceLoadSummaries { get; set; } = new List<ServiceLoadSummary>();
 }

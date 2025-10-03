@@ -93,6 +93,17 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<TenureMilestone> TenureMilestones { get; set; } = null!;
     public DbSet<PromotionVote> PromotionVotes { get; set; } = null!;
 
+    // Department Assignment and Administration Entities (Prompt 5 Task 4)
+    public DbSet<DepartmentChair> DepartmentChairs { get; set; } = null!;
+    public DbSet<CommitteeChair> CommitteeChairs { get; set; } = null!;
+    public DbSet<CommitteeMemberAssignment> CommitteeMemberAssignments { get; set; } = null!;
+    public DbSet<AdministrativeRole> AdministrativeRoles { get; set; } = null!;
+    public DbSet<AdministrativeAssignment> AdministrativeAssignments { get; set; } = null!;
+    public DbSet<FacultySearchCommittee> FacultySearchCommittees { get; set; } = null!;
+    public DbSet<FacultySearchCommitteeMember> FacultySearchCommitteeMembers { get; set; } = null!;
+    public DbSet<DepartmentalService> DepartmentalServices { get; set; } = null!;
+    public DbSet<ServiceLoadSummary> ServiceLoadSummaries { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
@@ -2259,5 +2270,111 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
             entity.HasIndex(pv => new { pv.PromotionApplicationId, pv.Vote })
                 .HasDatabaseName("IX_PromotionVote_Application_Vote");
         });
+
+        // ========== Prompt 5 Task 4: Department Assignment and Administration Entity Configurations ==========
+
+        // Configure DepartmentChair relationships
+        modelBuilder.Entity<DepartmentChair>()
+            .HasOne(dc => dc.Department)
+            .WithMany(d => d.DepartmentChairs)
+            .HasForeignKey(dc => dc.DepartmentName)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DepartmentChair>()
+            .HasOne(dc => dc.Faculty)
+            .WithMany(a => a.DepartmentChairAssignments)
+            .HasForeignKey(dc => dc.FacultyEmpNr)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure CommitteeChair relationships  
+        modelBuilder.Entity<CommitteeChair>()
+            .HasOne(cc => cc.Committee)
+            .WithMany(c => c.CommitteeChairs)
+            .HasForeignKey(cc => cc.CommitteeName)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CommitteeChair>()
+            .HasOne(cc => cc.Chair)
+            .WithMany(a => a.CommitteeChairAssignments)
+            .HasForeignKey(cc => cc.ChairEmpNr)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure CommitteeMemberAssignment relationships
+        modelBuilder.Entity<CommitteeMemberAssignment>()
+            .HasOne(cma => cma.Committee)
+            .WithMany(c => c.CommitteeMemberAssignments)
+            .HasForeignKey(cma => cma.CommitteeName)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CommitteeMemberAssignment>()
+            .HasOne(cma => cma.Member)
+            .WithMany(a => a.CommitteeMemberAssignments)
+            .HasForeignKey(cma => cma.MemberEmpNr)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure AdministrativeAssignment relationships
+        modelBuilder.Entity<AdministrativeAssignment>()
+            .HasOne(aa => aa.Role)
+            .WithMany(ar => ar.Assignments)
+            .HasForeignKey(aa => aa.RoleCode)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AdministrativeAssignment>()
+            .HasOne(aa => aa.Assignee)
+            .WithMany(a => a.AdministrativeAssignments)
+            .HasForeignKey(aa => aa.AssigneeEmpNr)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure FacultySearchCommittee relationships
+        modelBuilder.Entity<FacultySearchCommittee>()
+            .HasOne(fsc => fsc.Department)
+            .WithMany(d => d.FacultySearchCommittees)
+            .HasForeignKey(fsc => fsc.DepartmentName)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FacultySearchCommittee>()
+            .HasOne(fsc => fsc.Chair)
+            .WithMany(a => a.FacultySearchCommitteesAsChair)
+            .HasForeignKey(fsc => fsc.ChairEmpNr)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure FacultySearchCommitteeMember relationships
+        modelBuilder.Entity<FacultySearchCommitteeMember>()
+            .HasOne(fscm => fscm.SearchCommittee)
+            .WithMany(fsc => fsc.Members)
+            .HasForeignKey(fscm => fscm.SearchCommitteeCode)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FacultySearchCommitteeMember>()
+            .HasOne(fscm => fscm.Member)
+            .WithMany(a => a.FacultySearchCommitteeMemberships)
+            .HasForeignKey(fscm => fscm.MemberEmpNr)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure DepartmentalService relationships
+        modelBuilder.Entity<DepartmentalService>()
+            .HasOne(ds => ds.Faculty)
+            .WithMany(a => a.DepartmentalServices)
+            .HasForeignKey(ds => ds.FacultyEmpNr)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DepartmentalService>()
+            .HasOne(ds => ds.Department)
+            .WithMany(d => d.DepartmentalServices)
+            .HasForeignKey(ds => ds.DepartmentName)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure ServiceLoadSummary relationships
+        modelBuilder.Entity<ServiceLoadSummary>()
+            .HasOne(sls => sls.Faculty)
+            .WithMany(a => a.ServiceLoadSummaries)
+            .HasForeignKey(sls => sls.FacultyEmpNr)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ServiceLoadSummary>()
+            .HasOne(sls => sls.Department)
+            .WithMany(d => d.ServiceLoadSummaries)
+            .HasForeignKey(sls => sls.DepartmentName)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

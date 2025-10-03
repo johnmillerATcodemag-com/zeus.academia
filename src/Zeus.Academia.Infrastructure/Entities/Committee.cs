@@ -36,6 +36,18 @@ public class Committee : BaseEntity
     /// Navigation property for committee members.
     /// </summary>
     public virtual ICollection<CommitteeMember> Members { get; set; } = new List<CommitteeMember>();
+
+    // ========== Prompt 5 Task 4: Department Assignment and Administration Navigation Properties ==========
+
+    /// <summary>
+    /// Navigation property for committee chair assignments for this committee.
+    /// </summary>
+    public virtual ICollection<CommitteeChair> CommitteeChairs { get; set; } = new List<CommitteeChair>();
+
+    /// <summary>
+    /// Navigation property for enhanced committee member assignments.
+    /// </summary>
+    public virtual ICollection<CommitteeMemberAssignment> CommitteeMemberAssignments { get; set; } = new List<CommitteeMemberAssignment>();
 }
 
 /// <summary>

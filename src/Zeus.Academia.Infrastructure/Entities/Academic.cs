@@ -116,6 +116,48 @@ public abstract class Academic : BaseEntity
     /// Navigation property for tenure milestones reviewed by this academic.
     /// </summary>
     public virtual ICollection<TenureMilestone> ReviewedTenureMilestones { get; set; } = new List<TenureMilestone>();
+
+    // ========== Prompt 5 Task 4: Department Assignment and Administration Navigation Properties ==========
+
+    /// <summary>
+    /// Navigation property for department chair assignments held by this academic.
+    /// </summary>
+    public virtual ICollection<DepartmentChair> DepartmentChairAssignments { get; set; } = new List<DepartmentChair>();
+
+    /// <summary>
+    /// Navigation property for committee chair positions held by this academic.
+    /// </summary>
+    public virtual ICollection<CommitteeChair> CommitteeChairAssignments { get; set; } = new List<CommitteeChair>();
+
+    /// <summary>
+    /// Navigation property for committee member assignments for this academic.
+    /// </summary>
+    public virtual ICollection<CommitteeMemberAssignment> CommitteeMemberAssignments { get; set; } = new List<CommitteeMemberAssignment>();
+
+    /// <summary>
+    /// Navigation property for administrative role assignments held by this academic.
+    /// </summary>
+    public virtual ICollection<AdministrativeAssignment> AdministrativeAssignments { get; set; } = new List<AdministrativeAssignment>();
+
+    /// <summary>
+    /// Navigation property for faculty search committees chaired by this academic.
+    /// </summary>
+    public virtual ICollection<FacultySearchCommittee> FacultySearchCommitteesAsChair { get; set; } = new List<FacultySearchCommittee>();
+
+    /// <summary>
+    /// Navigation property for faculty search committee memberships.
+    /// </summary>
+    public virtual ICollection<FacultySearchCommitteeMember> FacultySearchCommitteeMemberships { get; set; } = new List<FacultySearchCommitteeMember>();
+
+    /// <summary>
+    /// Navigation property for departmental services assigned to this academic.
+    /// </summary>
+    public virtual ICollection<DepartmentalService> DepartmentalServices { get; set; } = new List<DepartmentalService>();
+
+    /// <summary>
+    /// Navigation property for service load summaries for this academic.
+    /// </summary>
+    public virtual ICollection<ServiceLoadSummary> ServiceLoadSummaries { get; set; } = new List<ServiceLoadSummary>();
 }
 
 /// <summary>

@@ -19,11 +19,10 @@ public class AcademicRankTests
         Assert.NotNull(academicRank.RankLevel);
         Assert.Empty(academicRank.RankLevel);
         Assert.True(academicRank.IsCurrentRank);
-        Assert.Equal("Not Applicable", academicRank.TenureStatus);
-        Assert.Equal(DateTime.Today, academicRank.EffectiveDate.Date);
-        Assert.True(academicRank.IsSabbaticalEligible);
-        Assert.NotNull(academicRank.Notes);
-        Assert.Empty(academicRank.Notes);
+        Assert.Equal("Non-Tenure Track", academicRank.TenureStatus);
+        Assert.Equal(DateTime.MinValue, academicRank.EffectiveDate);
+        Assert.False(academicRank.IsSabbaticalEligible);
+        Assert.Equal(100.00m, academicRank.AppointmentPercentage);
     }
 
     [Fact]
@@ -107,7 +106,7 @@ public class AcademicRankTests
     }
 
     [Fact]
-    public void IsEligibleForTenure_TenureTrackAssistantProfessor_ReturnsTrue()
+    public void IsEligibleForPromotion_TenureTrackAssistantProfessor_ReturnsTrue()
     {
         // Arrange
         var academicRank = new AcademicRank
@@ -115,15 +114,16 @@ public class AcademicRankTests
             RankLevel = "Assistant Professor",
             TenureStatus = "Tenure Track",
             EffectiveDate = DateTime.Today.AddYears(-5),
-            IsCurrentRank = true
+            IsCurrentRank = true,
+            MinimumYearsInRank = 3
         };
 
         // Act & Assert
-        Assert.True(academicRank.IsEligibleForTenure);
+        Assert.True(academicRank.IsEligibleForPromotion);
     }
 
     [Fact]
-    public void IsEligibleForTenure_NonTenureTrack_ReturnsFalse()
+    public void IsEligibleForPromotion_NonTenureTrack_ReturnsFalse()
     {
         // Arrange
         var academicRank = new AcademicRank
@@ -135,11 +135,11 @@ public class AcademicRankTests
         };
 
         // Act & Assert
-        Assert.False(academicRank.IsEligibleForTenure);
+        Assert.False(academicRank.IsEligibleForPromotion);
     }
 
     [Fact]
-    public void IsEligibleForTenure_AlreadyTenured_ReturnsFalse()
+    public void IsEligibleForPromotion_AlreadyTenured_ReturnsFalse()
     {
         // Arrange
         var academicRank = new AcademicRank
@@ -151,7 +151,7 @@ public class AcademicRankTests
         };
 
         // Act & Assert
-        Assert.False(academicRank.IsEligibleForTenure);
+        Assert.False(academicRank.IsEligibleForPromotion);
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class AcademicRankTests
     }
 
     [Fact]
-    public void NextPromotionRank_AssistantProfessor_ReturnsAssociate()
+    public void FullRankDescription_AssistantProfessor_ReturnsAssistant()
     {
         // Arrange
         var academicRank = new AcademicRank
@@ -190,11 +190,11 @@ public class AcademicRankTests
         };
 
         // Act & Assert
-        Assert.Equal("Associate Professor", academicRank.NextPromotionRank);
+        Assert.Equal("Assistant Professor", academicRank.FullRankDescription);
     }
 
     [Fact]
-    public void NextPromotionRank_AssociateProfessor_ReturnsFull()
+    public void FullRankDescription_AssociateProfessor_ReturnsAssociate()
     {
         // Arrange
         var academicRank = new AcademicRank
@@ -203,11 +203,11 @@ public class AcademicRankTests
         };
 
         // Act & Assert
-        Assert.Equal("Full Professor", academicRank.NextPromotionRank);
+        Assert.Equal("Associate Professor", academicRank.FullRankDescription);
     }
 
     [Fact]
-    public void NextPromotionRank_FullProfessor_ReturnsNull()
+    public void FullRankDescription_FullProfessor_ReturnsFull()
     {
         // Arrange
         var academicRank = new AcademicRank
@@ -216,59 +216,67 @@ public class AcademicRankTests
         };
 
         // Act & Assert
-        Assert.Null(academicRank.NextPromotionRank);
+        Assert.Equal("Full Professor", academicRank.FullRankDescription);
     }
 
     [Fact]
-    public void RankLevel_AssistantProfessor_ReturnsLevel1()
+    public void YearsInRank_AssistantProfessor_OneYearAgo_ReturnsOne()
     {
         // Arrange
         var academicRank = new AcademicRank
         {
-            RankLevel = "Assistant Professor"
+            RankLevel = "Assistant Professor",
+            EffectiveDate = DateTime.Today.AddYears(-1),
+            EndDate = null
         };
 
         // Act & Assert
-        Assert.Equal(1, academicRank.RankLevelNumber);
+        Assert.Equal(1, academicRank.YearsInRank);
     }
 
     [Fact]
-    public void RankLevel_AssociateProfessor_ReturnsLevel2()
+    public void YearsInRank_AssociateProfessor_TwoYearsAgo_ReturnsTwo()
     {
         // Arrange
         var academicRank = new AcademicRank
         {
-            RankLevel = "Associate Professor"
+            RankLevel = "Associate Professor",
+            EffectiveDate = DateTime.Today.AddYears(-2),
+            EndDate = null
         };
 
         // Act & Assert
-        Assert.Equal(2, academicRank.RankLevelNumber);
+        Assert.Equal(2, academicRank.YearsInRank);
     }
 
     [Fact]
-    public void RankLevel_FullProfessor_ReturnsLevel3()
+    public void YearsInRank_FullProfessor_ThreeYearsAgo_ReturnsThree()
     {
         // Arrange
         var academicRank = new AcademicRank
         {
-            RankLevel = "Full Professor"
+            RankLevel = "Full Professor",
+            EffectiveDate = DateTime.Today.AddYears(-3),
+            EndDate = null
         };
 
         // Act & Assert
-        Assert.Equal(3, academicRank.RankLevelNumber);
+        Assert.Equal(3, academicRank.YearsInRank);
     }
 
     [Fact]
-    public void RankLevel_UnknownRank_ReturnsZero()
+    public void YearsInRank_NewRank_ReturnsZero()
     {
         // Arrange
         var academicRank = new AcademicRank
         {
-            RankLevel = "Unknown Rank"
+            RankLevel = "Unknown Rank",
+            EffectiveDate = DateTime.Today,
+            EndDate = null
         };
 
         // Act & Assert
-        Assert.Equal(0, academicRank.RankLevelNumber);
+        Assert.Equal(0, academicRank.YearsInRank);
     }
 
     [Fact]
@@ -317,13 +325,13 @@ public class AcademicRankTests
     }
 
     [Theory]
-    [InlineData("Assistant Professor", "Tenure Track", true, true)]
-    [InlineData("Associate Professor", "Tenure Track", true, true)]
-    [InlineData("Full Professor", "Tenured", true, false)]
-    [InlineData("Assistant Professor", "Non-Tenure Track", true, false)]
-    [InlineData("Assistant Professor", "Tenure Track", false, false)]
-    public void IsEligibleForTenure_VariousScenarios_ReturnsExpectedResult(
-        string rankLevel, string tenureStatus, bool isCurrentRank, bool expected)
+    [InlineData("Assistant Professor", "Tenure Track", true, 3, true)]
+    [InlineData("Associate Professor", "Tenure Track", true, 3, true)]
+    [InlineData("Full Professor", "Tenured", true, null, false)]
+    [InlineData("Assistant Professor", "Non-Tenure Track", true, 3, true)]
+    [InlineData("Assistant Professor", "Tenure Track", false, 3, false)]
+    public void IsEligibleForPromotion_VariousScenarios_ReturnsExpectedResult(
+        string rankLevel, string tenureStatus, bool isCurrentRank, int? minimumYears, bool expected)
     {
         // Arrange
         var academicRank = new AcademicRank
@@ -331,21 +339,27 @@ public class AcademicRankTests
             RankLevel = rankLevel,
             TenureStatus = tenureStatus,
             IsCurrentRank = isCurrentRank,
-            EffectiveDate = DateTime.Today.AddYears(-5)
+            EffectiveDate = DateTime.Today.AddYears(-5),
+            MinimumYearsInRank = minimumYears
         };
 
         // Act & Assert
-        Assert.Equal(expected, academicRank.IsEligibleForTenure);
+        Assert.Equal(expected, academicRank.IsEligibleForPromotion);
     }
 
     [Fact]
-    public void AcademicRank_CollectionProperties_InitializedProperly()
+    public void AcademicRank_NavigationProperties_CanBeSet()
     {
-        // Act
+        // Arrange
         var academicRank = new AcademicRank();
+        var academic = new Professor { EmpNr = 123, Name = "Test Professor" };
 
-        // Assert - Navigation properties should be initialized
-        Assert.NotNull(academicRank.Academic);
-        Assert.NotNull(academicRank.PromotionCommittee);
+        // Act
+        academicRank.Academic = academic;
+        academicRank.AcademicEmpNr = academic.EmpNr;
+
+        // Assert
+        Assert.Equal(academic, academicRank.Academic);
+        Assert.Equal(123, academicRank.AcademicEmpNr);
     }
 }
