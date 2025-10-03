@@ -44,7 +44,7 @@ public class ValidationDebugTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 1234567,
+            StudentId = "1234567",
             Name = "Alice Johnson",
             PhoneNumber = "555-111-2222",
             Class = "Senior",

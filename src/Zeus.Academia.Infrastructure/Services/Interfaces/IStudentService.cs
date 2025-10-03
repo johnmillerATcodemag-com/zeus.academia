@@ -246,4 +246,77 @@ public interface IStudentService
     Task<(IEnumerable<EnrollmentApplication> Applications, int TotalCount)> GetPendingApplicationsAsync(
         int pageNumber = 1,
         int pageSize = 10);
+
+    /// <summary>
+    /// Gets all students (alternative method for controller compatibility)
+    /// </summary>
+    /// <returns>All students</returns>
+    Task<IEnumerable<Student>> GetAllStudentsAsync();
+
+    /// <summary>
+    /// Gets a student by their employee number
+    /// </summary>
+    /// <param name="empNr">Employee number</param>
+    /// <returns>The student if found</returns>
+    Task<Student?> GetStudentByEmpNrAsync(string empNr);
+
+    /// <summary>
+    /// Gets a student by their student ID (alternative method name)
+    /// </summary>
+    /// <param name="studentId">Student ID</param>
+    /// <returns>The student if found</returns>
+    Task<Student?> GetStudentByStudentIdAsync(string studentId);
+
+    /// <summary>
+    /// Deactivates a student
+    /// </summary>
+    /// <param name="studentId">Student ID</param>
+    /// <returns>Success status</returns>
+    Task<bool> DeactivateStudentAsync(int studentId);
+
+    /// <summary>
+    /// Submits an enrollment application
+    /// </summary>
+    /// <param name="application">Application details</param>
+    /// <returns>Created application</returns>
+    Task<EnrollmentApplication> SubmitEnrollmentApplicationAsync(EnrollmentApplication application);
+
+    /// <summary>
+    /// Gets an enrollment application by ID
+    /// </summary>
+    /// <param name="applicationId">Application ID</param>
+    /// <returns>The application if found</returns>
+    Task<EnrollmentApplication?> GetEnrollmentApplicationAsync(int applicationId);
+
+    /// <summary>
+    /// Gets enrollment history for a student (alternative method name)
+    /// </summary>
+    /// <param name="studentId">Student ID</param>
+    /// <returns>Enrollment history</returns>
+    Task<IEnumerable<EnrollmentHistory>> GetEnrollmentHistoryAsync(int studentId);
+
+    /// <summary>
+    /// Gets student statistics
+    /// </summary>
+    /// <returns>Student statistics</returns>
+    Task<object> GetStudentStatisticsAsync();
+
+    /// <summary>
+    /// Uploads a document for a student
+    /// </summary>
+    /// <param name="studentId">Student ID</param>
+    /// <param name="documentType">Document type</param>
+    /// <param name="fileName">File name</param>
+    /// <param name="fileContent">File content</param>
+    /// <returns>Upload result</returns>
+    Task<object> UploadDocumentAsync(int studentId, string documentType, string fileName, byte[] fileContent);
+
+    /// <summary>
+    /// Uploads a photo for a student
+    /// </summary>
+    /// <param name="studentId">Student ID</param>
+    /// <param name="fileName">File name</param>
+    /// <param name="fileContent">File content</param>
+    /// <returns>Upload result</returns>
+    Task<object> UploadPhotoAsync(int studentId, string fileName, byte[] fileContent);
 }

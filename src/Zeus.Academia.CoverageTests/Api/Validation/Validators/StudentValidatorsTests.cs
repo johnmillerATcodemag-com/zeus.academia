@@ -16,7 +16,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 1234567,
+            StudentId = "1234567",
             Name = "Alice Johnson",
             PhoneNumber = "555-111-2222",
             Class = "Senior",
@@ -33,9 +33,9 @@ public class StudentValidatorsTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void CreateStudentRequestValidator_WithInvalidStudentId_ReturnsValidationError(int invalidStudentId)
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void CreateStudentRequestValidator_WithInvalidStudentId_ReturnsValidationError(string invalidStudentId)
     {
         // Arrange
         var validator = new CreateStudentRequestValidator();
@@ -64,7 +64,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 123456,
+            StudentId = "123456",
             Name = invalidName,
             PhoneNumber = "555-111-2222",
             GPA = 3.75m
@@ -88,7 +88,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 123456,
+            StudentId = "123456",
             Name = "Alice Johnson",
             PhoneNumber = invalidPhone,
             GPA = 3.75m
@@ -112,7 +112,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 1234567,
+            StudentId = "1234567",
             Name = "Alice Johnson",
             PhoneNumber = validPhone,
             Class = "Junior",
@@ -136,7 +136,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 123456,
+            StudentId = "123456",
             Name = "Alice Johnson",
             PhoneNumber = "555-111-2222",
             GPA = invalidGPA
@@ -161,7 +161,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 1234567,
+            StudentId = "1234567",
             Name = "Alice Johnson",
             PhoneNumber = "555-111-2222",
             Class = "Sophomore",
@@ -226,7 +226,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = -1, // Invalid
+            StudentId = "-1", // Invalid
             Name = "", // Invalid - empty
             PhoneNumber = "123", // Invalid format
             GPA = 5.0m // Invalid - too high
@@ -253,7 +253,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 7890123,
+            StudentId = "7890123",
             Name = "Carol Davis",
             PhoneNumber = "555-555-5555",
             GPA = 3.9m,
@@ -297,7 +297,7 @@ public class StudentValidatorsTests
         var validator = new CreateStudentRequestValidator();
         var request = new CreateStudentRequest
         {
-            StudentId = 1234567,
+            StudentId = "1234567",
             Name = "Alice Johnson",
             PhoneNumber = "555-111-2222",
             GPA = 3.75m,

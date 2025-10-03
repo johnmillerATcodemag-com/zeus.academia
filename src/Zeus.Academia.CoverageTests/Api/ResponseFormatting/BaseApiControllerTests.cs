@@ -7,7 +7,9 @@ using Xunit;
 using Zeus.Academia.Api.Controllers;
 using Zeus.Academia.Api.Extensions;
 using Zeus.Academia.Api.Models.Responses;
+using Zeus.Academia.Api.Models.Common;
 
+#pragma warning disable CS0618 // Type or member is obsolete
 namespace Zeus.Academia.CoverageTests.Api.ResponseFormatting;
 
 /// <summary>
@@ -89,7 +91,7 @@ public class BaseApiControllerTests
         // Arrange
         var message = "Operation failed";
         var statusCode = 400;
-        var errors = new { Field = "Error message" };
+        var errors = new Dictionary<string, string[]> { ["Field"] = new[] { "Error message" } };
 
         // Act
         var result = _controller.TestError(message, statusCode, errors);

@@ -1,27 +1,17 @@
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
+using Zeus.Academia.Api.Models.Common;
 
 namespace Zeus.Academia.Api.Models.Responses;
 
 /// <summary>
-/// Paged API response wrapper with pagination metadata
+/// Legacy paged API response wrapper - use PagedResponse&lt;T&gt; from Common instead
 /// </summary>
 /// <typeparam name="T">Type of items in the paged collection</typeparam>
-/// <remarks>
-/// Extends the base ApiResponse to include paged data and pagination metadata.
-/// Provides comprehensive pagination information for client applications.
-/// </remarks>
+[Obsolete("Use PagedResponse<T> from Zeus.Academia.Api.Models.Common instead")]
 [XmlRoot("PagedResponse")]
-public class PagedApiResponse<T> : ApiResponse
+public class PagedApiResponse<T> : ApiResponse<IEnumerable<T>>
 {
-    /// <summary>
-    /// Collection of items for the current page
-    /// </summary>
-    [JsonPropertyName("data")]
-    [XmlArray("Data")]
-    [XmlArrayItem("Item")]
-    public IEnumerable<T>? Data { get; set; }
-
     /// <summary>
     /// Pagination metadata
     /// </summary>
@@ -89,7 +79,7 @@ public class PagedApiResponse<T> : ApiResponse
     /// <param name="correlationId">Request correlation ID</param>
     /// <param name="version">API version</param>
     /// <returns>Error paged response</returns>
-    public static new PagedApiResponse<T> CreateError(string message, object? errors = null, string? correlationId = null, string? version = null)
+    public static new PagedApiResponse<T> CreateError(string message, Dictionary<string, string[]>? errors = null, string? correlationId = null, string? version = null)
     {
         return new PagedApiResponse<T>
         {

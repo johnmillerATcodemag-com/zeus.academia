@@ -4,6 +4,7 @@ using Moq;
 using Xunit;
 using Zeus.Academia.Api.Controllers.V1;
 using Zeus.Academia.Api.Models.Responses;
+using Zeus.Academia.Api.Models.Common;
 using Zeus.Academia.Api.Services;
 
 namespace Zeus.Academia.CoverageTests.Api.Controllers.V1;

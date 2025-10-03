@@ -1,6 +1,8 @@
 using Xunit;
 using Zeus.Academia.Api.Models.Responses;
+using Zeus.Academia.Api.Models.Common;
 
+#pragma warning disable CS0618 // Type or member is obsolete
 namespace Zeus.Academia.CoverageTests.Api.ResponseFormatting;
 
 /// <summary>
@@ -66,7 +68,7 @@ public class PagedApiResponseTests
     {
         // Arrange
         var message = "Pagination failed";
-        var errors = new { Page = "Invalid page number" };
+        var errors = new Dictionary<string, string[]> { ["Page"] = new[] { "Invalid page number" } };
         var correlationId = "error-correlation-id";
         var version = "1.0";
 

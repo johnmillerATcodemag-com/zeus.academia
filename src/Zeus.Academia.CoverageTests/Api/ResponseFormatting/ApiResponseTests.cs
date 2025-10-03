@@ -1,5 +1,6 @@
 using Xunit;
 using Zeus.Academia.Api.Models.Responses;
+using Zeus.Academia.Api.Models.Common;
 
 namespace Zeus.Academia.CoverageTests.Api.ResponseFormatting;
 
@@ -48,7 +49,7 @@ public class ApiResponseTests
     {
         // Arrange
         var message = "Operation failed";
-        var errors = new { Field = "Error message" };
+        var errors = new Dictionary<string, string[]> { ["Field"] = new[] { "Error message" } };
         var correlationId = "test-correlation-id";
         var version = "1.0";
 
@@ -91,7 +92,7 @@ public class ApiResponseTests
     {
         // Arrange
         var message = "Operation failed";
-        var errors = new[] { "Error 1", "Error 2" };
+        var errors = new Dictionary<string, string[]> { ["Field"] = new[] { "Error 1", "Error 2" } };
         var correlationId = "test-correlation-id";
         var version = "1.0";
 

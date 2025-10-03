@@ -97,10 +97,19 @@ public class SampleDataController : BaseApiController
             query = query.OrderBy(x => x.Id); // Default sort
         }
 
-        // Apply pagination
-        var pagedResult = query.ToPaginatedList(pagination);
+        // Apply pagination (simple implementation for now)
+        var totalCount = query.Count();
+        var items = query
+            .Skip((pagination.Page - 1) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .ToList();
 
-        return PagedSuccess(pagedResult, $"Retrieved {pagedResult.Items.Count()} items from page {pagination.Page}");
+        return PagedSuccess(
+            items,
+            pagination.Page,
+            pagination.PageSize,
+            totalCount,
+            $"Retrieved {items.Count} items from page {pagination.Page}");
     }
 
     /// <summary>

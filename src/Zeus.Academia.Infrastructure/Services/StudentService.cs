@@ -683,4 +683,175 @@ public class StudentService : IStudentService
         return await _enrollmentApplicationService.GetApplicationsByStatusAsync(
             ApplicationStatus.Submitted, pageNumber, pageSize);
     }
+
+    public async Task<IEnumerable<Student>> GetAllStudentsAsync()
+    {
+        _logger.LogDebug("Getting all students");
+
+        return await _context.Students
+            .Include(s => s.Department)
+            .OrderBy(s => s.Name)
+            .ToListAsync();
+    }
+
+    public async Task<Student?> GetStudentByEmpNrAsync(string empNr)
+    {
+        _logger.LogDebug("Getting student by employee number: {EmpNr}", empNr);
+
+        if (!int.TryParse(empNr, out int empNrInt))
+        {
+            _logger.LogWarning("Invalid employee number format: {EmpNr}", empNr);
+            return null;
+        }
+
+        return await _context.Students
+            .Include(s => s.Department)
+            .FirstOrDefaultAsync(s => s.EmpNr == empNrInt);
+    }
+
+    public async Task<Student?> GetStudentByStudentIdAsync(string studentId)
+    {
+        _logger.LogDebug("Getting student by student ID: {StudentId}", studentId);
+
+        return await _context.Students
+            .Include(s => s.Department)
+            .FirstOrDefaultAsync(s => s.StudentId == studentId);
+    }
+
+    public async Task<bool> DeactivateStudentAsync(int studentId)
+    {
+        _logger.LogDebug("Deactivating student with ID: {StudentId}", studentId);
+
+        var student = await GetStudentByIdAsync(studentId);
+        if (student == null)
+        {
+            _logger.LogWarning("Student with ID {StudentId} not found for deactivation", studentId);
+            return false;
+        }
+
+        student.IsActive = false;
+        student.EnrollmentStatus = EnrollmentStatus.Withdrawn;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Student with ID {StudentId} deactivated successfully", studentId);
+        return true;
+    }
+
+    public async Task<EnrollmentApplication> SubmitEnrollmentApplicationAsync(EnrollmentApplication application)
+    {
+        _logger.LogDebug("Submitting enrollment application for applicant: {ApplicantEmpNr}", application.ApplicantEmpNr);
+
+        application.ApplicationDate = DateTime.UtcNow;
+        application.Status = ApplicationStatus.Submitted;
+
+        _context.EnrollmentApplications.Add(application);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Enrollment application submitted successfully with ID: {ApplicationId}", application.Id);
+        return application;
+    }
+
+    public async Task<EnrollmentApplication?> GetEnrollmentApplicationAsync(int applicationId)
+    {
+        _logger.LogDebug("Getting enrollment application with ID: {ApplicationId}", applicationId);
+
+        return await _context.EnrollmentApplications
+            .Include(a => a.Department)
+            .FirstOrDefaultAsync(a => a.Id == applicationId);
+    }
+
+    public async Task<IEnumerable<EnrollmentHistory>> GetEnrollmentHistoryAsync(int studentId)
+    {
+        _logger.LogDebug("Getting enrollment history for student ID: {StudentId}", studentId);
+
+        return await _context.EnrollmentHistory
+            .Where(h => h.StudentEmpNr == studentId)
+            .OrderByDescending(h => h.EventDate)
+            .ToListAsync();
+    }
+
+    public async Task<object> GetStudentStatisticsAsync()
+    {
+        _logger.LogDebug("Getting student statistics");
+
+        var totalStudents = await _context.Students.CountAsync();
+        var activeStudents = await _context.Students.CountAsync(s => s.IsActive);
+        var inactiveStudents = totalStudents - activeStudents;
+
+        var enrollmentStatusStats = await _context.Students
+            .GroupBy(s => s.EnrollmentStatus)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var academicStandingStats = await _context.Students
+            .GroupBy(s => s.AcademicStanding)
+            .Select(g => new { Standing = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        return new
+        {
+            TotalStudents = totalStudents,
+            ActiveStudents = activeStudents,
+            InactiveStudents = inactiveStudents,
+            EnrollmentStatusBreakdown = enrollmentStatusStats,
+            AcademicStandingBreakdown = academicStandingStats
+        };
+    }
+
+    public async Task<object> UploadDocumentAsync(int studentId, string documentType, string fileName, byte[] fileContent)
+    {
+        _logger.LogDebug("Uploading document for student ID: {StudentId}, Type: {DocumentType}", studentId, documentType);
+
+        var student = await GetStudentByIdAsync(studentId);
+        if (student == null)
+        {
+            _logger.LogWarning("Student with ID {StudentId} not found for document upload", studentId);
+            throw new ArgumentException($"Student with ID {studentId} not found", nameof(studentId));
+        }
+
+        // In a real implementation, you would save the file to a storage service
+        // For now, just return a mock response
+        var uploadResult = new
+        {
+            Success = true,
+            StudentId = studentId,
+            DocumentType = documentType,
+            FileName = fileName,
+            FileSize = fileContent.Length,
+            UploadDate = DateTime.UtcNow,
+            DocumentId = Guid.NewGuid().ToString()
+        };
+
+        _logger.LogInformation("Document uploaded successfully for student ID: {StudentId}", studentId);
+        return uploadResult;
+    }
+
+    public async Task<object> UploadPhotoAsync(int studentId, string fileName, byte[] fileContent)
+    {
+        _logger.LogDebug("Uploading photo for student ID: {StudentId}", studentId);
+
+        var student = await GetStudentByIdAsync(studentId);
+        if (student == null)
+        {
+            _logger.LogWarning("Student with ID {StudentId} not found for photo upload", studentId);
+            throw new ArgumentException($"Student with ID {studentId} not found", nameof(studentId));
+        }
+
+        // In a real implementation, you would save the file to a storage service
+        // For now, just return a mock response
+        var uploadResult = new
+        {
+            Success = true,
+            StudentId = studentId,
+            FileName = fileName,
+            FileSize = fileContent.Length,
+            UploadDate = DateTime.UtcNow,
+            PhotoUrl = $"/api/students/{studentId}/photo",
+            PhotoId = Guid.NewGuid().ToString()
+        };
+
+        _logger.LogInformation("Photo uploaded successfully for student ID: {StudentId}", studentId);
+        return uploadResult;
+    }
 }

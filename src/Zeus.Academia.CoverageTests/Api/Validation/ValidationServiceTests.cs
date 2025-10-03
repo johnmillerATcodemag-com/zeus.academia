@@ -106,7 +106,7 @@ public class ValidationServiceTests
         // Arrange
         var request = new CreateStudentRequest
         {
-            StudentId = 1234567,
+            StudentId = "1234567",
             Name = "Alice Johnson",
             PhoneNumber = "555-111-2222",
             Class = "Senior",
@@ -127,7 +127,7 @@ public class ValidationServiceTests
         // Arrange
         var request = new CreateStudentRequest
         {
-            StudentId = -1, // Invalid - negative
+            StudentId = "-1", // Invalid - negative
             Name = "", // Invalid - required
             PhoneNumber = "123", // Invalid format
             GPA = 5.0m // Invalid - exceeds 4.0

@@ -16,7 +16,7 @@ public class ApiVersionAttributeTests
     public void Constructor_WithVersion_SetsVersion()
     {
         // Arrange & Act
-        var attribute = new ApiVersionAttribute("2.0");
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute("2.0");
 
         // Assert
         Assert.Equal("2.0", attribute.Version);
@@ -27,14 +27,14 @@ public class ApiVersionAttributeTests
     public void Constructor_WithNullVersion_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ApiVersionAttribute(null!));
+        Assert.Throws<ArgumentNullException>(() => new Zeus.Academia.Api.Versioning.ApiVersionAttribute(null!));
     }
 
     [Fact]
     public void OnActionExecuting_WithNoRequestedVersion_SetsVersionInContext()
     {
         // Arrange
-        var attribute = new ApiVersionAttribute("1.0");
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute("1.0");
         var context = CreateActionExecutingContext();
 
         // Act
@@ -49,7 +49,7 @@ public class ApiVersionAttributeTests
     public void OnActionExecuting_WithMatchingVersion_SetsVersionInContext()
     {
         // Arrange
-        var attribute = new ApiVersionAttribute("2.0");
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute("2.0");
         var context = CreateActionExecutingContext();
         context.HttpContext.Request.Headers["X-API-Version"] = "2.0";
 
@@ -65,7 +65,7 @@ public class ApiVersionAttributeTests
     public void OnActionExecuting_WithMismatchedVersion_ReturnsBadRequest()
     {
         // Arrange
-        var attribute = new ApiVersionAttribute("1.0");
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute("1.0");
         var context = CreateActionExecutingContext();
         context.HttpContext.Request.Headers["X-API-Version"] = "2.0";
 
@@ -82,7 +82,7 @@ public class ApiVersionAttributeTests
     public void OnActionExecuting_WithDeprecatedVersion_AddsDeprecationHeaders()
     {
         // Arrange
-        var attribute = new ApiVersionAttribute("1.0") { IsDeprecated = true };
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute("1.0") { IsDeprecated = true };
         var context = CreateActionExecutingContext();
         context.HttpContext.Request.Headers["X-API-Version"] = "1.0";
 
@@ -100,7 +100,7 @@ public class ApiVersionAttributeTests
     public void OnActionExecuting_WithQueryParameterVersion_SetsVersionInContext()
     {
         // Arrange
-        var attribute = new ApiVersionAttribute("1.5");
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute("1.5");
         var context = CreateActionExecutingContext();
         context.HttpContext.Request.QueryString = new QueryString("?version=1.5");
 
@@ -123,7 +123,7 @@ public class ApiVersionAttributeTests
     public void OnActionExecuted_AddsVersionHeader()
     {
         // Arrange
-        var attribute = new ApiVersionAttribute("2.0");
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute("2.0");
         var context = CreateActionExecutedContext();
 
         // Act
@@ -141,7 +141,7 @@ public class ApiVersionAttributeTests
     public void OnActionExecuting_WithVariousValidVersions_SetsCorrectVersion(string version)
     {
         // Arrange
-        var attribute = new ApiVersionAttribute(version);
+        var attribute = new Zeus.Academia.Api.Versioning.ApiVersionAttribute(version);
         var context = CreateActionExecutingContext();
         context.HttpContext.Request.Headers["X-API-Version"] = version;
 

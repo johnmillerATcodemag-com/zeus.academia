@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using Zeus.Academia.Api.Configuration;
@@ -47,6 +49,9 @@ public static partial class ServiceCollectionExtensions
 
         // Add memory cache
         services.AddMemoryCache();
+
+        // Add AutoMapper
+        services.AddAutoMapper(typeof(Zeus.Academia.Api.Mapping.StudentMappingProfile));
 
         // Add correlation ID service for request tracking
         services.AddSingleton<ICorrelationIdService, CorrelationIdService>();
@@ -234,8 +239,19 @@ public static partial class ServiceCollectionExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddApiVersioningServices(this IServiceCollection services)
     {
-        // Register the API version service
-        services.AddSingleton<Zeus.Academia.Api.Versioning.IApiVersionService, Zeus.Academia.Api.Versioning.ApiVersionService>();
+        // Add API versioning
+        services.AddApiVersioning(options =>
+        {
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+        });
+
+        // Add API explorer for versioned APIs
+        services.AddVersionedApiExplorer(setup =>
+        {
+            setup.GroupNameFormat = "'v'VVV";
+            setup.SubstituteApiVersionInUrl = true;
+        });
 
         return services;
     }

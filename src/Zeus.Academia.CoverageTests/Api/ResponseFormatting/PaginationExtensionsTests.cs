@@ -17,7 +17,7 @@ public class PaginationExtensionsTests
     {
         // Arrange
         var queryable = _testData.AsQueryable();
-        var parameters = PaginationParameters.Create(2, 5);
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 2, PageSize = 5 };
 
         // Act
         var result = queryable.ToPaginatedList(parameters);
@@ -25,6 +25,7 @@ public class PaginationExtensionsTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(5, result.Items.Count());
+        Assert.NotNull(result.Pagination);
         Assert.Equal(2, result.Pagination.CurrentPage);
         Assert.Equal(5, result.Pagination.PageSize);
         Assert.Equal(_testData.Count, result.Pagination.TotalItems);
@@ -38,15 +39,16 @@ public class PaginationExtensionsTests
     public void ToPaginatedList_IEnumerable_ShouldReturnCorrectPage()
     {
         // Arrange
-        var enumerable = _testData.AsEnumerable();
-        var parameters = PaginationParameters.Create(1, 3);
+        var queryable = _testData.AsQueryable();
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 1, PageSize = 3 };
 
         // Act
-        var result = enumerable.ToPaginatedList(parameters);
+        var result = queryable.ToPaginatedList(parameters);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(3, result.Items.Count());
+        Assert.NotNull(result.Pagination);
         Assert.Equal(1, result.Pagination.CurrentPage);
         Assert.Equal(3, result.Pagination.PageSize);
         Assert.Equal(_testData.Count, result.Pagination.TotalItems);
@@ -61,12 +63,13 @@ public class PaginationExtensionsTests
     {
         // Arrange
         var queryable = _testData.AsQueryable();
-        var parameters = PaginationParameters.Create(1, 5);
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 1, PageSize = 5 };
 
         // Act
         var result = queryable.ToPaginatedList(parameters);
 
         // Assert
+        Assert.NotNull(result.Pagination);
         Assert.Equal(1, result.Pagination.CurrentPage);
         Assert.Equal(5, result.Pagination.PageSize);
         Assert.Equal(_testData.Count, result.Pagination.TotalItems);
@@ -82,12 +85,13 @@ public class PaginationExtensionsTests
     {
         // Arrange
         var queryable = _testData.AsQueryable();
-        var parameters = PaginationParameters.Create(2, 5);
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 2, PageSize = 5 };
 
         // Act
         var result = queryable.ToPaginatedList(parameters);
 
         // Assert
+        Assert.NotNull(result.Pagination);
         Assert.Equal(2, result.Pagination.CurrentPage);
         Assert.Equal(5, result.Pagination.PageSize);
         Assert.Equal(_testData.Count, result.Pagination.TotalItems);
@@ -103,7 +107,7 @@ public class PaginationExtensionsTests
     {
         // Arrange
         var emptyQueryable = Enumerable.Empty<TestItem>().AsQueryable();
-        var parameters = PaginationParameters.Create(1, 5);
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 1, PageSize = 5 };
 
         // Act
         var result = emptyQueryable.ToPaginatedList(parameters);
@@ -111,6 +115,7 @@ public class PaginationExtensionsTests
         // Assert
         Assert.NotNull(result);
         Assert.Empty(result.Items);
+        Assert.NotNull(result.Pagination);
         Assert.Equal(1, result.Pagination.CurrentPage);
         Assert.Equal(5, result.Pagination.PageSize);
         Assert.Equal(0, result.Pagination.TotalItems);
@@ -124,7 +129,7 @@ public class PaginationExtensionsTests
     {
         // Arrange
         var queryable = _testData.AsQueryable();
-        var parameters = PaginationParameters.Create(5, 5); // Page 5 with 5 items per page, but only 10 total items
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 5, PageSize = 5 }; // Page 5 with 5 items per page, but only 10 total items
 
         // Act
         var result = queryable.ToPaginatedList(parameters);
@@ -132,6 +137,7 @@ public class PaginationExtensionsTests
         // Assert
         Assert.NotNull(result);
         Assert.Empty(result.Items);
+        Assert.NotNull(result.Pagination);
         Assert.Equal(5, result.Pagination.CurrentPage);
         Assert.Equal(5, result.Pagination.PageSize);
         Assert.Equal(_testData.Count, result.Pagination.TotalItems);
@@ -147,20 +153,15 @@ public class PaginationExtensionsTests
             Items = _testData.Take(3),
             Pagination = PaginationMetadata.Create(1, 3, _testData.Count)
         };
-        var message = "Data retrieved";
-        var correlationId = "test-id";
-        var version = "1.0";
-
         // Act
-        var response = pagedResult.ToApiResponse(message, correlationId, version);
+        var response = pagedResult.ToPagedResponse();
 
         // Assert
-        Assert.True(response.Success);
         Assert.Equal(pagedResult.Items, response.Data);
-        Assert.Equal(pagedResult.Pagination, response.Pagination);
-        Assert.Equal(message, response.Message);
-        Assert.Equal(correlationId, response.CorrelationId);
-        Assert.Equal(version, response.Version);
+        Assert.Equal(pagedResult.Pagination?.CurrentPage, response.PageNumber);
+        Assert.Equal(pagedResult.Pagination?.PageSize, response.PageSize);
+        Assert.Equal(pagedResult.Pagination?.TotalItems, response.TotalCount);
+        Assert.Equal(pagedResult.Pagination?.TotalPages, response.TotalPages);
     }
 
     [Fact]
@@ -168,49 +169,38 @@ public class PaginationExtensionsTests
     {
         // Arrange
         var queryable = _testData.AsQueryable();
-        var parameters = PaginationParameters.Create(1, 4);
-        var message = "Items retrieved";
-        var correlationId = "query-test";
-        var version = "2.0";
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 1, PageSize = 4 };
+
 
         // Act
-        var response = queryable.ToPagedApiResponse(parameters, message, correlationId, version);
+        var pagedResult = queryable.ToPaginatedList(parameters);
+        var response = pagedResult.ToPagedResponse();
 
         // Assert
-        Assert.True(response.Success);
-        Assert.Equal(4, response.Data!.Count());
-        Assert.Equal(message, response.Message);
-        Assert.Equal(correlationId, response.CorrelationId);
-        Assert.Equal(version, response.Version);
-        Assert.NotNull(response.Pagination);
-        Assert.Equal(1, response.Pagination.CurrentPage);
-        Assert.Equal(4, response.Pagination.PageSize);
-        Assert.Equal(_testData.Count, response.Pagination.TotalItems);
+        Assert.Equal(4, response.Data.Count());
+        Assert.Equal(1, response.PageNumber);
+        Assert.Equal(4, response.PageSize);
+        Assert.Equal(_testData.Count, response.TotalCount);
+        Assert.Equal(3, response.TotalPages); // 10 items / 4 per page = 3 pages (rounded up)
     }
 
     [Fact]
     public void ToPagedApiResponse_IEnumerable_ShouldCreateCorrectResponse()
     {
         // Arrange
-        var enumerable = _testData.AsEnumerable();
-        var parameters = PaginationParameters.Create(2, 3);
-        var message = "Items retrieved";
-        var correlationId = "enum-test";
-        var version = "1.5";
+        var queryable = _testData.AsQueryable();
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = 2, PageSize = 3 };
 
         // Act
-        var response = enumerable.ToPagedApiResponse(parameters, message, correlationId, version);
+        var pagedResult = queryable.ToPaginatedList(parameters);
+        var response = pagedResult.ToPagedResponse();
 
         // Assert
-        Assert.True(response.Success);
-        Assert.Equal(3, response.Data!.Count());
-        Assert.Equal(message, response.Message);
-        Assert.Equal(correlationId, response.CorrelationId);
-        Assert.Equal(version, response.Version);
-        Assert.NotNull(response.Pagination);
-        Assert.Equal(2, response.Pagination.CurrentPage);
-        Assert.Equal(3, response.Pagination.PageSize);
-        Assert.Equal(_testData.Count, response.Pagination.TotalItems);
+        Assert.Equal(3, response.Data.Count());
+        Assert.Equal(2, response.PageNumber);
+        Assert.Equal(3, response.PageSize);
+        Assert.Equal(_testData.Count, response.TotalCount);
+        Assert.Equal(4, response.TotalPages); // 10 items / 3 per page = 4 pages (rounded up)
     }
 
     [Theory]
@@ -223,12 +213,13 @@ public class PaginationExtensionsTests
         // Arrange
         var data = Enumerable.Range(1, totalItems).Select(i => new TestItem { Id = i, Name = $"Item {i}" }).ToList();
         var queryable = data.AsQueryable();
-        var parameters = PaginationParameters.Create(page, pageSize);
+        var parameters = new Zeus.Academia.Api.Models.Common.PaginationParameters { PageNumber = page, PageSize = pageSize };
 
         // Act
         var result = queryable.ToPaginatedList(parameters);
 
         // Assert
+        Assert.NotNull(result.Pagination);
         Assert.Equal(page, result.Pagination.CurrentPage);
         Assert.Equal(pageSize, result.Pagination.PageSize);
         Assert.Equal(totalItems, result.Pagination.TotalItems);

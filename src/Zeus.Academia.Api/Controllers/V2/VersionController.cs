@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Zeus.Academia.Api.Versioning;
 
 namespace Zeus.Academia.Api.Controllers.V2;
 
@@ -10,8 +9,8 @@ namespace Zeus.Academia.Api.Controllers.V2;
 [ApiController]
 [Route("api/v2/[controller]")]
 [Route("api/[controller]")] // Also support header-based versioning
-[ApiVersion("2.0")]
-public class VersionController : VersionedApiController
+[Microsoft.AspNetCore.Mvc.ApiVersion("2.0")]
+public class VersionController : ControllerBase
 {
     /// <summary>
     /// Gets the API version information with enhanced details

@@ -1,4 +1,5 @@
 using Zeus.Academia.Api.Models.Requests;
+using Zeus.Academia.Api.Validation;
 
 namespace Zeus.Academia.Api.Validation.Validators;
 
@@ -10,13 +11,19 @@ public class CreateStudentRequestValidator : AbstractValidator<CreateStudentRequ
     public CreateStudentRequestValidator()
     {
         // Student ID validation
-        RuleFor(nameof(CreateStudentRequest.StudentId),
-            request => request.StudentId > 0,
-            "Student ID must be a positive integer");
+        NotEmpty(nameof(CreateStudentRequest.StudentId),
+            request => request.StudentId,
+            "Student ID is required");
 
-        RuleFor(nameof(CreateStudentRequest.StudentId),
-            request => request.StudentId >= 1000000 && request.StudentId <= 9999999,
-            "Student ID must be a 7-digit number between 1000000 and 9999999");
+        MinLength(nameof(CreateStudentRequest.StudentId),
+            request => request.StudentId,
+            3,
+            "Student ID must be at least 3 characters long");
+
+        MaxLength(nameof(CreateStudentRequest.StudentId),
+            request => request.StudentId,
+            20,
+            "Student ID cannot exceed 20 characters");
 
         // Name validation
         NotEmpty(nameof(CreateStudentRequest.Name),

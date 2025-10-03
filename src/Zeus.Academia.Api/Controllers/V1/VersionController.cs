@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Zeus.Academia.Api.Versioning;
 
 namespace Zeus.Academia.Api.Controllers.V1;
 
@@ -9,8 +8,8 @@ namespace Zeus.Academia.Api.Controllers.V1;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Route("api/[controller]")] // Also support header-based versioning
-[ApiVersion("1.0")]
-public class VersionController : VersionedApiController
+[Microsoft.AspNetCore.Mvc.ApiVersion("1.0")]
+public class VersionController : ControllerBase
 {
     /// <summary>
     /// Gets the API version information
@@ -19,7 +18,7 @@ public class VersionController : VersionedApiController
     /// <response code="200">Returns the version information</response>
     [HttpGet]
     [ProducesResponseType(typeof(object), 200)]
-    public async Task<IActionResult> GetVersionAsync()
+    public IActionResult GetVersion()
     {
         var versionInfo = new
         {
@@ -42,7 +41,7 @@ public class VersionController : VersionedApiController
             }
         };
 
-        return await Task.FromResult(VersionedResponse(versionInfo, "Version 1.0 information retrieved successfully"));
+        return Ok(versionInfo);
     }
 
     /// <summary>

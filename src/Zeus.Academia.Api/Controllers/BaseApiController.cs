@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Zeus.Academia.Api.Models.Common;
 using Zeus.Academia.Api.Models.Responses;
 using Zeus.Academia.Api.Models.Requests;
 using Zeus.Academia.Api.Extensions;
@@ -7,7 +8,7 @@ using Zeus.Academia.Api.Extensions;
 namespace Zeus.Academia.Api.Controllers;
 
 /// <summary>
-/// Base controller for Zeus Academia API with common functionality and authentication support
+/// Base or Zeus Academia API with common functionality and authentication support
 /// </summary>
 /// <remarks>
 /// This controller provides common functionality for all API controllers including:
@@ -125,21 +126,12 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>OK result with formatted response</returns>
     protected IActionResult Success<T>(T data, string? message = null)
     {
-        var response = new ApiResponse<T>
-        {
-            Success = true,
-            Data = data,
-            Message = message,
-            CorrelationId = CorrelationId,
-            Timestamp = DateTime.UtcNow
-        };
-
-        // Set version if available
-        var version = GetApiVersion();
-        if (!string.IsNullOrEmpty(version))
-        {
-            response.Version = version;
-        }
+        var response = ApiResponse<T>.CreateSuccess(
+            data,
+            message ?? "Request successful",
+            CorrelationId,
+            GetApiVersion()
+        );
 
         return Ok(response);
     }
@@ -151,14 +143,11 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>OK result with formatted response</returns>
     protected IActionResult Success(string message = "Operation completed successfully")
     {
-        var response = new ApiResponse
-        {
-            Success = true,
-            Message = message,
-            Timestamp = DateTime.UtcNow,
-            CorrelationId = CorrelationId,
-            Version = GetApiVersion()
-        };
+        var response = ApiResponse.CreateSuccess(
+            message,
+            CorrelationId,
+            GetApiVersion()
+        );
 
         return Ok(response);
     }
@@ -172,15 +161,12 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>Error result with formatted response</returns>
     protected IActionResult Error(string message, int statusCode = 400, object? errors = null)
     {
-        var response = new ApiResponse
-        {
-            Success = false,
-            Message = message,
-            Errors = errors,
-            Timestamp = DateTime.UtcNow,
-            CorrelationId = CorrelationId,
-            Version = GetApiVersion()
-        };
+        var response = ApiResponse.CreateError(
+            message,
+            errors as Dictionary<string, string[]>,
+            CorrelationId,
+            GetApiVersion()
+        );
 
         return StatusCode(statusCode, response);
     }
@@ -242,6 +228,7 @@ public abstract class BaseApiController : ControllerBase
         int totalItems,
         string? message = null)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         var response = PagedApiResponse<T>.CreateSuccess(
             data,
             currentPage,
@@ -250,20 +237,80 @@ public abstract class BaseApiController : ControllerBase
             message,
             CorrelationId,
             GetApiVersion());
+#pragma warning restore CS0618 // Type or member is obsolete
 
         return Ok(response);
     }
 
     /// <summary>
-    /// Creates a successful paged response from pagination result
+    /// Creates a paged success response using PagedResult
     /// </summary>
-    /// <typeparam name="T">Type of items in the collection</typeparam>
-    /// <param name="pagedResult">Paged result</param>
+    /// <typeparam name="T">Type of data items</typeparam>
+    /// <param name="pagedResult">Paged result containing data and pagination metadata</param>
     /// <param name="message">Optional success message</param>
     /// <returns>OK result with paged response</returns>
     protected IActionResult PagedSuccess<T>(PagedResult<T> pagedResult, string? message = null)
     {
-        var response = pagedResult.ToApiResponse(message, CorrelationId, GetApiVersion());
+        if (pagedResult?.Pagination == null)
+        {
+            return Error("Invalid paged result", 500);
+        }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        var response = PagedApiResponse<T>.CreateSuccess(
+            pagedResult.Items,
+            pagedResult.Pagination,
+            message,
+            CorrelationId,
+            GetApiVersion());
+#pragma warning restore CS0618 // Type or member is obsolete
+
         return Ok(response);
     }
+
+    /// <summary>
+    /// Creates a success response with data
+    /// </summary>
+    /// <typeparam name="T">Type of data</typeparam>
+    /// <param name="data">Response data</param>
+    /// <param name="message">Optional success message</param>
+    /// <returns>Formatted success response</returns>
+    protected IActionResult CreateSuccessResponse<T>(T data, string? message = null)
+    {
+        return Success(data, message);
+    }
+
+    /// <summary>
+    /// Creates a success response without data
+    /// </summary>
+    /// <param name="message">Success message</param>
+    /// <returns>Formatted success response</returns>
+    protected IActionResult CreateSuccessResponse(string message = "Operation completed successfully")
+    {
+        return Success(message);
+    }
+
+    /// <summary>
+    /// Creates an error response
+    /// </summary>
+    /// <param name="message">Error message</param>
+    /// <param name="statusCode">HTTP status code</param>
+    /// <param name="errors">Detailed error information</param>
+    /// <returns>Formatted error response</returns>
+    protected IActionResult CreateErrorResponse(string message, int statusCode = 400, object? errors = null)
+    {
+        return Error(message, statusCode, errors);
+    }
+
+    /// <summary>
+    /// Creates a validation error response
+    /// </summary>
+    /// <param name="errors">Validation errors</param>
+    /// <param name="message">Optional custom message</param>
+    /// <returns>Formatted validation error response</returns>
+    protected IActionResult CreateValidationErrorResponse(object errors, string? message = null)
+    {
+        return Error(message ?? "Validation failed", 400, errors);
+    }
+
 }
