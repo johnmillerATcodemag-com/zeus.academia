@@ -161,6 +161,17 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<AcademicCalendar> AcademicCalendars { get; set; } = null!;
     public DbSet<CalendarEvent> CalendarEvents { get; set; } = null!;
 
+    // Course Planning and Degree Requirements Entities (Prompt 6 Task 5)
+    public DbSet<DegreeRequirementTemplate> DegreeRequirementTemplates { get; set; } = null!;
+    public DbSet<RequirementCategory> RequirementCategories { get; set; } = null!;
+    public DbSet<DegreeRequirement> DegreeRequirements { get; set; } = null!;
+    public DbSet<ConditionalRequirement> ConditionalRequirements { get; set; } = null!;
+    public DbSet<PrerequisiteLink> PrerequisiteLinks { get; set; } = null!;
+    public DbSet<StudentDegreeAudit> StudentDegreeAudits { get; set; } = null!;
+    public DbSet<CourseSubstitution> CourseSubstitutions { get; set; } = null!;
+    public DbSet<CategoryProgress> CategoryProgress { get; set; } = null!;
+    public DbSet<RequirementFulfillment> RequirementFulfillments { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;

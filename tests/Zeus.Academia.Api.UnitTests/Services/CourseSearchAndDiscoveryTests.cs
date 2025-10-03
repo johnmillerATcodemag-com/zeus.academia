@@ -599,25 +599,9 @@ public class CourseFilterCriteria
 }
 
 /// <summary>
-/// Student academic profile for recommendations
+/// NOTE: StudentAcademicProfile class moved to CoursePlanningAndDegreeRequirementsTests.cs 
+/// to avoid duplicate definition conflicts in the test project
 /// </summary>
-public class StudentAcademicProfile
-{
-    public int StudentId { get; set; }
-    public string? Major { get; set; }
-    public string? Minor { get; set; }
-    public string? DegreeCode { get; set; }
-    public int[]? CompletedCourses { get; set; }
-    public Dictionary<int, string>? CourseGrades { get; set; }
-    public decimal CurrentGPA { get; set; }
-    public int AcademicYear { get; set; }
-    public string? Semester { get; set; }
-    public ClassStanding ClassStanding { get; set; }
-    public string[]? Interests { get; set; }
-    public string[]? StrengthAreas { get; set; }
-    public string[]? WeaknessAreas { get; set; }
-    public string? CareerGoals { get; set; }
-}
 
 /// <summary>
 /// Course waitlist request

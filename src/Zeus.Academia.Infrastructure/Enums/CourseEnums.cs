@@ -1,6 +1,141 @@
 namespace Zeus.Academia.Infrastructure.Enums;
 
 /// <summary>
+/// Enumeration for degree requirement types.
+/// </summary>
+public enum RequirementType
+{
+    /// <summary>
+    /// Requires specific named courses
+    /// </summary>
+    SpecificCourse = 1,
+
+    /// <summary>
+    /// Requires courses from a subject area or group
+    /// </summary>
+    CourseGroup = 2,
+
+    /// <summary>
+    /// Conditional requirement with either/or logic
+    /// </summary>
+    ConditionalGroup = 3,
+
+    /// <summary>
+    /// Courses that must be taken in sequence
+    /// </summary>
+    SequencedCourses = 4,
+
+    /// <summary>
+    /// Requirement based only on credit hours
+    /// </summary>
+    CreditHours = 5
+}
+
+/// <summary>
+/// Enumeration for requirement logic types.
+/// </summary>
+public enum RequirementLogicType
+{
+    /// <summary>
+    /// All conditions must be met
+    /// </summary>
+    And = 1,
+
+    /// <summary>
+    /// Any condition can be met
+    /// </summary>
+    Or = 2,
+
+    /// <summary>
+    /// Either one condition or another
+    /// </summary>
+    Either = 3,
+
+    /// <summary>
+    /// All listed options must be completed
+    /// </summary>
+    All = 4,
+
+    /// <summary>
+    /// Minimum number of options must be completed
+    /// </summary>
+    MinimumOf = 5
+}
+
+/// <summary>
+/// Enumeration for prerequisite logic types.
+/// </summary>
+public enum PrerequisiteLogicType
+{
+    /// <summary>
+    /// All prerequisites must be met
+    /// </summary>
+    And = 1,
+
+    /// <summary>
+    /// Any prerequisite can be met
+    /// </summary>
+    Or = 2
+}
+
+/// <summary>
+/// Enumeration for course load preferences.
+/// </summary>
+public enum CourseLoadPreference
+{
+    /// <summary>
+    /// Light course load (12-13 credits)
+    /// </summary>
+    Light = 1,
+
+    /// <summary>
+    /// Standard course load (15-16 credits)
+    /// </summary>
+    Standard = 2,
+
+    /// <summary>
+    /// Heavy course load (17-18 credits)
+    /// </summary>
+    Heavy = 3,
+
+    /// <summary>
+    /// Maximum course load (19+ credits)
+    /// </summary>
+    Maximum = 4
+}
+
+/// <summary>
+/// Enumeration for optimization priorities.
+/// </summary>
+public enum OptimizationPriority
+{
+    /// <summary>
+    /// Minimize time to graduation
+    /// </summary>
+    MinimizeTime = 1,
+
+    /// <summary>
+    /// Balance course difficulty across semesters
+    /// </summary>
+    BalanceDifficulty = 2,
+
+    /// <summary>
+    /// Maximize schedule flexibility
+    /// </summary>
+    MaximizeScheduleFlexibility = 3,
+
+    /// <summary>
+    /// Minimize total cost
+    /// </summary>
+    MinimizeCost = 4,
+
+    /// <summary>
+    /// Maximize potential GPA
+    /// </summary>
+    MaximizeGPA = 5
+}
+
+/// <summary>
 /// Enumeration for subject types in the hierarchical categorization system.
 /// </summary>
 public enum SubjectType
