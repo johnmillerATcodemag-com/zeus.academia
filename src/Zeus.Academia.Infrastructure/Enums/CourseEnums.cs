@@ -119,9 +119,14 @@ public enum PrerequisiteType
     Permission = 5,
 
     /// <summary>
+    /// Prerequisite requires specific permission
+    /// </summary>
+    PermissionRequired = 6,
+
+    /// <summary>
     /// Prerequisite is completion of a certain number of credit hours
     /// </summary>
-    CreditHours = 6
+    CreditHours = 7
 }
 
 /// <summary>
@@ -178,7 +183,27 @@ public enum RestrictionType
     /// <summary>
     /// Restriction based on enrollment capacity
     /// </summary>
-    Enrollment = 7
+    Enrollment = 7,
+
+    /// <summary>
+    /// Restriction requiring specific major
+    /// </summary>
+    MajorRequired = 8,
+
+    /// <summary>
+    /// Restriction based on class standing requirement
+    /// </summary>
+    ClassStandingRequired = 9,
+
+    /// <summary>
+    /// Restriction requiring specific permission
+    /// </summary>
+    PermissionRequired = 10,
+
+    /// <summary>
+    /// Time-based restriction for enrollment windows
+    /// </summary>
+    TimeRestriction = 11
 }
 
 /// <summary>

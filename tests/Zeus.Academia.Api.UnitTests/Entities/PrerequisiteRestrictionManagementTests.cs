@@ -174,7 +174,7 @@ public class PrerequisiteRestrictionManagementTests
         // Assert
         Assert.Equal(CorequisiteEnforcementType.MustTakeSimultaneously, corequisiteRule.EnforcementType);
         Assert.Single(corequisiteRule.CorequisiteRequirements);
-        Assert.Equal(CorequisiteRelationship.MustEnrollSimultaneously, 
+        Assert.Equal(CorequisiteRelationship.MustEnrollSimultaneously,
             corequisiteRule.CorequisiteRequirements.First().EnrollmentRelationship);
         Assert.False(corequisiteRule.CorequisiteRequirements.First().IsWaivable);
     }
@@ -204,10 +204,10 @@ public class PrerequisiteRestrictionManagementTests
 
         // Assert
         Assert.Equal(CorequisiteEnforcementType.MustTakeBeforeOrWith, corequisiteRule.EnforcementType);
-        Assert.Equal(CorequisiteRelationship.MustCompleteBeforeOrWith, 
+        Assert.Equal(CorequisiteRelationship.MustCompleteBeforeOrWith,
             corequisiteRule.CorequisiteRequirements.First().EnrollmentRelationship);
         Assert.True(corequisiteRule.CorequisiteRequirements.First().IsWaivable);
-        Assert.Equal("MATH_DEPARTMENT_PERMISSION", 
+        Assert.Equal("MATH_DEPARTMENT_PERMISSION",
             corequisiteRule.CorequisiteRequirements.First().WaiverRequiredPermission);
     }
 
@@ -281,7 +281,7 @@ public class PrerequisiteRestrictionManagementTests
         // Assert
         Assert.Equal(RestrictionType.ClassStandingRequired, classLevelRestriction.RestrictionType);
         Assert.Single(classLevelRestriction.ClassStandingRestrictions);
-        Assert.Equal(ClassStanding.Freshman, 
+        Assert.Equal(ClassStanding.Freshman,
             classLevelRestriction.ClassStandingRestrictions.First().RequiredClassStanding);
         Assert.Equal(29, classLevelRestriction.ClassStandingRestrictions.First().MaximumCreditHours);
     }
@@ -319,7 +319,7 @@ public class PrerequisiteRestrictionManagementTests
         Assert.Equal(RestrictionType.PermissionRequired, permissionRestriction.RestrictionType);
         Assert.Equal(2, permissionRestriction.PermissionRestrictions.Count);
         Assert.True(permissionRestriction.PermissionRestrictions.All(pr => pr.RequiresDocumentation));
-        Assert.Contains(permissionRestriction.PermissionRestrictions, 
+        Assert.Contains(permissionRestriction.PermissionRestrictions,
             pr => pr.PermissionLevel == PermissionLevel.Instructor);
     }
 
@@ -354,8 +354,8 @@ public class PrerequisiteRestrictionManagementTests
                     RequiredCourseId = 201,
                     Status = RequirementStatus.NotSatisfied,
                     FailureReason = "Course not completed",
-                    SuggestedActions = new List<string> 
-                    { 
+                    SuggestedActions = new List<string>
+                    {
                         "Complete CS 201 with grade C or better",
                         "Consider taking CS 201 in current semester if available"
                     }
@@ -378,10 +378,10 @@ public class PrerequisiteRestrictionManagementTests
         Assert.Equal(PrerequisiteValidationStatus.Failed, validationResult.OverallStatus);
         Assert.Equal(2, validationResult.RequirementResults.Count);
         Assert.Single(validationResult.MissingRequirements);
-        
+
         var satisfiedRequirement = validationResult.RequirementResults.First(r => r.Status == RequirementStatus.Satisfied);
         Assert.Equal("A", satisfiedRequirement.CompletedGrade);
-        
+
         var unsatisfiedRequirement = validationResult.RequirementResults.First(r => r.Status == RequirementStatus.NotSatisfied);
         Assert.Equal(2, unsatisfiedRequirement.SuggestedActions.Count);
     }
@@ -469,7 +469,7 @@ public class PrerequisiteRestrictionManagementTests
         Assert.NotNull(prerequisiteOverride.Justification);
         Assert.NotNull(prerequisiteOverride.Conditions);
         Assert.Single(prerequisiteOverride.OverriddenRequirements);
-        Assert.Equal("Industry experience equivalent to course content", 
+        Assert.Equal("Industry experience equivalent to course content",
             prerequisiteOverride.OverriddenRequirements.First().WaiverReason);
     }
 
@@ -497,7 +497,7 @@ public class PrerequisiteRestrictionManagementTests
                 new() {
                     DocumentType = WaiverDocumentType.CourseEquivalency,
                     DocumentName = "Course Equivalency Analysis",
-                    FilePath = "/documents/waivers/equivalency_12345.pdf", 
+                    FilePath = "/documents/waivers/equivalency_12345.pdf",
                     UploadDate = DateTime.Now.AddDays(-2)
                 }
             },
@@ -653,21 +653,21 @@ public class PrerequisiteRestrictionManagementTests
             List<(int CourseId, int PrerequisiteCourseId)> prerequisites)
         {
             var graph = new Dictionary<int, List<int>>();
-            
+
             foreach (var (courseId, prerequisiteId) in prerequisites)
             {
                 if (!graph.ContainsKey(courseId))
                     graph[courseId] = new List<int>();
                 if (!graph.ContainsKey(prerequisiteId))
                     graph[prerequisiteId] = new List<int>();
-                    
+
                 graph[courseId].Add(prerequisiteId);
             }
-            
+
             return graph;
         }
 
-        private bool HasCycle(Dictionary<int, List<int>> graph, int courseId, 
+        private bool HasCycle(Dictionary<int, List<int>> graph, int courseId,
             HashSet<int> visited, HashSet<int> recursionStack, List<int> path)
         {
             visited.Add(courseId);

@@ -137,6 +137,26 @@ public class PrerequisiteValidationResult : BaseEntity
     /// Gets or sets any waivers applied to this validation.
     /// </summary>
     public List<PrerequisiteWaiver> AppliedWaivers { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether the validation passed.
+    /// </summary>
+    public bool IsValid { get; set; }
+
+    /// <summary>
+    /// Gets or sets detailed requirement results.
+    /// </summary>
+    public string? RequirementResults { get; set; }
+
+    /// <summary>
+    /// Gets or sets missing requirements details.
+    /// </summary>
+    public string? MissingRequirements { get; set; }
+
+    /// <summary>
+    /// Gets or sets logic evaluation results for complex prerequisite chains.
+    /// </summary>
+    public string? LogicEvaluationResults { get; set; }
 }
 
 /// <summary>

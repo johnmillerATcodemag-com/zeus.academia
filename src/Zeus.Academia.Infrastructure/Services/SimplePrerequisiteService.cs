@@ -52,7 +52,7 @@ public class SimplePrerequisiteService : ISimplePrerequisiteService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating prerequisites for student {StudentId} and course {CourseId}", 
+            _logger.LogError(ex, "Error validating prerequisites for student {StudentId} and course {CourseId}",
                 studentId, courseId);
             return false;
         }
@@ -78,7 +78,7 @@ public class SimplePrerequisiteService : ISimplePrerequisiteService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating restrictions for student {StudentId} and course {CourseId}", 
+            _logger.LogError(ex, "Error validating restrictions for student {StudentId} and course {CourseId}",
                 studentId, courseId);
             return false;
         }

@@ -9,12 +9,12 @@ public enum PrerequisiteLogicOperator
     /// All requirements must be satisfied
     /// </summary>
     AND = 1,
-    
+
     /// <summary>
     /// At least one requirement must be satisfied
     /// </summary>
     OR = 2,
-    
+
     /// <summary>
     /// Exactly one requirement must be satisfied
     /// </summary>
@@ -30,32 +30,32 @@ public enum ClassStanding
     /// First-year student (0-29 credit hours)
     /// </summary>
     Freshman = 1,
-    
+
     /// <summary>
     /// Second-year student (30-59 credit hours)
     /// </summary>
     Sophomore = 2,
-    
+
     /// <summary>
     /// Third-year student (60-89 credit hours)
     /// </summary>
     Junior = 3,
-    
+
     /// <summary>
     /// Fourth-year student (90+ credit hours)
     /// </summary>
     Senior = 4,
-    
+
     /// <summary>
     /// Graduate student
     /// </summary>
     Graduate = 5,
-    
+
     /// <summary>
     /// Post-baccalaureate student
     /// </summary>
     PostBaccalaureate = 6,
-    
+
     /// <summary>
     /// Doctoral student
     /// </summary>
@@ -71,17 +71,17 @@ public enum CorequisiteEnforcementType
     /// Must enroll in corequisite courses at the same time
     /// </summary>
     MustTakeSimultaneously = 1,
-    
+
     /// <summary>
     /// Must complete corequisite before or with this course
     /// </summary>
     MustTakeBeforeOrWith = 2,
-    
+
     /// <summary>
     /// Recommended to take together but not required
     /// </summary>
     RecommendedTogether = 3,
-    
+
     /// <summary>
     /// Strongly recommended but not enforced
     /// </summary>
@@ -97,17 +97,17 @@ public enum CorequisiteRelationship
     /// Must enroll in both courses simultaneously
     /// </summary>
     MustEnrollSimultaneously = 1,
-    
+
     /// <summary>
     /// Must complete before or enroll concurrently
     /// </summary>
     MustCompleteBeforeOrWith = 2,
-    
+
     /// <summary>
     /// Recommended to take concurrently
     /// </summary>
     RecommendedConcurrent = 3,
-    
+
     /// <summary>
     /// Should be taken in sequence
     /// </summary>
@@ -123,22 +123,22 @@ public enum CorequisiteFailureAction
     /// Block enrollment completely
     /// </summary>
     BlockEnrollment = 1,
-    
+
     /// <summary>
     /// Require advisor approval
     /// </summary>
     RequireAdvisorApproval = 2,
-    
+
     /// <summary>
     /// Require department permission
     /// </summary>
     RequireDepartmentPermission = 3,
-    
+
     /// <summary>
     /// Allow with warning
     /// </summary>
     AllowWithWarning = 4,
-    
+
     /// <summary>
     /// Generate notification only
     /// </summary>
@@ -154,17 +154,17 @@ public enum RestrictionEnforcementLevel
     /// Hard block - cannot be overridden
     /// </summary>
     Hard = 1,
-    
+
     /// <summary>
     /// Requires override approval
     /// </summary>
     RequiresOverride = 2,
-    
+
     /// <summary>
     /// Warning only
     /// </summary>
     Warning = 3,
-    
+
     /// <summary>
     /// Information only
     /// </summary>
@@ -180,22 +180,22 @@ public enum MajorType
     /// Primary/main major
     /// </summary>
     Primary = 1,
-    
+
     /// <summary>
     /// Secondary major
     /// </summary>
     Secondary = 2,
-    
+
     /// <summary>
     /// Minor program
     /// </summary>
     Minor = 3,
-    
+
     /// <summary>
     /// Certificate program
     /// </summary>
     Certificate = 4,
-    
+
     /// <summary>
     /// Concentration within major
     /// </summary>
@@ -211,27 +211,27 @@ public enum PermissionLevel
     /// Instructor permission
     /// </summary>
     Instructor = 1,
-    
+
     /// <summary>
     /// Department permission
     /// </summary>
     Department = 2,
-    
+
     /// <summary>
     /// College permission
     /// </summary>
     College = 3,
-    
+
     /// <summary>
     /// Academic affairs permission
     /// </summary>
     AcademicAffairs = 4,
-    
+
     /// <summary>
     /// Registrar permission
     /// </summary>
     Registrar = 5,
-    
+
     /// <summary>
     /// Advisor permission
     /// </summary>
@@ -247,27 +247,27 @@ public enum PrerequisiteValidationStatus
     /// All requirements satisfied
     /// </summary>
     Satisfied = 1,
-    
+
     /// <summary>
     /// Requirements not met
     /// </summary>
     Failed = 2,
-    
+
     /// <summary>
     /// Requirements partially met
     /// </summary>
     PartiallyMet = 3,
-    
+
     /// <summary>
     /// Pending validation
     /// </summary>
     Pending = 4,
-    
+
     /// <summary>
     /// Validation error occurred
     /// </summary>
     Error = 5,
-    
+
     /// <summary>
     /// Requirements waived
     /// </summary>
@@ -283,22 +283,22 @@ public enum RequirementStatus
     /// Requirement is satisfied
     /// </summary>
     Satisfied = 1,
-    
+
     /// <summary>
     /// Requirement is not satisfied
     /// </summary>
     NotSatisfied = 2,
-    
+
     /// <summary>
     /// Requirement is in progress
     /// </summary>
     InProgress = 3,
-    
+
     /// <summary>
     /// Requirement has been waived
     /// </summary>
     Waived = 4,
-    
+
     /// <summary>
     /// Requirement has been overridden
     /// </summary>
@@ -314,22 +314,22 @@ public enum RequirementPriority
     /// Critical requirement - must be completed
     /// </summary>
     Critical = 1,
-    
+
     /// <summary>
     /// High priority requirement
     /// </summary>
     High = 2,
-    
+
     /// <summary>
     /// Medium priority requirement
     /// </summary>
     Medium = 3,
-    
+
     /// <summary>
     /// Low priority requirement
     /// </summary>
     Low = 4,
-    
+
     /// <summary>
     /// Optional requirement
     /// </summary>
@@ -345,27 +345,27 @@ public enum OverrideType
     /// Administrative override by authorized personnel
     /// </summary>
     AdministrativeOverride = 1,
-    
+
     /// <summary>
     /// Academic advisor override
     /// </summary>
     AdvisorOverride = 2,
-    
+
     /// <summary>
     /// Department chair override
     /// </summary>
     DepartmentOverride = 3,
-    
+
     /// <summary>
     /// Instructor override
     /// </summary>
     InstructorOverride = 4,
-    
+
     /// <summary>
     /// Emergency override
     /// </summary>
     EmergencyOverride = 5,
-    
+
     /// <summary>
     /// System override for special circumstances
     /// </summary>
@@ -381,27 +381,27 @@ public enum OverrideStatus
     /// Override request pending review
     /// </summary>
     Pending = 1,
-    
+
     /// <summary>
     /// Override approved and active
     /// </summary>
     Approved = 2,
-    
+
     /// <summary>
     /// Override denied
     /// </summary>
     Denied = 3,
-    
+
     /// <summary>
     /// Override expired
     /// </summary>
     Expired = 4,
-    
+
     /// <summary>
     /// Override revoked
     /// </summary>
     Revoked = 5,
-    
+
     /// <summary>
     /// Override under review
     /// </summary>
@@ -417,27 +417,27 @@ public enum WaiverType
     /// Academic waiver for equivalent experience
     /// </summary>
     AcademicException = 1,
-    
+
     /// <summary>
     /// Transfer credit waiver
     /// </summary>
     TransferCredit = 2,
-    
+
     /// <summary>
     /// Professional experience waiver
     /// </summary>
     ProfessionalExperience = 3,
-    
+
     /// <summary>
     /// Military experience waiver
     /// </summary>
     MilitaryExperience = 4,
-    
+
     /// <summary>
     /// Medical/health related waiver
     /// </summary>
     MedicalWaiver = 5,
-    
+
     /// <summary>
     /// Hardship waiver
     /// </summary>
@@ -453,27 +453,27 @@ public enum WaiverStatus
     /// Waiver request pending
     /// </summary>
     Pending = 1,
-    
+
     /// <summary>
     /// Waiver approved
     /// </summary>
     Approved = 2,
-    
+
     /// <summary>
     /// Waiver denied
     /// </summary>
     Denied = 3,
-    
+
     /// <summary>
     /// Waiver under committee review
     /// </summary>
     UnderReview = 4,
-    
+
     /// <summary>
     /// Additional documentation required
     /// </summary>
     DocumentationRequired = 5,
-    
+
     /// <summary>
     /// Waiver expired
     /// </summary>
@@ -489,32 +489,32 @@ public enum WaiverDocumentType
     /// Official transcript
     /// </summary>
     Transcript = 1,
-    
+
     /// <summary>
     /// Course equivalency documentation
     /// </summary>
     CourseEquivalency = 2,
-    
+
     /// <summary>
     /// Professional certification
     /// </summary>
     ProfessionalCertification = 3,
-    
+
     /// <summary>
     /// Work experience documentation
     /// </summary>
     WorkExperience = 4,
-    
+
     /// <summary>
     /// Military records
     /// </summary>
     MilitaryRecords = 5,
-    
+
     /// <summary>
     /// Medical documentation
     /// </summary>
     MedicalDocumentation = 6,
-    
+
     /// <summary>
     /// Supporting letter
     /// </summary>
@@ -530,27 +530,27 @@ public enum EnrollmentValidationStatus
     /// Enrollment approved
     /// </summary>
     Approved = 1,
-    
+
     /// <summary>
     /// Enrollment denied
     /// </summary>
     Denied = 2,
-    
+
     /// <summary>
     /// Enrollment requires approval
     /// </summary>
     RequiresApproval = 3,
-    
+
     /// <summary>
     /// Enrollment on waitlist
     /// </summary>
     Waitlisted = 4,
-    
+
     /// <summary>
     /// Enrollment pending prerequisites
     /// </summary>
     PendingPrerequisites = 5,
-    
+
     /// <summary>
     /// Enrollment blocked by restrictions
     /// </summary>

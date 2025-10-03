@@ -157,6 +157,10 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<OverrideDocument> OverrideDocuments { get; set; } = null!;
     public DbSet<WaiverDocument> WaiverDocuments { get; set; } = null!;
 
+    // Academic Calendar Entities (New Addition - Non-breaking)
+    public DbSet<AcademicCalendar> AcademicCalendars { get; set; } = null!;
+    public DbSet<CalendarEvent> CalendarEvents { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
