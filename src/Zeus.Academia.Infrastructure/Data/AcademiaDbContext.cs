@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Zeus.Academia.Infrastructure.Configuration;
 using Zeus.Academia.Infrastructure.Configurations;
 using Zeus.Academia.Infrastructure.Entities;
 using Zeus.Academia.Infrastructure.Enums;
@@ -130,6 +131,31 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<VersionChange> VersionChanges { get; set; } = null!;
     public DbSet<VersionComparison> VersionComparisons { get; set; } = null!;
     public DbSet<ComparisonDetail> ComparisonDetails { get; set; } = null!;
+
+    // Prerequisite and Restriction Management Entities (Prompt 6 Task 3)
+    public DbSet<PrerequisiteRule> PrerequisiteRules { get; set; } = null!;
+    public DbSet<PrerequisiteRequirement> PrerequisiteRequirements { get; set; } = null!;
+    public DbSet<CorequisiteRule> CorequisiteRules { get; set; } = null!;
+    public DbSet<CorequisiteRequirement> CorequisiteRequirements { get; set; } = null!;
+    public DbSet<EnrollmentRestriction> EnrollmentRestrictions { get; set; } = null!;
+    public DbSet<MajorRestriction> MajorRestrictions { get; set; } = null!;
+    public DbSet<ClassStandingRestriction> ClassStandingRestrictions { get; set; } = null!;
+    public DbSet<PermissionRestriction> PermissionRestrictions { get; set; } = null!;
+    public DbSet<RuleValidationHistory> RuleValidationHistory { get; set; } = null!;
+    public DbSet<PrerequisiteValidationResult> PrerequisiteValidationResults { get; set; } = null!;
+    public DbSet<PrerequisiteCheckResult> PrerequisiteCheckResults { get; set; } = null!;
+    public DbSet<RequirementCheckResult> RequirementCheckResults { get; set; } = null!;
+    public DbSet<CorequisiteCheckResult> CorequisiteCheckResults { get; set; } = null!;
+    public DbSet<RestrictionCheckResult> RestrictionCheckResults { get; set; } = null!;
+    public DbSet<CircularDependencyResult> CircularDependencyResults { get; set; } = null!;
+    public DbSet<PrerequisiteOverride> PrerequisiteOverrides { get; set; } = null!;
+    public DbSet<PrerequisiteWaiver> PrerequisiteWaivers { get; set; } = null!;
+    public DbSet<OverrideRuleMapping> OverrideRuleMappings { get; set; } = null!;
+    public DbSet<WaiverRuleMapping> WaiverRuleMappings { get; set; } = null!;
+    public DbSet<OverrideApprovalStep> OverrideApprovalSteps { get; set; } = null!;
+    public DbSet<OverrideAuditEntry> OverrideAuditEntries { get; set; } = null!;
+    public DbSet<OverrideDocument> OverrideDocuments { get; set; } = null!;
+    public DbSet<WaiverDocument> WaiverDocuments { get; set; } = null!;
 
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
@@ -2466,21 +2492,6 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
             .HasForeignKey(sls => sls.DepartmentName)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Apply Course Catalog Management configurations (Prompt 6 Task 2)
-        modelBuilder.ApplyConfiguration(new CourseCatalogConfiguration());
-        modelBuilder.ApplyConfiguration(new CourseApprovalWorkflowConfiguration());
-        modelBuilder.ApplyConfiguration(new ApprovalStepConfiguration());
-        modelBuilder.ApplyConfiguration(new ApprovalAttachmentConfiguration());
-        modelBuilder.ApplyConfiguration(new CatalogApprovalConfiguration());
-        modelBuilder.ApplyConfiguration(new LearningOutcomeConfiguration());
-        modelBuilder.ApplyConfiguration(new OutcomeAssessmentConfiguration());
-        modelBuilder.ApplyConfiguration(new AssessmentResultConfiguration());
-        modelBuilder.ApplyConfiguration(new CatalogPublicationConfiguration());
-        modelBuilder.ApplyConfiguration(new PublicationDistributionConfiguration());
-        modelBuilder.ApplyConfiguration(new PublicationAccessLogConfiguration());
-        modelBuilder.ApplyConfiguration(new CatalogVersionConfiguration());
-        modelBuilder.ApplyConfiguration(new VersionChangeConfiguration());
-        modelBuilder.ApplyConfiguration(new VersionComparisonConfiguration());
-        modelBuilder.ApplyConfiguration(new ComparisonDetailConfiguration());
+        // All entity configurations are automatically applied via ApplyConfigurationsFromAssembly above
     }
 }
