@@ -77,6 +77,12 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<FacultyServiceRecord> FacultyServiceRecords { get; set; } = null!;
     public DbSet<CommitteeLeadership> CommitteeLeadership { get; set; } = null!;
 
+    // Faculty Profile Management Entities (Prompt 5 Task 2)
+    public DbSet<FacultyProfile> FacultyProfiles { get; set; } = null!;
+    public DbSet<FacultyDocument> FacultyDocuments { get; set; } = null!;
+    public DbSet<FacultyPublication> FacultyPublications { get; set; } = null!;
+    public DbSet<OfficeAssignment> OfficeAssignments { get; set; } = null!;
+
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
@@ -1848,6 +1854,126 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
 
             entity.HasIndex(cl => new { cl.CommitteeName, cl.Position, cl.IsCurrent })
                 .HasDatabaseName("IX_CommitteeLeadership_Committee_Position_Current");
+        });
+
+        // Configure FacultyProfile
+        modelBuilder.Entity<FacultyProfile>(entity =>
+        {
+            entity.HasKey(fp => fp.Id);
+
+            // Foreign key to Academic
+            entity.HasOne(fp => fp.Academic)
+                .WithOne()
+                .HasForeignKey<FacultyProfile>(fp => fp.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure indexes
+            entity.HasIndex(fp => fp.AcademicEmpNr)
+                .IsUnique()
+                .HasDatabaseName("IX_FacultyProfile_Academic");
+
+            entity.HasIndex(fp => fp.IsPublicProfile)
+                .HasDatabaseName("IX_FacultyProfile_Public");
+
+            entity.HasIndex(fp => new { fp.IsPublicProfile, fp.ModifiedDate })
+                .HasDatabaseName("IX_FacultyProfile_Public_LastModified");
+        });
+
+        // Configure FacultyDocument
+        modelBuilder.Entity<FacultyDocument>(entity =>
+        {
+            entity.HasKey(fd => fd.Id);
+
+            // Foreign key to Academic
+            entity.HasOne(fd => fd.Academic)
+                .WithMany()
+                .HasForeignKey(fd => fd.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign key to FacultyProfile (optional - via Academic relationship)
+            entity.HasOne(fd => fd.FacultyProfile)
+                .WithMany()
+                .HasForeignKey(fd => fd.AcademicEmpNr)
+                .HasPrincipalKey(fp => fp.AcademicEmpNr)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // No decimal precision needed for FileSizeBytes (long)
+
+            // Configure indexes
+            entity.HasIndex(fd => fd.AcademicEmpNr)
+                .HasDatabaseName("IX_FacultyDocument_Academic");
+
+            entity.HasIndex(fd => fd.DocumentType)
+                .HasDatabaseName("IX_FacultyDocument_Type");
+
+            entity.HasIndex(fd => fd.IsCurrentVersion)
+                .HasDatabaseName("IX_FacultyDocument_Current");
+
+            entity.HasIndex(fd => new { fd.AcademicEmpNr, fd.DocumentType, fd.IsCurrentVersion })
+                .HasDatabaseName("IX_FacultyDocument_Academic_Type_Current");
+        });
+
+        // Configure FacultyPublication
+        modelBuilder.Entity<FacultyPublication>(entity =>
+        {
+            entity.HasKey(fp => fp.PublicationId);
+
+            // Foreign key to Academic
+            entity.HasOne(fp => fp.Academic)
+                .WithMany()
+                .HasForeignKey(fp => fp.AcademicId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure indexes
+            entity.HasIndex(fp => fp.AcademicId)
+                .HasDatabaseName("IX_FacultyPublication_Academic");
+
+            entity.HasIndex(fp => fp.PublicationType)
+                .HasDatabaseName("IX_FacultyPublication_Type");
+
+            entity.HasIndex(fp => fp.PublicationYear)
+                .HasDatabaseName("IX_FacultyPublication_Year");
+
+            entity.HasIndex(fp => fp.DOI)
+                .HasDatabaseName("IX_FacultyPublication_DOI");
+
+            entity.HasIndex(fp => new { fp.AcademicId, fp.PublicationYear })
+                .HasDatabaseName("IX_FacultyPublication_Academic_Year");
+        });
+
+        // Configure OfficeAssignment
+        modelBuilder.Entity<OfficeAssignment>(entity =>
+        {
+            entity.HasKey(oa => oa.OfficeAssignmentId);
+
+            // Foreign key to Academic
+            entity.HasOne(oa => oa.Academic)
+                .WithMany()
+                .HasForeignKey(oa => oa.AcademicId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure decimal precision
+            entity.Property(oa => oa.Latitude)
+                .HasPrecision(10, 8);
+
+            entity.Property(oa => oa.Longitude)
+                .HasPrecision(11, 8);
+
+            entity.Property(oa => oa.OfficeSize)
+                .HasPrecision(8, 2);
+
+            // Configure indexes
+            entity.HasIndex(oa => oa.AcademicId)
+                .HasDatabaseName("IX_OfficeAssignment_Academic");
+
+            entity.HasIndex(oa => oa.AssignmentStatus)
+                .HasDatabaseName("IX_OfficeAssignment_Status");
+
+            entity.HasIndex(oa => new { oa.BuildingName, oa.RoomNumber })
+                .HasDatabaseName("IX_OfficeAssignment_Building_Room");
+
+            entity.HasIndex(oa => new { oa.AcademicId, oa.AssignmentStatus })
+                .HasDatabaseName("IX_OfficeAssignment_Academic_Status");
         });
     }
 }
