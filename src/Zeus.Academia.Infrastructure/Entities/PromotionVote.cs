@@ -257,13 +257,13 @@ public class PromotionVote : BaseEntity
     /// Gets whether this is a positive vote.
     /// </summary>
     [NotMapped]
-    public bool IsPositiveVote => Vote == "Approve";
+    public bool IsPositiveVote => Vote == "Approve" || Vote == "Support";
 
     /// <summary>
     /// Gets whether this is a negative vote.
     /// </summary>
     [NotMapped]
-    public bool IsNegativeVote => Vote == "Reject";
+    public bool IsNegativeVote => Vote == "Reject" || Vote == "Deny";
 
     /// <summary>
     /// Gets whether the voter abstained.

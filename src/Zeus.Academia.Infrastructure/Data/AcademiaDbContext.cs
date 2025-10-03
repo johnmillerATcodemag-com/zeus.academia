@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Zeus.Academia.Infrastructure.Configurations;
 using Zeus.Academia.Infrastructure.Entities;
 using Zeus.Academia.Infrastructure.Enums;
 using Zeus.Academia.Infrastructure.Identity;
@@ -112,6 +113,23 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
     public DbSet<FacultySearchCommitteeMember> FacultySearchCommitteeMembers { get; set; } = null!;
     public DbSet<DepartmentalService> DepartmentalServices { get; set; } = null!;
     public DbSet<ServiceLoadSummary> ServiceLoadSummaries { get; set; } = null!;
+
+    // Course Catalog Management Entities (Prompt 6 Task 2)
+    public DbSet<CourseCatalog> CourseCatalogs { get; set; } = null!;
+    public DbSet<CourseApprovalWorkflow> CourseApprovalWorkflows { get; set; } = null!;
+    public DbSet<ApprovalStep> ApprovalSteps { get; set; } = null!;
+    public DbSet<ApprovalAttachment> ApprovalAttachments { get; set; } = null!;
+    public DbSet<CatalogApproval> CatalogApprovals { get; set; } = null!;
+    public DbSet<LearningOutcome> LearningOutcomes { get; set; } = null!;
+    public DbSet<OutcomeAssessment> OutcomeAssessments { get; set; } = null!;
+    public DbSet<AssessmentResult> AssessmentResults { get; set; } = null!;
+    public DbSet<CatalogPublication> CatalogPublications { get; set; } = null!;
+    public DbSet<PublicationDistribution> PublicationDistributions { get; set; } = null!;
+    public DbSet<PublicationAccessLog> PublicationAccessLogs { get; set; } = null!;
+    public DbSet<CatalogVersion> CatalogVersions { get; set; } = null!;
+    public DbSet<VersionChange> VersionChanges { get; set; } = null!;
+    public DbSet<VersionComparison> VersionComparisons { get; set; } = null!;
+    public DbSet<ComparisonDetail> ComparisonDetails { get; set; } = null!;
 
     // Additional Identity Entities (beyond the inherited ones)
     // AcademiaUserRole is accessed through inherited UserRoles property
@@ -2447,5 +2465,22 @@ public class AcademiaDbContext : IdentityDbContext<AcademiaUser, AcademiaRole, i
             .WithMany(d => d.ServiceLoadSummaries)
             .HasForeignKey(sls => sls.DepartmentName)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Apply Course Catalog Management configurations (Prompt 6 Task 2)
+        modelBuilder.ApplyConfiguration(new CourseCatalogConfiguration());
+        modelBuilder.ApplyConfiguration(new CourseApprovalWorkflowConfiguration());
+        modelBuilder.ApplyConfiguration(new ApprovalStepConfiguration());
+        modelBuilder.ApplyConfiguration(new ApprovalAttachmentConfiguration());
+        modelBuilder.ApplyConfiguration(new CatalogApprovalConfiguration());
+        modelBuilder.ApplyConfiguration(new LearningOutcomeConfiguration());
+        modelBuilder.ApplyConfiguration(new OutcomeAssessmentConfiguration());
+        modelBuilder.ApplyConfiguration(new AssessmentResultConfiguration());
+        modelBuilder.ApplyConfiguration(new CatalogPublicationConfiguration());
+        modelBuilder.ApplyConfiguration(new PublicationDistributionConfiguration());
+        modelBuilder.ApplyConfiguration(new PublicationAccessLogConfiguration());
+        modelBuilder.ApplyConfiguration(new CatalogVersionConfiguration());
+        modelBuilder.ApplyConfiguration(new VersionChangeConfiguration());
+        modelBuilder.ApplyConfiguration(new VersionComparisonConfiguration());
+        modelBuilder.ApplyConfiguration(new ComparisonDetailConfiguration());
     }
 }

@@ -43,8 +43,7 @@ public class PromotionVoteTests
         var vote = new PromotionVote { Vote = voteValue };
 
         // Act & Assert
-        // Note: The entity only checks for exact "Approve" match
-        Assert.Equal(voteValue == "Approve", vote.IsPositiveVote);
+        Assert.Equal(expected, vote.IsPositiveVote);
     }
 
     [Theory]
@@ -59,8 +58,7 @@ public class PromotionVoteTests
         var vote = new PromotionVote { Vote = voteValue };
 
         // Act & Assert
-        // Note: The entity only checks for exact "Reject" match
-        Assert.Equal(voteValue == "Reject", vote.IsNegativeVote);
+        Assert.Equal(expected, vote.IsNegativeVote);
     }
 
     [Theory]
@@ -326,7 +324,7 @@ public class PromotionVoteTests
     [InlineData("Approve", "High", "Strong Approve")]
     [InlineData("Reject", "Medium", "Moderate Reject")]
     [InlineData("Approve", "Low", "Weak Approve")]
-    [InlineData("Approve", null, "Unspecified Approve")]
+    [InlineData("Approve", "", "Unspecified Approve")]
     [InlineData("Abstain", "High", "N/A")]
     [InlineData("Recuse", "High", "N/A")]
     public void VoteStrength_VariousScenarios_ReturnsExpectedResult(

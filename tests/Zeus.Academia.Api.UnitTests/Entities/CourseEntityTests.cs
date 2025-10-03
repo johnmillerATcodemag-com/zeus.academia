@@ -46,7 +46,7 @@ public class CourseEntityTests
         Assert.Equal("CS", parentSubject.Code);
         Assert.Equal(SubjectType.SubjectArea, parentSubject.SubjectType);
         Assert.Null(parentSubject.ParentSubjectCode);
-        
+
         Assert.Equal("CS5000", childSubject.Code);
         Assert.Equal(SubjectType.Course, childSubject.SubjectType);
         Assert.Equal("CS", childSubject.ParentSubjectCode);
@@ -253,7 +253,7 @@ public class CourseEntityTests
         // Assert
         Assert.Equal(CourseStatus.Active, activeCourse.Status);
         Assert.Equal(2, activeCourse.StatusHistory.Count);
-        
+
         Assert.Equal(CourseStatus.Retired, retiredCourse.Status);
         Assert.NotNull(retiredCourse.RetiredDate);
         Assert.Equal("Course content no longer relevant", retiredCourse.RetirementReason);
@@ -343,7 +343,7 @@ public class CourseEntityTests
     private static CourseLevel DetermineCourseLevelFromNumber(string courseNumber)
     {
         if (string.IsNullOrEmpty(courseNumber)) return CourseLevel.Undergraduate;
-        
+
         var numberPart = new string(courseNumber.Where(char.IsDigit).ToArray());
         if (int.TryParse(numberPart, out var number))
         {
@@ -356,17 +356,17 @@ public class CourseEntityTests
                 _ => CourseLevel.Undergraduate
             };
         }
-        
+
         return CourseLevel.Undergraduate;
     }
 
     private static bool IsValidCourseNumber(string courseNumber)
     {
         if (string.IsNullOrEmpty(courseNumber)) return false;
-        
+
         // Basic pattern: 2-4 letters followed by 3-4 digits, optional letter suffix
         return System.Text.RegularExpressions.Regex.IsMatch(
-            courseNumber, 
+            courseNumber,
             @"^[A-Z]{2,4}[0-9]{3,4}[A-Z]?$");
     }
 
