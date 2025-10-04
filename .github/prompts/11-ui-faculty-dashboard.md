@@ -19,7 +19,7 @@ Implement a comprehensive faculty dashboard and teaching tools providing faculty
 
 **Technical Requirements**:
 
-- Create React/Angular/Vue.js project with TypeScript for faculty interface
+- Create Vue.js project with TypeScript for faculty interface
 - Set up component architecture optimized for faculty workflows
 - Configure state management for complex gradebook operations
 - Implement responsive design suitable for desktop and tablet use

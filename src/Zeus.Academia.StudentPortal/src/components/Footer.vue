@@ -18,7 +18,14 @@
             </li>
             <li>
               <router-link to="/courses" class="text-light text-decoration-none"
-                >Courses</router-link
+                >My Courses</router-link
+              >
+            </li>
+            <li>
+              <router-link
+                to="/course-search"
+                class="text-light text-decoration-none"
+                >Course Search</router-link
               >
             </li>
             <li>

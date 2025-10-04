@@ -48,6 +48,19 @@ export interface Course {
   instructor: string
   schedule: CourseSchedule[]
   enrollmentStatus: EnrollmentStatus
+  department?: string
+  prerequisites?: Prerequisite[]
+  maxEnrollment?: number
+  enrolledStudents?: number
+  waitlistCount?: number
+  difficulty?: number // 1-5 scale
+  weeklyWorkload?: number // hours per week
+}
+
+export interface Prerequisite {
+  code: string
+  name: string
+  id: string
 }
 
 export interface CourseSchedule {
@@ -64,6 +77,8 @@ export interface Enrollment {
   enrollmentDate: string
   status: EnrollmentStatus
   grade?: string
+  previousStatus?: EnrollmentStatus
+  autoEnrolledFromWaitlist?: boolean
 }
 
 // Enums

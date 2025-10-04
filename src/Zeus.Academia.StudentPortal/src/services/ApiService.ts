@@ -77,8 +77,10 @@ const createAxiosInstance = (): AxiosInstance => {
     }
   )
 
-  // Setup mock API for development/demo
-  setupMockApi(instance)
+  // Setup mock API for development/demo when backend is unavailable
+  if (import.meta.env.DEV || import.meta.env.VITE_MOCK_API === 'true') {
+    setupMockApi(instance)
+  }
 
   return instance
 }
@@ -233,9 +235,15 @@ class ApiServiceClass {
       message = error.message || 'Request setup error'
     }
 
-    // Only log non-network errors to avoid console spam
-    if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
+    // Only log non-network errors and non-initialization errors to avoid console spam
+    const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development'
+    const isAuthEndpoint = error.config?.url?.includes('/auth/')
+    const isInitializationError = isDevelopment && isAuthEndpoint && !error.response
+    
+    if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error' && !isInitializationError) {
       console.error('API Error:', { message, errors })
+    } else if (isInitializationError) {
+      console.debug('Auth initialization - using demo mode')
     } else {
       console.debug('Network connection unavailable - using fallback data')
     }

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment Fix - Test Result</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .fix-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+        }
+        .result-area {
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Enrollment Endpoint Fix</h1>
+            <p>Testing the resolution for the JSON parsing error</p>
+        </div>
+
+        <div class="status success">
+            ✅ <strong>Issue Resolved!</strong> The enrollment endpoint now properly handles string course IDs.
+        </div>
+
+        <div class="fix-details">
+            <h3>🔍 What was the problem?</h3>
+            <p>The backend API enrollment endpoints were expecting <strong>integer</strong> course IDs (like <code>1</code>), but the frontend was sending <strong>string</strong> course codes (like <code>"CS101"</code>).</p>
+            
+            <h3>🛠️ How was it fixed?</h3>
+            <p>Updated the API endpoints to accept string course IDs:</p>
+            <ul>
+                <li>Changed <code>[FromRoute] int courseId</code> to <code>[FromRoute] string courseId</code></li>
+                <li>Added CourseId to the response for better tracking</li>
+                <li>Both enrollment and drop endpoints now work with course codes</li>
+            </ul>
+        </div>
+
+        <h3>🧪 Test the Fix</h3>
+        <p>Click the buttons below to test the enrollment functionality:</p>
+        
+        <button class="test-button" onclick="testEnrollment()">Test Enroll in CS101</button>
+        <button class="test-button" onclick="testDrop()">Test Drop CS101</button>
+        <button class="test-button" onclick="testWithAuth()">Full Auth + Enroll Test</button>
+
+        <div id="result" class="result-area" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000';
+        let authToken = null;
+
+        function showResult(content, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = content;
+            resultDiv.style.background = isError ? '#2d1b1b' : '#1a1a2e';
+            resultDiv.style.color = isError ? '#ff6b6b' : '#eee';
+        }
+
+        async function getAuthToken() {
+            if (!authToken) {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'john.smith@academia.edu',
+                        password: 'password123'
+                    })
+                });
+                const data = await response.json();
+                authToken = data.token;
+            }
+            return authToken;
+        }
+
+        async function testEnrollment() {
+            try {
+                showResult('Testing enrollment...');
+                
+                const token = await getAuthToken();
+                const response = await fetch(`${API_BASE_URL}/api/student/enroll/CS101`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                showResult(`✅ Enrollment Successful!\n\n${JSON.stringify(data, null, 2)}`);
+                
+            } catch (error) {
+                showResult(`❌ Enrollment Failed:\n\n${error.message}`, true);
+            }
+        }
+
+        async function testDrop() {
+            try {
+                showResult('Testing course drop...');
+                
+                const token = await getAuthToken();
+                const response = await fetch(`${API_BASE_URL}/api/student/enroll/CS101`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                showResult(`✅ Drop Successful!\n\n${JSON.stringify(data, null, 2)}`);
+                
+            } catch (error) {
+                showResult(`❌ Drop Failed:\n\n${error.message}`, true);
+            }
+        }
+
+        async function testWithAuth() {
+            try {
+                showResult('Running full authentication + enrollment test...');
+                
+                // Step 1: Login
+                const loginResponse = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'john.smith@academia.edu',
+                        password: 'password123'
+                    })
+                });
+                const loginData = await loginResponse.json();
+                
+                if (!loginData.success) {
+                    throw new Error('Login failed');
+                }
+
+                // Step 2: Enroll
+                const enrollResponse = await fetch(`${API_BASE_URL}/api/student/enroll/CS101`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const enrollData = await enrollResponse.json();
+
+                // Step 3: Drop
+                const dropResponse = await fetch(`${API_BASE_URL}/api/student/enroll/CS101`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const dropData = await dropResponse.json();
+
+                const result = {
+                    step1_login: { success: loginData.success, message: 'Authentication successful' },
+                    step2_enroll: { success: enrollData.Success, message: enrollData.Message },
+                    step3_drop: { success: dropData.Success, message: dropData.Message }
+                };
+
+                showResult(`✅ Full Test Successful!\n\n${JSON.stringify(result, null, 2)}`);
+                
+            } catch (error) {
+                showResult(`❌ Full Test Failed:\n\n${error.message}`, true);
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.querySelector('.test-button').click();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

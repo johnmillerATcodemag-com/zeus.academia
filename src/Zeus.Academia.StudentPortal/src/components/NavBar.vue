@@ -32,7 +32,14 @@
               >
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/courses">Courses</router-link>
+              <router-link class="nav-link" to="/courses"
+                >My Courses</router-link
+              >
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/course-search"
+                >Course Search</router-link
+              >
             </li>
             <li class="nav-item dropdown">
               <a

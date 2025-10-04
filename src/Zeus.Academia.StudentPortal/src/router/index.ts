@@ -4,6 +4,7 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Courses from '../views/Courses.vue'
+import CourseSearch from '../views/CourseSearch.vue'
 import Profile from '../views/Profile.vue'
 
 export const routes: RouteRecordRaw[] = [
@@ -29,6 +30,12 @@ export const routes: RouteRecordRaw[] = [
     path: '/courses',
     name: 'Courses',
     component: Courses,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/course-search',
+    name: 'CourseSearch',
+    component: CourseSearch,
     meta: { requiresAuth: true }
   },
   {

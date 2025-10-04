@@ -240,6 +240,9 @@ public static partial class ServiceCollectionExtensions
     /// <returns>The service collection for chaining</returns>
     public static IServiceCollection AddApiVersioningServices(this IServiceCollection services)
     {
+        // Add API versioning service
+        services.AddScoped<Zeus.Academia.Api.Versioning.IApiVersionService, Zeus.Academia.Api.Versioning.ApiVersionService>();
+
         // Add API versioning
         services.AddApiVersioning(options =>
         {

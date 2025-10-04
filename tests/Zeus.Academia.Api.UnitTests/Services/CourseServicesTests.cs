@@ -240,7 +240,7 @@ public class CourseServicesTests
             new CourseEnrollment { StudentEmpNr = studentId, SubjectCode = "ENG101", CreditHours = 3, FinalGrade = "B" }
         };
 
-        var degreeRequirements = new DegreeRequirement
+        var degreeRequirements = new TestDegreeRequirement
         {
             DegreeCode = degreeCode,
             TotalCreditsRequired = 120,
@@ -251,7 +251,7 @@ public class CourseServicesTests
 
         SetupMockDbSetForStudent(new List<Student> { student });
         SetupMockDbSetForEnrollment(completedCourses);
-        SetupMockDbSetForDegreeRequirement(new List<DegreeRequirement> { degreeRequirements });
+        SetupMockDbSetForDegreeRequirement(new List<TestDegreeRequirement> { degreeRequirements });
 
         // Act
         var progress = await _courseService.CheckDegreeProgressAsync(studentId, degreeCode);
@@ -870,7 +870,7 @@ public class CourseServicesTests
         _mockContext.Setup(c => c.CourseEquivalencies).Returns(mockSet.Object);
     }
 
-    private void SetupMockDbSetForDegreeRequirement(List<DegreeRequirement> requirements)
+    private void SetupMockDbSetForDegreeRequirement(List<TestDegreeRequirement> requirements)
     {
         var queryable = requirements.AsQueryable();
         var mockSet = new Mock<DbSet<DegreeRequirement>>();
@@ -1206,7 +1206,7 @@ public class SemesterCapacityData
 /// <summary>
 /// Degree requirement for testing
 /// </summary>
-public class DegreeRequirement
+public class TestDegreeRequirement
 {
     public int Id { get; set; }
     public string DegreeCode { get; set; } = string.Empty;
