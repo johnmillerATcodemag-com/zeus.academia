@@ -1,0 +1,72 @@
+/* Global styles for Zeus Academia Student Portal */
+
+:root {
+  --bs-primary: #0d6efd;
+  --bs-secondary: #6c757d;
+  --bs-success: #198754;
+  --bs-info: #0dcaf0;
+  --bs-warning: #ffc107;
+  --bs-danger: #dc3545;
+  --zeus-primary: #1e3a8a;
+  --zeus-secondary: #3b82f6;
+  --zeus-accent: #f59e0b;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.zeus-primary {
+  color: var(--zeus-primary) !important;
+}
+
+.bg-zeus-primary {
+  background-color: var(--zeus-primary) !important;
+}
+
+.zeus-secondary {
+  color: var(--zeus-secondary) !important;
+}
+
+.bg-zeus-secondary {
+  background-color: var(--zeus-secondary) !important;
+}
+
+.zeus-accent {
+  color: var(--zeus-accent) !important;
+}
+
+.bg-zeus-accent {
+  background-color: var(--zeus-accent) !important;
+}
+
+/* Loading states */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Utility classes */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
