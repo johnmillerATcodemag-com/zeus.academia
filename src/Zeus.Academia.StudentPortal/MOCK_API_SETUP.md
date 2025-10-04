@@ -7,6 +7,7 @@ The Zeus Academia Student Portal now includes a **Mock API system** for demonstr
 ## How It Works
 
 The mock API interceptepts HTTP requests and returns realistic mock data, simulating a real backend server with:
+
 - Realistic response delays
 - Proper error handling
 - Data persistence during the session
@@ -19,6 +20,7 @@ The mock API interceptepts HTTP requests and returns realistic mock data, simula
 ## Available Mock Endpoints
 
 ### Authentication
+
 - `POST /auth/login` - Login with demo credentials
 - `POST /auth/logout` - Logout user
 - `GET /auth/me` - Get current user profile
@@ -27,12 +29,14 @@ The mock API interceptepts HTTP requests and returns realistic mock data, simula
 - `POST /auth/refresh` - Refresh JWT token
 
 ### Emergency Contacts
+
 - `GET /emergency-contacts` - List all emergency contacts
 - `POST /emergency-contacts` - Add new emergency contact
 - `PUT /emergency-contacts/:id` - Update emergency contact
 - `DELETE /emergency-contacts/:id` - Delete emergency contact
 
 ### Documents
+
 - `GET /documents` - List uploaded documents
 - `POST /documents/upload` - Upload new document
 - `POST /profile/photo` - Upload profile photo
@@ -46,6 +50,7 @@ The mock API interceptepts HTTP requests and returns realistic mock data, simula
 ## Sample Data
 
 The mock API comes pre-loaded with:
+
 - **Student Profile**: John Doe, STU001, GPA 3.85
 - **Emergency Contacts**: 2 pre-loaded contacts (Mother & Father)
 - **Documents**: 2 sample documents (Transcript & Student ID)
@@ -63,17 +68,20 @@ The mock API comes pre-loaded with:
 ## Mock API Features
 
 ### 🎯 Realistic Behavior
+
 - Network delays (300ms - 2000ms depending on operation)
 - File upload simulation with progress
 - Form validation responses
 - Error handling for edge cases
 
 ### 💾 Session Persistence
+
 - Data changes persist during your session
 - Add/edit/delete operations work as expected
 - Profile updates are maintained
 
 ### 🔒 Authentication Simulation
+
 - JWT token generation and validation
 - Session management
 - Auto-refresh token handling
@@ -96,6 +104,7 @@ VITE_MOCK_API=true  # Enables mock API
 ## Console Output
 
 When the mock API is active, you'll see console messages like:
+
 ```
 🎭 Mock API enabled for development/demo purposes
 🎭 Mock response for: PUT /auth/profile
@@ -112,6 +121,6 @@ If you're still getting network errors:
 
 ## Next Steps
 
-Your **"Network error: Unable to connect to server"** issue should now be resolved! 
+Your **"Network error: Unable to connect to server"** issue should now be resolved!
 
 🎉 **Ready to showcase all Task 2 features without any network errors!**
