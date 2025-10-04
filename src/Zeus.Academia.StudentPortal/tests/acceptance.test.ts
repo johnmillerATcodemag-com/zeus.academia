@@ -73,16 +73,23 @@ describe('Acceptance Criteria - Student Portal Implementation', () => {
 
     it('should support TypeScript mutations and actions', () => {
       // Test that mutations work with TypeScript
-      store.commit('auth/SET_LOADING', true)
+      store.commit('SET_LOADING', { auth: true })
       expect(store.state.loading.auth).toBe(true)
     })
   })
 
   describe('AC3: Vite Build Pipeline', () => {
-    it('should have Vite configuration with optimization', () => {
-      const viteConfig = require('../vite.config.ts')
-      expect(viteConfig).toBeDefined()
-      // Note: In a real build environment, we would test actual build output
+    it('should have Vite configuration with optimization', async () => {
+      // Test that vite config file exists and is valid
+      const fs = await import('fs')
+      const path = await import('path')
+      const configPath = path.resolve(__dirname, '../vite.config.ts')
+      expect(fs.existsSync(configPath)).toBe(true)
+      
+      // Test that the config file contains expected Vite configuration
+      const configContent = fs.readFileSync(configPath, 'utf-8')
+      expect(configContent).toContain('defineConfig')
+      expect(configContent).toContain('vue()')
     })
 
     it('should have proper build script configuration', () => {
@@ -103,7 +110,7 @@ describe('Acceptance Criteria - Student Portal Implementation', () => {
   describe('AC4: Bootstrap 5 Integration', () => {
     it('should have Bootstrap 5 installed and configured', () => {
       const packageJson = require('../package.json')
-      expect(packageJson.dependencies.bootstrap).toMatch(/^5\./)
+      expect(packageJson.dependencies.bootstrap).toMatch(/^\^?5\./)
       expect(packageJson.dependencies['bootstrap-vue-next']).toBeDefined()
     })
 

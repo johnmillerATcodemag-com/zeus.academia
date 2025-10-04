@@ -1,0 +1,506 @@
+using Microsoft.EntityFrameworkCore;
+using Zeus.Academia.Infrastructure.Entities;
+using Zeus.Academia.Infrastructure.Models;
+using Zeus.Academia.Infrastructure.Enums;
+using Zeus.Academia.Infrastructure.Data;
+
+namespace Zeus.Academia.Infrastructure.Services;
+
+/// <summary>
+/// Implementation of transfer credit evaluation services.
+/// </summary>
+public class TransferCreditService : ITransferCreditService
+{
+    private readonly AcademiaDbContext _context;
+
+    public TransferCreditService(AcademiaDbContext context)
+    {
+        _context = context;
+    }
+
+    #region Transfer Credit Evaluation
+
+    public async Task<TransferCreditEvaluation> EvaluateTransferCreditsAsync(TransferCreditRequest transferRequest, TransferCreditPolicies? policies = null)
+    {
+        if (transferRequest == null)
+            throw new ArgumentNullException(nameof(transferRequest));
+
+        policies ??= await GetTransferCreditPoliciesAsync();
+
+        var evaluation = new TransferCreditEvaluation
+        {
+            StudentId = transferRequest.StudentId,
+            RequestDate = DateTime.Now,
+            Status = TransferStatus.PendingReview,
+            EvaluationDate = DateTime.Now,
+            EvaluatedBy = "System",
+            TotalCreditsRequested = transferRequest.ExternalCourses.Sum(c => c.Credits),
+            TotalCreditsApproved = 0,
+            ExternalCourses = transferRequest.ExternalCourses.ToList(),
+            EvaluationResults = new List<TransferCreditResult>()
+        };
+
+        foreach (var externalCourse in transferRequest.ExternalCourses)
+        {
+            var result = await EvaluateIndividualCourseAsync(externalCourse, policies);
+            evaluation.EvaluationResults.Add(result);
+            
+            if (result.Status == TransferStatus.Approved || result.Status == TransferStatus.ConditionalApproval)
+            {
+                evaluation.TotalCreditsApproved += result.TransferredCredits;
+            }
+        }
+
+        // Apply overall transfer policies
+        if (evaluation.TotalCreditsApproved > policies.MaxTransferCredits)
+        {
+            evaluation.TotalCreditsApproved = policies.MaxTransferCredits;
+            evaluation.Notes = $"Transfer credits limited to maximum of {policies.MaxTransferCredits} credits per institutional policy.";
+            
+            // Adjust individual course evaluations
+            await ApplyMaxCreditLimitAsync(evaluation, policies.MaxTransferCredits);
+        }
+
+        // Determine overall status
+        evaluation.Status = DetermineOverallStatus(evaluation.EvaluationResults);
+
+        // Save evaluation to database
+        var evaluationEntity = new TransferCreditEvaluationEntity
+        {
+            StudentId = evaluation.StudentId,
+            RequestDate = evaluation.RequestDate,
+            Status = evaluation.Status.ToString(),
+            EvaluationDate = evaluation.EvaluationDate,
+            EvaluatedBy = evaluation.EvaluatedBy,
+            TotalCreditsRequested = evaluation.TotalCreditsRequested,
+            TotalCreditsApproved = evaluation.TotalCreditsApproved,
+            Notes = evaluation.Notes
+        };
+
+        _context.TransferCreditEvaluations.Add(evaluationEntity);
+        await _context.SaveChangesAsync();
+
+        evaluation.Id = evaluationEntity.Id;
+        return evaluation;
+    }
+
+    private async Task<TransferCreditResult> EvaluateIndividualCourseAsync(ExternalCourse externalCourse, TransferCreditPolicies policies)
+    {
+        var result = new TransferCreditResult
+        {
+            ExternalCourse = externalCourse,
+            Status = TransferStatus.PendingReview,
+            TransferredCredits = 0,
+            EvaluationNotes = new List<string>()
+        };
+
+        // Check basic eligibility
+        if (externalCourse.Grade < policies.MinimumGrade)
+        {
+            result.Status = TransferStatus.Rejected;
+            result.EvaluationNotes.Add($"Grade {externalCourse.Grade} below minimum requirement of {policies.MinimumGrade}");
+            return result;
+        }
+
+        // Check course age
+        var courseAge = DateTime.Now.Year - externalCourse.CompletionDate.Year;
+        if (courseAge > policies.MaxCreditAge)
+        {
+            result.Status = TransferStatus.Rejected;
+            result.EvaluationNotes.Add($"Course completed {courseAge} years ago, exceeds maximum age of {policies.MaxCreditAge} years");
+            return result;
+        }
+
+        // Check restricted subjects
+        if (policies.RestrictedSubjects.Any(rs => externalCourse.SubjectArea.Contains(rs, StringComparison.OrdinalIgnoreCase)))
+        {
+            result.Status = TransferStatus.Rejected;
+            result.EvaluationNotes.Add($"Subject area '{externalCourse.SubjectArea}' is restricted for transfer");
+            return result;
+        }
+
+        // Check for existing equivalency
+        var equivalency = await _context.CourseEquivalencies
+            .Include(ce => ce.InternalCourse)
+            .FirstOrDefaultAsync(ce => ce.ExternalCourseCode == externalCourse.CourseCode &&
+                                     ce.ExternalInstitution == externalCourse.Institution &&
+                                     ce.IsActive);
+
+        if (equivalency != null)
+        {
+            result.EquivalentInternalCourse = new Course
+            {
+                Id = equivalency.InternalCourse.Id,
+                Title = equivalency.InternalCourse.Title,
+                CourseCode = equivalency.InternalCourse.CourseCode,
+                Credits = equivalency.InternalCourse.Credits
+            };
+
+            result.TransferredCredits = (int)(externalCourse.Credits * equivalency.CreditTransferRatio);
+            
+            switch (equivalency.EquivalencyType)
+            {
+                case EquivalencyType.Direct:
+                    result.Status = TransferStatus.Approved;
+                    result.EvaluationNotes.Add("Direct equivalency found");
+                    break;
+                case EquivalencyType.Partial:
+                    result.Status = TransferStatus.ConditionalApproval;
+                    result.EvaluationNotes.Add("Partial equivalency - may require additional coursework");
+                    break;
+                case EquivalencyType.Conditional:
+                    result.Status = TransferStatus.ConditionalApproval;
+                    result.EvaluationNotes.Add("Conditional equivalency - subject to review");
+                    break;
+                default:
+                    result.Status = TransferStatus.PendingReview;
+                    result.EvaluationNotes.Add("Manual review required");
+                    break;
+            }
+        }
+        else
+        {
+            // No existing equivalency - requires manual review
+            result.Status = TransferStatus.PendingReview;
+            result.EvaluationNotes.Add("No existing equivalency found - manual review required");
+            
+            // Try to find similar courses for suggestion
+            var similarCourses = await FindSimilarInternalCoursesAsync(externalCourse);
+            if (similarCourses.Any())
+            {
+                result.SuggestedEquivalencies = similarCourses;
+                result.EvaluationNotes.Add($"Found {similarCourses.Count} potential equivalent courses");
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<List<Course>> FindSimilarInternalCoursesAsync(ExternalCourse externalCourse)
+    {
+        var similarCourses = new List<Course>();
+
+        // Search by similar title
+        var titleKeywords = externalCourse.Title.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 3)
+            .Take(3);
+
+        foreach (var keyword in titleKeywords)
+        {
+            var courses = await _context.Courses
+                .Where(c => c.Title.Contains(keyword) && c.Status == CourseStatus.Active)
+                .Take(3)
+                .ToListAsync();
+            
+            similarCourses.AddRange(courses);
+        }
+
+        // Search by subject area
+        var subjectCourses = await _context.Courses
+            .Include(c => c.Subject)
+            .Where(c => c.Subject.Name.Contains(externalCourse.SubjectArea) && 
+                       c.Status == CourseStatus.Active)
+            .Take(5)
+            .ToListAsync();
+        
+        similarCourses.AddRange(subjectCourses);
+
+        // Remove duplicates and limit results
+        return similarCourses
+            .GroupBy(c => c.Id)
+            .Select(g => g.First())
+            .Take(5)
+            .ToList();
+    }
+
+    private async Task ApplyMaxCreditLimitAsync(TransferCreditEvaluation evaluation, int maxCredits)
+    {
+        var approvedResults = evaluation.EvaluationResults
+            .Where(r => r.Status == TransferStatus.Approved || r.Status == TransferStatus.ConditionalApproval)
+            .OrderByDescending(r => r.TransferredCredits)
+            .ToList();
+
+        int remainingCredits = maxCredits;
+        
+        foreach (var result in approvedResults)
+        {
+            if (remainingCredits >= result.TransferredCredits)
+            {
+                remainingCredits -= result.TransferredCredits;
+            }
+            else if (remainingCredits > 0)
+            {
+                result.TransferredCredits = remainingCredits;
+                result.EvaluationNotes.Add("Credits reduced due to maximum transfer limit");
+                remainingCredits = 0;
+            }
+            else
+            {
+                result.Status = TransferStatus.Rejected;
+                result.TransferredCredits = 0;
+                result.EvaluationNotes.Add("Rejected due to maximum transfer credit limit reached");
+            }
+        }
+    }
+
+    private TransferStatus DetermineOverallStatus(List<TransferCreditResult> results)
+    {
+        if (results.All(r => r.Status == TransferStatus.Approved))
+            return TransferStatus.Approved;
+        
+        if (results.Any(r => r.Status == TransferStatus.Approved || r.Status == TransferStatus.ConditionalApproval))
+            return TransferStatus.ConditionalApperoval;
+        
+        if (results.All(r => r.Status == TransferStatus.Rejected))
+            return TransferStatus.Rejected;
+        
+        return TransferStatus.PendingReview;
+    }
+
+    #endregion
+
+    #region Policy Management
+
+    public async Task<TransferCreditPolicies> GetTransferCreditPoliciesAsync()
+    {
+        var policy = await _context.TransferCreditPolicies
+            .OrderByDescending(p => p.EffectiveDate)
+            .FirstOrDefaultAsync();
+
+        return policy ?? new TransferCreditPolicies
+        {
+            MaxTransferCredits = 60,
+            MinimumGrade = 2.0m,
+            MaxCreditAge = 10,
+            RequireAccreditation = true,
+            RestrictedSubjects = new List<string>(),
+            EffectiveDate = DateTime.Now,
+            CreatedBy = "System"
+        };
+    }
+
+    public async Task<bool> UpdateTransferCreditPoliciesAsync(TransferCreditPolicies policies)
+    {
+        if (policies == null)
+            return false;
+
+        try
+        {
+            _context.TransferCreditPolicies.Add(policies);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    #endregion
+
+    #region Student Transfer History
+
+    public async Task<List<TransferCreditEvaluation>> GetStudentTransferCreditsAsync(int studentId)
+    {
+        var evaluationEntities = await _context.TransferCreditEvaluations
+            .Where(tce => tce.StudentId == studentId)
+            .OrderByDescending(tce => tce.RequestDate)
+            .ToListAsync();
+
+        var evaluations = new List<TransferCreditEvaluation>();
+        
+        foreach (var entity in evaluationEntities)
+        {
+            var evaluation = new TransferCreditEvaluation
+            {
+                Id = entity.Id,
+                StudentId = entity.StudentId,
+                RequestDate = entity.RequestDate,
+                Status = Enum.Parse<TransferStatus>(entity.Status),
+                EvaluationDate = entity.EvaluationDate,
+                EvaluatedBy = entity.EvaluatedBy,
+                TotalCreditsRequested = entity.TotalCreditsRequested,
+                TotalCreditsApproved = entity.TotalCreditsApproved,
+                Notes = entity.Notes,
+                ExternalCourses = new List<ExternalCourse>(),
+                EvaluationResults = new List<TransferCreditResult>()
+            };
+
+            evaluations.Add(evaluation);
+        }
+
+        return evaluations;
+    }
+
+    public async Task<bool> ApplyTransferCreditsAsync(int evaluationId, string approvedBy)
+    {
+        var evaluation = await _context.TransferCreditEvaluations.FindAsync(evaluationId);
+        if (evaluation == null || evaluation.Status != TransferStatus.Approved.ToString())
+            return false;
+
+        try
+        {
+            // Create transfer credit records
+            var transferCreditRecord = new TransferCreditRecord
+            {
+                StudentId = evaluation.StudentId,
+                EvaluationId = evaluationId,
+                CreditsTransferred = evaluation.TotalCreditsApproved,
+                ApprovalDate = DateTime.Now,
+                ApprovedBy = approvedBy,
+                IsApplied = true
+            };
+
+            _context.TransferCreditRecords.Add(transferCreditRecord);
+            
+            // Update evaluation status
+            evaluation.Status = "Applied";
+            
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    #endregion
+
+    #region External Course Validation
+
+    public async Task<CourseValidationResult> ValidateExternalCourseAsync(ExternalCourse externalCourse)
+    {
+        var result = new CourseValidationResult { IsValid = true };
+
+        if (string.IsNullOrWhiteSpace(externalCourse.CourseCode))
+        {
+            result.IsValid = false;
+            result.ValidationErrors.Add("Course code is required");
+        }
+
+        if (string.IsNullOrWhiteSpace(externalCourse.Title))
+        {
+            result.IsValid = false;
+            result.ValidationErrors.Add("Course title is required");
+        }
+
+        if (string.IsNullOrWhiteSpace(externalCourse.Institution))
+        {
+            result.IsValid = false;
+            result.ValidationErrors.Add("Institution is required");
+        }
+
+        if (externalCourse.Credits <= 0)
+        {
+            result.IsValid = false;
+            result.ValidationErrors.Add("Credits must be greater than zero");
+        }
+
+        if (externalCourse.Grade < 0 || externalCourse.Grade > 4.0m)
+        {
+            result.IsValid = false;
+            result.ValidationErrors.Add("Grade must be between 0 and 4.0");
+        }
+
+        if (externalCourse.CompletionDate > DateTime.Now)
+        {
+            result.IsValid = false;
+            result.ValidationErrors.Add("Completion date cannot be in the future");
+        }
+
+        // Check institution accreditation
+        var institutionMapping = await GetInstitutionMappingAsync(externalCourse.Institution);
+        if (institutionMapping == null)
+        {
+            result.Warnings.Add("Institution not found in approved transfer list - manual review may be required");
+        }
+        else if (!institutionMapping.IsApprovedForTransfer)
+        {
+            result.ValidationErrors.Add("Institution is not approved for credit transfer");
+            result.IsValid = false;
+        }
+
+        if (result.IsValid)
+        {
+            result.RecommendedAction = "Course is valid for transfer evaluation";
+        }
+        else
+        {
+            result.RecommendedAction = "Course requires correction before evaluation";
+        }
+
+        return result;
+    }
+
+    #endregion
+
+    #region Institution Mapping
+
+    public async Task<InstitutionMapping?> GetInstitutionMappingAsync(string institutionCode)
+    {
+        return await _context.InstitutionMappings
+            .FirstOrDefaultAsync(im => im.InstitutionCode == institutionCode ||
+                                     im.InstitutionName.Contains(institutionCode));
+    }
+
+    public async Task<InstitutionMapping> UpdateInstitutionMappingAsync(InstitutionMapping mapping)
+    {
+        if (mapping.Id == 0)
+        {
+            _context.InstitutionMappings.Add(mapping);
+        }
+        else
+        {
+            var existing = await _context.InstitutionMappings.FindAsync(mapping.Id);
+            if (existing != null)
+            {
+                existing.InstitutionName = mapping.InstitutionName;
+                existing.AccreditationStatus = mapping.AccreditationStatus;
+                existing.IsApprovedForTransfer = mapping.IsApprovedForTransfer;
+                existing.TransferCreditMultiplier = mapping.TransferCreditMultiplier;
+                existing.RestrictedSubjects = mapping.RestrictedSubjects;
+                existing.ExpirationDate = mapping.ExpirationDate;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return mapping;
+    }
+
+    #endregion
+}
+
+#region Supporting Entity Classes
+
+/// <summary>
+/// Transfer credit evaluation entity for database storage
+/// </summary>
+public class TransferCreditEvaluationEntity
+{
+    public int Id { get; set; }
+    public int StudentId { get; set; }
+    public DateTime RequestDate { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime EvaluationDate { get; set; }
+    public string EvaluatedBy { get; set; } = string.Empty;
+    public decimal TotalCreditsRequested { get; set; }
+    public decimal TotalCreditsApproved { get; set; }
+    public string Notes { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Transfer credit record entity
+/// </summary>
+public class TransferCreditRecord
+{
+    public int Id { get; set; }
+    public int StudentId { get; set; }
+    public int EvaluationId { get; set; }
+    public decimal CreditsTransferred { get; set; }
+    public DateTime ApprovalDate { get; set; }
+    public string ApprovedBy { get; set; } = string.Empty;
+    public bool IsApplied { get; set; }
+}
+
+#endregion

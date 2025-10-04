@@ -7,6 +7,36 @@ export interface Student {
   studentId: string
   enrollmentDate: string
   gpa?: number
+  phone?: string
+  dateOfBirth?: string
+  address?: Address
+  emergencyContact?: EmergencyContact
+}
+
+export interface Address {
+  street: string
+  city: string
+  state: string
+  zipCode: string
+  country: string
+}
+
+export interface EmergencyContact {
+  id?: string
+  name: string
+  relationship: string
+  phone: string
+  email: string
+  address?: Address
+}
+
+export interface Document {
+  id: string
+  name: string
+  type: string
+  url: string
+  uploadDate: string
+  size: number
 }
 
 export interface Course {

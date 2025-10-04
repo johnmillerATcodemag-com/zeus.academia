@@ -14,6 +14,7 @@ export const authModule = {
   getters: {
     isAuthenticated: (state: AuthState) => state.isAuthenticated,
     student: (state: AuthState) => state.student,
+    currentStudent: (state: AuthState) => state.student, // Alias for template consistency
     studentName: (state: AuthState) => {
       return state.student ? `${state.student.firstName} ${state.student.lastName}` : 'Student'
     },

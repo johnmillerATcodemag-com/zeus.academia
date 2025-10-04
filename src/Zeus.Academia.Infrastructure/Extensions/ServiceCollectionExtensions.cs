@@ -156,6 +156,10 @@ public static class ServiceCollectionExtensions
         // Register Faculty Management services (Prompt 5 Task 5)
         services.AddScoped<IFacultyService, FacultyService>();
 
+        // Register Course Analytics and Transfer Credit services (Task 7) - Stub implementations
+        services.AddScoped<ICourseAnalyticsService, CourseAnalyticsService>();
+        services.AddScoped<ITransferCreditService, TransferCreditService>();
+
         return services;
     }
 }

@@ -1,10 +1,10 @@
 <template>
-  <div 
+  <div
     v-if="show"
     class="toast-container position-fixed top-0 end-0 p-3"
-    style="z-index: 1055;"
+    style="z-index: 1055"
   >
-    <div 
+    <div
       class="toast show"
       :class="toastClass"
       role="alert"
@@ -29,64 +29,64 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted } from "vue";
 
 interface Props {
-  show: boolean
-  type?: 'info' | 'success' | 'warning' | 'error'
-  title: string
-  message: string
-  autoHide?: boolean
-  delay?: number
+  show: boolean;
+  type?: "info" | "success" | "warning" | "error";
+  title: string;
+  message: string;
+  autoHide?: boolean;
+  delay?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  type: 'info',
+  type: "info",
   autoHide: true,
-  delay: 5000
-})
+  delay: 5000,
+});
 
 const emit = defineEmits<{
-  dismiss: []
-}>()
+  dismiss: [];
+}>();
 
 const toastClass = computed(() => {
   switch (props.type) {
-    case 'success':
-      return 'text-bg-success'
-    case 'warning':
-      return 'text-bg-warning'
-    case 'error':
-      return 'text-bg-danger'
+    case "success":
+      return "text-bg-success";
+    case "warning":
+      return "text-bg-warning";
+    case "error":
+      return "text-bg-danger";
     default:
-      return 'text-bg-info'
+      return "text-bg-info";
   }
-})
+});
 
 const iconClass = computed(() => {
   switch (props.type) {
-    case 'success':
-      return 'bi bi-check-circle-fill text-white'
-    case 'warning':
-      return 'bi bi-exclamation-triangle-fill text-dark'
-    case 'error':
-      return 'bi bi-x-circle-fill text-white'
+    case "success":
+      return "bi bi-check-circle-fill text-white";
+    case "warning":
+      return "bi bi-exclamation-triangle-fill text-dark";
+    case "error":
+      return "bi bi-x-circle-fill text-white";
     default:
-      return 'bi bi-info-circle-fill text-white'
+      return "bi bi-info-circle-fill text-white";
   }
-})
+});
 
 const dismiss = () => {
-  emit('dismiss')
-}
+  emit("dismiss");
+};
 
 onMounted(() => {
   if (props.autoHide && props.show) {
     setTimeout(() => {
-      dismiss()
-    }, props.delay)
+      dismiss();
+    }, props.delay);
   }
-})
+});
 </script>
 
 <style scoped>

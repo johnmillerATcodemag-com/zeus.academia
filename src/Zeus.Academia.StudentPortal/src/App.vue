@@ -5,7 +5,7 @@
       <RouterView />
     </main>
     <Footer />
-    
+
     <!-- Global notification toast -->
     <Toast
       v-if="notification"
@@ -19,19 +19,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useStore } from 'vuex'
+import { computed } from "vue";
+import { useStore } from "vuex";
 import NavBar from "./components/NavBar.vue";
 import Footer from "./components/Footer.vue";
 import Toast from "./components/Toast.vue";
 
-const store = useStore()
+const store = useStore();
 
-const notification = computed(() => store.getters.notification)
+const notification = computed(() => store.getters.notification);
 
 const clearNotification = () => {
-  store.dispatch('clearNotification')
-}
+  store.dispatch("clearNotification");
+};
 
 console.log("App.vue loaded successfully");
 </script>

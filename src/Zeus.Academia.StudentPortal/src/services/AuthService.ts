@@ -3,7 +3,9 @@ import type {
   LoginRequest, 
   LoginResponse, 
   Student, 
-  ApiResponse 
+  ApiResponse,
+  EmergencyContact,
+  Document
 } from '../types'
 
 class AuthServiceClass {
@@ -215,6 +217,47 @@ class AuthServiceClass {
       console.error('Invalid token format:', error)
       return null
     }
+  }
+
+  // Emergency Contact Management
+  async getEmergencyContacts(): Promise<ApiResponse<EmergencyContact[]>> {
+    return await ApiService.get<EmergencyContact[]>('/auth/emergency-contacts')
+  }
+
+  async addEmergencyContact(contact: Omit<EmergencyContact, 'id'>): Promise<ApiResponse<EmergencyContact>> {
+    return await ApiService.post<EmergencyContact>('/auth/emergency-contacts', contact)
+  }
+
+  async updateEmergencyContact(contactId: string, contact: Partial<EmergencyContact>): Promise<ApiResponse<EmergencyContact>> {
+    return await ApiService.put<EmergencyContact>(`/auth/emergency-contacts/${contactId}`, contact)
+  }
+
+  async deleteEmergencyContact(contactId: string): Promise<ApiResponse<void>> {
+    return await ApiService.delete(`/auth/emergency-contacts/${contactId}`)
+  }
+
+  // Document and Photo Management
+  async uploadProfilePhoto(file: File): Promise<ApiResponse<{ photoUrl: string }>> {
+    const formData = new FormData()
+    formData.append('photo', file)
+    
+    return await ApiService.post<{ photoUrl: string }>('/auth/profile/photo', formData)
+  }
+
+  async uploadDocument(file: File, documentType: string): Promise<ApiResponse<{ documentId: string; documentUrl: string }>> {
+    const formData = new FormData()
+    formData.append('document', file)
+    formData.append('type', documentType)
+    
+    return await ApiService.post<{ documentId: string; documentUrl: string }>('/auth/documents', formData)
+  }
+
+  async getDocuments(): Promise<ApiResponse<Document[]>> {
+    return await ApiService.get<Document[]>('/auth/documents')
+  }
+
+  async deleteDocument(documentId: string): Promise<ApiResponse<void>> {
+    return await ApiService.delete(`/auth/documents/${documentId}`)
   }
 
   // Clear all authentication data

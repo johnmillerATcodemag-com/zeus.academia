@@ -1,0 +1,677 @@
+using Microsoft.EntityFrameworkCore;
+using Zeus.Academia.Infrastructure.Entities;
+using Zeus.Academia.Infrastructure.Models;
+using Zeus.Academia.Infrastructure.Enums;
+using Zeus.Academia.Infrastructure.Data;
+using System.Text.Json;
+
+namespace Zeus.Academia.Infrastructure.Services;
+
+/// <summary>
+/// Implementation of course analytics and reporting services.
+/// </summary>
+public class CourseAnalyticsService : ICourseAnalyticsService
+{
+    private readonly AcademiaDbContext _context;
+
+    public CourseAnalyticsService(AcademiaDbContext context)
+    {
+        _context = context;
+    }
+
+    #region Course Analytics Reports
+
+    public async Task<CourseAnalyticsReport> GenerateCourseReportAsync(CourseReportType reportType, CourseAnalyticsParameters parameters)
+    {
+        var report = new CourseAnalyticsReport
+        {
+            ReportType = reportType,
+            GeneratedDate = DateTime.Now,
+            Parameters = parameters,
+            Title = GetReportTitle(reportType),
+            Summary = new CourseAnalyticsSummary()
+        };
+
+        switch (reportType)
+        {
+            case CourseReportType.EnrollmentTrends:
+                await GenerateEnrollmentTrendsReportAsync(report, parameters);
+                break;
+            case CourseReportType.SuccessRates:
+                await GenerateSuccessRatesReportAsync(report, parameters);
+                break;
+            case CourseReportType.CapacityUtilization:
+                await GenerateCapacityUtilizationReportAsync(report, parameters);
+                break;
+            case CourseReportType.StudentDemographics:
+                await GenerateStudentDemographicsReportAsync(report, parameters);
+                break;
+            case CourseReportType.GradeDistribution:
+                await GenerateGradeDistributionReportAsync(report, parameters);
+                break;
+            case CourseReportType.ComprehensiveSummary:
+                await GenerateComprehensiveSummaryReportAsync(report, parameters);
+                break;
+        }
+
+        // Save report to database
+        await SaveReportAsync(report);
+
+        return report;
+    }
+
+    #endregion
+
+    #region Enrollment Analytics
+
+    public async Task<EnrollmentTrends> GetEnrollmentTrendsAsync(List<int> courseIds, TimeRange timeRange)
+    {
+        var enrollmentData = await _context.StudentCourses
+            .Where(sc => courseIds.Contains(sc.CourseId) &&
+                        sc.EnrollmentDate >= timeRange.StartDate &&
+                        sc.EnrollmentDate <= timeRange.EndDate)
+            .Include(sc => sc.Course)
+            .GroupBy(sc => new { sc.CourseId, Year = sc.EnrollmentDate.Year, Month = sc.EnrollmentDate.Month })
+            .Select(g => new
+            {
+                CourseId = g.Key.CourseId,
+                Period = $"{g.Key.Year}-{g.Key.Month:D2}",
+                EnrollmentCount = g.Count()
+            })
+            .ToListAsync();
+
+        var trendData = new Dictionary<string, List<int>>();
+        var periods = enrollmentData.Select(ed => ed.Period).Distinct().OrderBy(p => p).ToList();
+
+        foreach (var courseId in courseIds)
+        {
+            var courseTrends = new List<int>();
+            foreach (var period in periods)
+            {
+                var enrollment = enrollmentData
+                    .FirstOrDefault(ed => ed.CourseId == courseId && ed.Period == period)
+                    ?.EnrollmentCount ?? 0;
+                courseTrends.Add(enrollment);
+            }
+            trendData[courseId.ToString()] = courseTrends;
+        }
+
+        // Calculate growth rate
+        var totalEnrollmentStart = trendData.Values.Sum(trends => trends.FirstOrDefault());
+        var totalEnrollmentEnd = trendData.Values.Sum(trends => trends.LastOrDefault());
+        var growthRate = totalEnrollmentStart > 0 
+            ? ((decimal)(totalEnrollmentEnd - totalEnrollmentStart) / totalEnrollmentStart) * 100 
+            : 0;
+
+        // Detect seasonal patterns
+        var seasonalPatterns = DetectSeasonalPatterns(trendData, periods);
+
+        return new EnrollmentTrends
+        {
+            CourseIds = courseIds,
+            TrendData = trendData,
+            GrowthRate = growthRate,
+            TrendDirection = growthRate > 5 ? "Increasing" : growthRate < -5 ? "Decreasing" : "Stable",
+            SeasonalPatterns = seasonalPatterns,
+            AnalysisDate = DateTime.Now
+        };
+    }
+
+    #endregion
+
+    #region Success Rate Analytics
+
+    public async Task<SuccessRateAnalytics> GetSuccessRateAnalyticsAsync(List<int> courseIds, TimeRange timeRange)
+    {
+        var courseData = await _context.StudentCourses
+            .Where(sc => courseIds.Contains(sc.CourseId) &&
+                        sc.CompletionDate >= timeRange.StartDate &&
+                        sc.CompletionDate <= timeRange.EndDate &&
+                        sc.Grade.HasValue)
+            .Include(sc => sc.Course)
+            .Include(sc => sc.Student)
+            .ToListAsync();
+
+        var successRates = new Dictionary<int, decimal>();
+        var demographicSuccessRates = new Dictionary<string, decimal>();
+
+        foreach (var courseId in courseIds)
+        {
+            var courseStudents = courseData.Where(cd => cd.CourseId == courseId).ToList();
+            if (courseStudents.Any())
+            {
+                var successfulStudents = courseStudents.Count(cs => cs.Grade >= 2.0m);
+                var successRate = (decimal)successfulStudents / courseStudents.Count * 100;
+                successRates[courseId] = successRate;
+            }
+        }
+
+        // Calculate demographic-based success rates
+        var allStudents = courseData.GroupBy(cd => cd.Student.Id).Select(g => g.First()).ToList();
+        if (allStudents.Any())
+        {
+            // Example demographic analysis (would need actual demographic data)
+            var firstTimeStudents = allStudents.Where(s => IsFirstTimeStudent(s.StudentId)).ToList();
+            if (firstTimeStudents.Any())
+            {
+                var firstTimeSuccessRate = (decimal)firstTimeStudents.Count(s => s.Grade >= 2.0m) / firstTimeStudents.Count * 100;
+                demographicSuccessRates["First-Time Students"] = firstTimeSuccessRate;
+            }
+        }
+
+        // Identify success factors
+        var successFactors = await IdentifySuccessFactorsAsync(courseIds, timeRange);
+        var riskFactors = await IdentifyRiskFactorsAsync(courseIds, timeRange);
+
+        return new SuccessRateAnalytics
+        {
+            CourseIds = courseIds,
+            SuccessRates = successRates,
+            AverageSuccessRate = successRates.Values.DefaultIfEmpty(0).Average(),
+            SuccessRateByDemographic = demographicSuccessRates,
+            SuccessFactors = successFactors,
+            RiskFactors = riskFactors
+        };
+    }
+
+    #endregion
+
+    #region Prerequisite Effectiveness
+
+    public async Task<PrerequisiteEffectiveness> AnalyzePrerequisiteEffectivenessAsync(int courseId)
+    {
+        var course = await _context.Courses
+            .Include(c => c.Prerequisites)
+            .FirstOrDefaultAsync(c => c.Id == courseId);
+
+        if (course?.Prerequisites == null || !course.Prerequisites.Any())
+        {
+            return new PrerequisiteEffectiveness
+            {
+                CourseId = courseId,
+                PrerequisiteCourseIds = new List<int>(),
+                EffectivenessScores = new Dictionary<int, decimal>(),
+                OverallEffectiveness = 0,
+                Recommendations = new List<string> { "No prerequisites to analyze" },
+                AnalysisDate = DateTime.Now
+            };
+        }
+
+        var prerequisiteIds = course.Prerequisites.Select(p => p.Id).ToList();
+        var effectivenessScores = new Dictionary<int, decimal>();
+
+        // Analyze each prerequisite
+        foreach (var prereqId in prerequisiteIds)
+        {
+            var effectiveness = await CalculatePrerequisiteEffectivenessAsync(courseId, prereqId);
+            effectivenessScores[prereqId] = effectiveness;
+        }
+
+        var overallEffectiveness = effectivenessScores.Values.DefaultIfEmpty(0).Average();
+        var recommendations = GeneratePrerequisiteRecommendations(effectivenessScores, course.Prerequisites.ToList());
+
+        return new PrerequisiteEffectiveness
+        {
+            CourseId = courseId,
+            PrerequisiteCourseIds = prerequisiteIds,
+            EffectivenessScores = effectivenessScores,
+            OverallEffectiveness = overallEffectiveness,
+            Recommendations = recommendations,
+            AnalysisDate = DateTime.Now
+        };
+    }
+
+    private async Task<decimal> CalculatePrerequisiteEffectivenessAsync(int courseId, int prerequisiteId)
+    {
+        // Get students who took the prerequisite and then the main course
+        var studentsWithPrereq = await _context.StudentCourses
+            .Where(sc => sc.CourseId == prerequisiteId && sc.Grade >= 2.0m)
+            .Select(sc => sc.StudentId)
+            .ToListAsync();
+
+        var mainCourseResults = await _context.StudentCourses
+            .Where(sc => sc.CourseId == courseId && 
+                        studentsWithPrereq.Contains(sc.StudentId) &&
+                        sc.Grade.HasValue)
+            .ToListAsync();
+
+        if (!mainCourseResults.Any())
+            return 0;
+
+        // Calculate success rate for students with prerequisite
+        var successfulWithPrereq = mainCourseResults.Count(sc => sc.Grade >= 2.0m);
+        var successRateWithPrereq = (decimal)successfulWithPrereq / mainCourseResults.Count;
+
+        // Get overall success rate for comparison
+        var allMainCourseResults = await _context.StudentCourses
+            .Where(sc => sc.CourseId == courseId && sc.Grade.HasValue)
+            .ToListAsync();
+
+        var overallSuccessRate = allMainCourseResults.Any()
+            ? (decimal)allMainCourseResults.Count(sc => sc.Grade >= 2.0m) / allMainCourseResults.Count
+            : 0;
+
+        // Effectiveness is the improvement over overall success rate
+        return Math.Max(0, (successRateWithPrereq - overallSuccessRate) * 100);
+    }
+
+    #endregion
+
+    #region Capacity Utilization
+
+    public async Task<CapacityUtilizationReport> GetCapacityUtilizationReportAsync(int semesterId, int? departmentId = null)
+    {
+        var query = _context.Courses
+            .Include(c => c.Subject)
+            .Where(c => c.Status == CourseStatus.Active);
+
+        if (departmentId.HasValue)
+            query = query.Where(c => c.Subject.DepartmentId == departmentId.Value);
+
+        var courses = await query.ToListAsync();
+        var courseUtilization = new Dictionary<int, decimal>();
+        var overenrolledCourses = new List<int>();
+        var underenrolledCourses = new List<int>();
+
+        decimal totalUtilization = 0;
+        int courseCount = 0;
+
+        foreach (var course in courses)
+        {
+            var currentEnrollment = await _context.StudentCourses
+                .CountAsync(sc => sc.CourseId == course.Id && sc.Grade == null);
+
+            var utilization = course.MaxEnrollment > 0 
+                ? (decimal)currentEnrollment / course.MaxEnrollment * 100 
+                : 0;
+
+            courseUtilization[course.Id] = utilization;
+            totalUtilization += utilization;
+            courseCount++;
+
+            if (utilization > 100)
+                overenrolledCourses.Add(course.Id);
+            else if (utilization < 70)
+                underenrolledCourses.Add(course.Id);
+        }
+
+        var overallUtilization = courseCount > 0 ? totalUtilization / courseCount : 0;
+        var recommendations = GenerateCapacityOptimizationRecommendations(overenrolledCourses, underenrolledCourses);
+
+        return new CapacityUtilizationReport
+        {
+            SemesterId = semesterId,
+            DepartmentId = departmentId,
+            OverallUtilization = overallUtilization,
+            CourseUtilization = courseUtilization,
+            OverenrolledCourses = overenrolledCourses,
+            UnderenrolledCourses = underenrolledCourses,
+            OptimizationRecommendations = recommendations
+        };
+    }
+
+    #endregion
+
+    #region Progression Analytics
+
+    public async Task<ProgressionAnalytics> GetProgressionAnalyticsAsync(int subjectId, string level)
+    {
+        var courses = await _context.Courses
+            .Where(c => c.SubjectId == subjectId && c.Level.ToString() == level)
+            .ToListAsync();
+
+        var courseIds = courses.Select(c => c.Id).ToList();
+
+        // Get student progression data
+        var progressionData = await _context.StudentCourses
+            .Where(sc => courseIds.Contains(sc.CourseId) && sc.Grade.HasValue)
+            .Include(sc => sc.Student)
+            .OrderBy(sc => sc.EnrollmentDate)
+            .ToListAsync();
+
+        // Calculate completion rate
+        var totalEnrollments = progressionData.Count;
+        var completions = progressionData.Count(pd => pd.Grade >= 2.0m);
+        var completionRate = totalEnrollments > 0 ? (decimal)completions / totalEnrollments * 100 : 0;
+
+        // Calculate average time to complete
+        var completedStudents = progressionData
+            .Where(pd => pd.Grade >= 2.0m && pd.CompletionDate.HasValue)
+            .ToList();
+
+        var averageTimeToComplete = completedStudents.Any()
+            ? (decimal)completedStudents.Average(cs => (cs.CompletionDate.Value - cs.EnrollmentDate).TotalDays)
+            : 0;
+
+        // Bottleneck analysis
+        var bottleneckAnalysis = await PerformBottleneckAnalysisAsync(courseIds);
+
+        // Common dropout points
+        var dropoutPoints = await IdentifyDropoutPointsAsync(courseIds);
+
+        // Improvement suggestions
+        var improvementSuggestions = GenerateProgressionImprovements(completionRate, averageTimeToComplete, bottleneckAnalysis);
+
+        return new ProgressionAnalytics
+        {
+            SubjectId = subjectId,
+            Level = level,
+            CompletionRate = completionRate,
+            AverageTimeToComplete = averageTimeToComplete,
+            BottleneckAnalysis = bottleneckAnalysis,
+            CommonDropoutPoints = dropoutPoints,
+            ImprovementSuggestions = improvementSuggestions
+        };
+    }
+
+    #endregion
+
+    #region Waitlist Analytics
+
+    public async Task<WaitlistAnalytics> GetWaitlistAnalyticsAsync(List<int> courseIds, TimeRange timeRange)
+    {
+        var waitlistData = await _context.CourseWaitlists
+            .Where(cw => courseIds.Contains(cw.CourseId) &&
+                        cw.RequestDate >= timeRange.StartDate &&
+                        cw.RequestDate <= timeRange.EndDate)
+            .Include(cw => cw.Course)
+            .ToListAsync();
+
+        var averageWaitlistSize = new Dictionary<int, int>();
+        var conversionRates = new Dictionary<int, decimal>();
+        var averageWaitTime = new Dictionary<int, int>();
+
+        foreach (var courseId in courseIds)
+        {
+            var courseWaitlistData = waitlistData.Where(wd => wd.CourseId == courseId).ToList();
+            
+            if (courseWaitlistData.Any())
+            {
+                // Calculate average waitlist size (this is simplified - would need historical data)
+                averageWaitlistSize[courseId] = courseWaitlistData.Count;
+
+                // Calculate conversion rate (students who got enrolled from waitlist)
+                var enrolledFromWaitlist = await _context.StudentCourses
+                    .CountAsync(sc => sc.CourseId == courseId && 
+                                     courseWaitlistData.Any(cw => cw.StudentId == sc.StudentId));
+                
+                var conversionRate = courseWaitlistData.Count > 0 
+                    ? (decimal)enrolledFromWaitlist / courseWaitlistData.Count * 100 
+                    : 0;
+                conversionRates[courseId] = conversionRate;
+
+                // Calculate average wait time (simplified)
+                var avgWaitDays = courseWaitlistData.Any() 
+                    ? (int)courseWaitlistData.Average(cw => (DateTime.Now - cw.RequestDate).TotalDays)
+                    : 0;
+                averageWaitTime[courseId] = avgWaitDays;
+            }
+        }
+
+        var patterns = IdentifyWaitlistPatterns(waitlistData);
+        var reductionStrategies = GenerateWaitlistReductionStrategies(averageWaitlistSize, conversionRates);
+
+        return new WaitlistAnalytics
+        {
+            CourseIds = courseIds,
+            AverageWaitlistSize = averageWaitlistSize,
+            ConversionRates = conversionRates,
+            AverageWaitTime = averageWaitTime,
+            WaitlistPatterns = patterns,
+            ReductionStrategies = reductionStrategies
+        };
+    }
+
+    #endregion
+
+    #region Actionable Insights
+
+    public async Task<List<CourseInsight>> GenerateActionableInsightsAsync(AnalysisType analysisType, List<int> courseIds)
+    {
+        var insights = new List<CourseInsight>();
+
+        switch (analysisType)
+        {
+            case AnalysisType.EnrollmentOptimization:
+                insights.AddRange(await GenerateEnrollmentOptimizationInsightsAsync(courseIds));
+                break;
+            case AnalysisType.PrerequisiteEffectiveness:
+                insights.AddRange(await GeneratePrerequisiteEffectivenessInsightsAsync(courseIds));
+                break;
+            case AnalysisType.CapacityPlanning:
+                insights.AddRange(await GenerateCapacityPlanningInsightsAsync(courseIds));
+                break;
+            case AnalysisType.StudentSuccess:
+                insights.AddRange(await GenerateStudentSuccessInsightsAsync(courseIds));
+                break;
+            case AnalysisType.CourseSequencing:
+                insights.AddRange(await GenerateCourseSequencingInsightsAsync(courseIds));
+                break;
+            case AnalysisType.ResourceAllocation:
+                insights.AddRange(await GenerateResourceAllocationInsightsAsync(courseIds));
+                break;
+        }
+
+        return insights.OrderByDescending(i => i.Priority).ToList();
+    }
+
+    #endregion
+
+    #region Demand Prediction
+
+    public async Task<DemandPrediction> PredictCourseDemandAsync(int subjectId, int futureSemesters = 4)
+    {
+        // Get historical enrollment data
+        var historicalData = await _context.StudentCourses
+            .Where(sc => sc.Course.SubjectId == subjectId)
+            .Include(sc => sc.Course)
+            .GroupBy(sc => new { Year = sc.EnrollmentDate.Year, Month = sc.EnrollmentDate.Month })
+            .Select(g => new { Period = $"{g.Key.Year}-{g.Key.Month:D2}", Count = g.Count() })
+            .OrderBy(g => g.Period)
+            .ToListAsync();
+
+        // Simple trend analysis (in a real system, this would use more sophisticated ML models)
+        var predictedEnrollment = new Dictionary<string, int>();
+        var currentDate = DateTime.Now;
+
+        for (int i = 1; i <= futureSemesters; i++)
+        {
+            var futureDate = currentDate.AddMonths(i * 3); // Assume semester is 3 months
+            var period = $"{futureDate.Year}-{futureDate.Month:D2}";
+            
+            // Simple linear trend prediction
+            var recentAverage = historicalData.TakeLast(6).Average(hd => hd.Count);
+            var trend = historicalData.Count > 6 
+                ? (historicalData.TakeLast(3).Average(hd => hd.Count) - historicalData.Skip(historicalData.Count - 6).Take(3).Average(hd => hd.Count))
+                : 0;
+
+            var prediction = Math.Max(0, (int)(recentAverage + (trend * i)));
+            predictedEnrollment[period] = prediction;
+        }
+
+        // Identify influencing factors
+        var influencingFactors = await IdentifyDemandInfluencingFactorsAsync(subjectId);
+
+        // Calculate confidence level based on data consistency
+        var confidence = CalculatePredictionConfidence(historicalData);
+
+        return new DemandPrediction
+        {
+            SubjectId = subjectId,
+            PredictionHorizon = futureSemesters,
+            PredictedEnrollment = predictedEnrollment,
+            ConfidenceLevel = confidence,
+            InfluencingFactors = influencingFactors,
+            SeasonalAdjustments = new Dictionary<string, string>(),
+            PredictionDate = DateTime.Now
+        };
+    }
+
+    #endregion
+
+    #region Export Functionality
+
+    public async Task<byte[]> ExportAnalyticsDataAsync(int reportId, ExportFormat format)
+    {
+        var report = await GetSavedReportAsync(reportId);
+        if (report == null)
+            throw new ArgumentException("Report not found", nameof(reportId));
+
+        return format switch
+        {
+            ExportFormat.Json => ExportToJson(report),
+            ExportFormat.Csv => ExportToCsv(report),
+            ExportFormat.Excel => ExportToExcel(report),
+            ExportFormat.Pdf => ExportToPdf(report),
+            _ => throw new ArgumentException("Unsupported export format", nameof(format))
+        };
+    }
+
+    #endregion
+
+    #region Private Helper Methods
+
+    private string GetReportTitle(CourseReportType reportType)
+    {
+        return reportType switch
+        {
+            CourseReportType.EnrollmentTrends => "Course Enrollment Trends Analysis",
+            CourseReportType.SuccessRates => "Course Success Rate Analysis",
+            CourseReportType.CapacityUtilization => "Course Capacity Utilization Report",
+            CourseReportType.StudentDemographics => "Student Demographics Analysis",
+            CourseReportType.GradeDistribution => "Grade Distribution Analysis",
+            CourseReportType.ComprehensiveSummary => "Comprehensive Course Analytics Report",
+            _ => "Course Analytics Report"
+        };
+    }
+
+    private async Task GenerateEnrollmentTrendsReportAsync(CourseAnalyticsReport report, CourseAnalyticsParameters parameters)
+    {
+        // Implementation for enrollment trends report generation
+        var timeRange = new TimeRange { StartDate = parameters.StartDate, EndDate = parameters.EndDate };
+        var trends = await GetEnrollmentTrendsAsync(parameters.CourseIds, timeRange);
+        
+        report.Data = JsonSerializer.Serialize(trends);
+        report.Summary.KeyMetrics = new Dictionary<string, object>
+        {
+            ["Growth Rate"] = $"{trends.GrowthRate:F1}%",
+            ["Trend Direction"] = trends.TrendDirection,
+            ["Analysis Period"] = $"{timeRange.StartDate:yyyy-MM-dd} to {timeRange.EndDate:yyyy-MM-dd}"
+        };
+    }
+
+    private async Task GenerateSuccessRatesReportAsync(CourseAnalyticsReport report, CourseAnalyticsParameters parameters)
+    {
+        var timeRange = new TimeRange { StartDate = parameters.StartDate, EndDate = parameters.EndDate };
+        var successRates = await GetSuccessRateAnalyticsAsync(parameters.CourseIds, timeRange);
+        
+        report.Data = JsonSerializer.Serialize(successRates);
+        report.Summary.KeyMetrics = new Dictionary<string, object>
+        {
+            ["Average Success Rate"] = $"{successRates.AverageSuccessRate:F1}%",
+            ["Courses Analyzed"] = parameters.CourseIds.Count,
+            ["Success Factors"] = successRates.SuccessFactors.Count
+        };
+    }
+
+    private async Task GenerateCapacityUtilizationReportAsync(CourseAnalyticsReport report, CourseAnalyticsParameters parameters)
+    {
+        var utilizationReport = await GetCapacityUtilizationReportAsync(parameters.SemesterId ?? 1);
+        
+        report.Data = JsonSerializer.Serialize(utilizationReport);
+        report.Summary.KeyMetrics = new Dictionary<string, object>
+        {
+            ["Overall Utilization"] = $"{utilizationReport.OverallUtilization:F1}%",
+            ["Overenrolled Courses"] = utilizationReport.OverenrolledCourses.Count,
+            ["Underenrolled Courses"] = utilizationReport.UnderenrolledCourses.Count
+        };
+    }
+
+    private async Task GenerateStudentDemographicsReportAsync(CourseAnalyticsReport report, CourseAnalyticsParameters parameters)
+    {
+        // Placeholder implementation
+        report.Data = "{}";
+        report.Summary.KeyMetrics = new Dictionary<string, object>();
+    }
+
+    private async Task GenerateGradeDistributionReportAsync(CourseAnalyticsReport report, CourseAnalyticsParameters parameters)
+    {
+        // Placeholder implementation
+        report.Data = "{}";
+        report.Summary.KeyMetrics = new Dictionary<string, object>();
+    }
+
+    private async Task GenerateComprehensiveSummaryReportAsync(CourseAnalyticsReport report, CourseAnalyticsParameters parameters)
+    {
+        // Placeholder implementation
+        report.Data = "{}";
+        report.Summary.KeyMetrics = new Dictionary<string, object>();
+    }
+
+    private List<string> DetectSeasonalPatterns(Dictionary<string, List<int>> trendData, List<string> periods)
+    {
+        var patterns = new List<string>();
+        
+        // Simple seasonal pattern detection
+        var totalByMonth = new Dictionary<int, int>();
+        foreach (var period in periods)
+        {
+            if (DateTime.TryParseExact(period + "-01", "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var date))
+            {
+                var month = date.Month;
+                var totalEnrollment = trendData.Values.Sum(trends => 
+                    periods.IndexOf(period) < trends.Count ? trends[periods.IndexOf(period)] : 0);
+                
+                if (totalByMonth.ContainsKey(month))
+                    totalByMonth[month] += totalEnrollment;
+                else
+                    totalByMonth[month] = totalEnrollment;
+            }
+        }
+
+        var avgEnrollment = totalByMonth.Values.DefaultIfEmpty(0).Average();
+        foreach (var kvp in totalByMonth)
+        {
+            if (kvp.Value > avgEnrollment * 1.2)
+                patterns.Add($"High enrollment in month {kvp.Key}");
+            else if (kvp.Value < avgEnrollment * 0.8)
+                patterns.Add($"Low enrollment in month {kvp.Key}");
+        }
+
+        return patterns;
+    }
+
+    // Additional helper methods would be implemented here...
+    private bool IsFirstTimeStudent(int studentId) => true; // Placeholder
+    private async Task<List<string>> IdentifySuccessFactorsAsync(List<int> courseIds, TimeRange timeRange) => new();
+    private async Task<List<string>> IdentifyRiskFactorsAsync(List<int> courseIds, TimeRange timeRange) => new();
+    private List<string> GeneratePrerequisiteRecommendations(Dictionary<int, decimal> scores, List<Course> prerequisites) => new();
+    private List<string> GenerateCapacityOptimizationRecommendations(List<int> overenrolled, List<int> underenrolled) => new();
+    private async Task<Dictionary<string, decimal>> PerformBottleneckAnalysisAsync(List<int> courseIds) => new();
+    private async Task<List<string>> IdentifyDropoutPointsAsync(List<int> courseIds) => new();
+    private List<string> GenerateProgressionImprovements(decimal completionRate, decimal avgTime, Dictionary<string, decimal> bottlenecks) => new();
+    private List<string> IdentifyWaitlistPatterns(List<CourseWaitlist> waitlistData) => new();
+    private List<string> GenerateWaitlistReductionStrategies(Dictionary<int, int> sizes, Dictionary<int, decimal> rates) => new();
+    
+    // Insight generation methods
+    private async Task<List<CourseInsight>> GenerateEnrollmentOptimizationInsightsAsync(List<int> courseIds) => new();
+    private async Task<List<CourseInsight>> GeneratePrerequisiteEffectivenessInsightsAsync(List<int> courseIds) => new();
+    private async Task<List<CourseInsight>> GenerateCapacityPlanningInsightsAsync(List<int> courseIds) => new();
+    private async Task<List<CourseInsight>> GenerateStudentSuccessInsightsAsync(List<int> courseIds) => new();
+    private async Task<List<CourseInsight>> GenerateCourseSequencingInsightsAsync(List<int> courseIds) => new();
+    private async Task<List<CourseInsight>> GenerateResourceAllocationInsightsAsync(List<int> courseIds) => new();
+    
+    private async Task<List<string>> IdentifyDemandInfluencingFactorsAsync(int subjectId) => new();
+    private decimal CalculatePredictionConfidence(List<dynamic> historicalData) => 0.75m;
+    
+    private async Task SaveReportAsync(CourseAnalyticsReport report) { }
+    private async Task<CourseAnalyticsReport?> GetSavedReportAsync(int reportId) => null;
+    
+    // Export methods
+    private byte[] ExportToJson(CourseAnalyticsReport report) => System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(report));
+    private byte[] ExportToCsv(CourseAnalyticsReport report) => System.Text.Encoding.UTF8.GetBytes("CSV data");
+    private byte[] ExportToExcel(CourseAnalyticsReport report) => new byte[0];
+    private byte[] ExportToPdf(CourseAnalyticsReport report) => new byte[0];
+
+    #endregion
+}

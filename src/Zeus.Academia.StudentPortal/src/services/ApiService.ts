@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse } from '../types'
+import { setupMockApi } from './mockApi'
 
 // Create axios instance with default configuration
 const createAxiosInstance = (): AxiosInstance => {
@@ -75,6 +76,9 @@ const createAxiosInstance = (): AxiosInstance => {
       return Promise.reject(error)
     }
   )
+
+  // Setup mock API for development/demo
+  setupMockApi(instance)
 
   return instance
 }
