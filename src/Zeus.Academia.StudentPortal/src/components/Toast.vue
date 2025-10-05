@@ -13,7 +13,7 @@
     >
       <div class="toast-header">
         <i :class="iconClass" class="me-2"></i>
-        <strong class="me-auto">{{ title }}</strong>
+        <strong class="me-auto">{{ displayTitle }}</strong>
         <button
           type="button"
           class="btn-close"
@@ -34,7 +34,7 @@ import { computed, onMounted } from "vue";
 interface Props {
   show: boolean;
   type?: "info" | "success" | "warning" | "error";
-  title: string;
+  title?: string;
   message: string;
   autoHide?: boolean;
   delay?: number;
@@ -42,8 +42,26 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   type: "info",
+  title: "",
   autoHide: true,
   delay: 5000,
+});
+
+// Computed property to provide default titles based on type
+const displayTitle = computed(() => {
+  if (props.title) return props.title;
+
+  switch (props.type) {
+    case "success":
+      return "Success";
+    case "error":
+      return "Error";
+    case "warning":
+      return "Warning";
+    case "info":
+    default:
+      return "Information";
+  }
 });
 
 const emit = defineEmits<{

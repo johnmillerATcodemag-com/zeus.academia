@@ -55,7 +55,7 @@ class CourseServiceClass {
 
   // Get enrolled courses
   async getEnrolledCourses(params?: CoursePaginationParams): Promise<ApiResponse<Course[]>> {
-    return await ApiService.get<Course[]>('/courses/enrolled', params)
+    return await ApiService.get<Course[]>('/student/enrollments', params)
   }
 
   // Get completed courses
@@ -90,20 +90,20 @@ class CourseServiceClass {
 
   // Enrollment operations
   async enrollInCourse(courseId: string): Promise<ApiResponse<Enrollment>> {
-    return await ApiService.post<Enrollment>(`/enrollments`, { courseId })
+    return await ApiService.post<Enrollment>(`/student/enroll/${courseId}`, {})
   }
 
   async dropCourse(courseId: string): Promise<ApiResponse<void>> {
-    return await ApiService.delete(`/enrollments/course/${courseId}`)
+    return await ApiService.delete(`/student/enroll/${courseId}`)
   }
 
   async waitlistCourse(courseId: string): Promise<ApiResponse<Enrollment>> {
-    return await ApiService.post<Enrollment>(`/enrollments/waitlist`, { courseId })
+    return await ApiService.post<Enrollment>(`/student/enroll/${courseId}`, { waitlist: true })
   }
 
   // Get student enrollments
   async getEnrollments(): Promise<ApiResponse<Enrollment[]>> {
-    return await ApiService.get<Enrollment[]>('/enrollments')
+    return await ApiService.get<Enrollment[]>('/student/enrollments')
   }
 
   async getEnrollmentById(enrollmentId: string): Promise<ApiResponse<Enrollment>> {

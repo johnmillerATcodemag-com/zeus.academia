@@ -250,7 +250,7 @@ export const coursesModule = {
         dispatch('setLoading', { courses: true }, { root: true })
         
         // Try to fetch from API first
-        let response: ApiResponse<Course[]>
+        let response: any
         
         try {
           response = await CourseService.getEnrolledCourses()
@@ -260,8 +260,29 @@ export const coursesModule = {
         }
         
         if (response.success && response.data) {
-          commit('SET_COURSES', response.data)
-          return response
+          // Handle the API response structure: { enrollments: [...], totalCredits: 7, semester: "Fall 2024" }
+          const enrollmentData = response.data
+          
+          // Extract courses from enrollments and convert to Course objects
+          const courses: Course[] = enrollmentData.enrollments?.map((enrollment: any) => ({
+            id: enrollment.courseId.toString(),
+            name: enrollment.course?.title || 'Course Title Pending',
+            code: enrollment.course?.code || 'Course Code Pending',
+            credits: enrollment.course?.credits || 0,
+            instructor: enrollment.course?.instructor || 'Instructor to be announced',
+            description: enrollment.course?.description || 'Course description will be available soon.',
+            enrollmentStatus: enrollment.status || EnrollmentStatus.Enrolled,
+            schedule: enrollment.course?.schedule || []
+          })) || []
+          
+          commit('SET_COURSES', courses)
+          commit('SET_ENROLLMENTS', enrollmentData.enrollments || [])
+          
+          return {
+            success: true,
+            data: courses,
+            message: `Loaded ${courses.length} enrolled courses`
+          }
         } else {
           // Fallback to mock data if API fails  
           console.debug('Using fallback mock data - API unavailable')

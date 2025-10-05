@@ -91,22 +91,33 @@
               <div class="mb-3">
                 <small class="text-muted">
                   <i class="bi bi-person-fill me-1"></i>
-                  {{ course.instructor }}
+                  {{ getInstructorDisplay(course.instructor) }}
                 </small>
               </div>
 
               <!-- Schedule -->
               <div class="mb-3">
                 <small class="text-muted d-block mb-1">Schedule:</small>
-                <div
-                  v-for="schedule in course.schedule"
-                  :key="`${schedule.dayOfWeek}-${schedule.startTime}`"
-                >
-                  <small class="text-dark">
-                    {{ schedule.dayOfWeek }} {{ schedule.startTime }} -
-                    {{ schedule.endTime }}
-                    <br />
-                    <span class="text-muted">{{ schedule.location }}</span>
+                <div v-if="course.schedule && course.schedule.length > 0">
+                  <div
+                    v-for="schedule in course.schedule"
+                    :key="`${schedule.dayOfWeek}-${schedule.startTime}`"
+                  >
+                    <small class="text-dark">
+                      {{ schedule.dayOfWeek }} {{ schedule.startTime }} -
+                      {{ schedule.endTime }}
+                      <br />
+                      <span class="text-muted">
+                        <i class="bi bi-geo-alt me-1"></i>
+                        {{ getLocationDisplay(schedule.location) }}
+                      </span>
+                    </small>
+                  </div>
+                </div>
+                <div v-else>
+                  <small class="text-muted">
+                    <i class="bi bi-calendar me-1"></i>
+                    Schedule to be determined
                   </small>
                 </div>
               </div>
@@ -212,9 +223,7 @@ const pageSize = ref<number>(9);
 const courses = computed<Course[]>(
   () => store.getters["courses/enrolledCourses"]
 );
-const isLoading = computed<boolean>(
-  () => store.getters["courses/isLoading"]
-);
+const isLoading = computed<boolean>(() => store.getters["courses/isLoading"]);
 
 // Initialize courses on component mount
 onMounted(() => {
@@ -311,6 +320,25 @@ const goToPage = (page: number): void => {
     currentPage.value = page;
   }
 };
+
+// Helper functions for better data display
+const getInstructorDisplay = (instructor: string | undefined): string => {
+  if (
+    !instructor ||
+    instructor === "TBA" ||
+    instructor === "Instructor to be announced"
+  ) {
+    return "Instructor to be announced";
+  }
+  return instructor;
+};
+
+const getLocationDisplay = (location: string | undefined): string => {
+  if (!location || location === "TBA") {
+    return "Room assignment pending";
+  }
+  return location;
+};
 </script>
 
 <style scoped>
@@ -340,4 +368,3 @@ const goToPage = (page: number): void => {
   border-color: var(--zeus-primary);
 }
 </style>
-

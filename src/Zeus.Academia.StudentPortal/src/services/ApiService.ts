@@ -77,8 +77,8 @@ const createAxiosInstance = (): AxiosInstance => {
     }
   )
 
-  // Setup mock API for development/demo when backend is unavailable
-  if (import.meta.env.DEV || import.meta.env.VITE_MOCK_API === 'true') {
+  // Setup mock API for development/demo when explicitly enabled
+  if (import.meta.env.VITE_MOCK_API === 'true') {
     setupMockApi(instance)
   }
 
@@ -238,9 +238,13 @@ class ApiServiceClass {
     // Only log non-network errors and non-initialization errors to avoid console spam
     const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development'
     const isAuthEndpoint = error.config?.url?.includes('/auth/')
+    const isDocumentsEndpoint = error.config?.url?.includes('/auth/documents')
     const isInitializationError = isDevelopment && isAuthEndpoint && !error.response
     
-    if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error' && !isInitializationError) {
+    // Don't log 404 errors for documents endpoint (minimal API doesn't have this endpoint)
+    if (isDocumentsEndpoint && error.response?.status === 404) {
+      console.debug('Documents endpoint not available (minimal API mode)')
+    } else if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error' && !isInitializationError) {
       console.error('API Error:', { message, errors })
     } else if (isInitializationError) {
       console.debug('Auth initialization - using demo mode')

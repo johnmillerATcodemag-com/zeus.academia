@@ -7,7 +7,7 @@ const mockStudent: Student = {
   email: 'student@zeus.edu',
   firstName: 'John',
   lastName: 'Doe',
-  studentId: 'STU001',
+  studentId: 'STU-2024-001',
   enrollmentDate: '2024-01-15',
   gpa: 3.85,
   phone: '555-123-4567',
@@ -664,8 +664,8 @@ const mockResponses: { [key: string]: any } = {
 
 // Setup mock interceptor
 export const setupMockApi = (axiosInstance: AxiosInstance) => {
-  // Only enable mocking in development mode
-  if (import.meta.env.DEV || import.meta.env.VITE_MOCK_API === 'true') {
+  // Only enable mocking when explicitly enabled via environment variable
+  if (import.meta.env.VITE_MOCK_API === 'true') {
     console.log('🎭 Mock API enabled for development/demo purposes')
     
     // Store original adapter (may be undefined in newer axios versions)

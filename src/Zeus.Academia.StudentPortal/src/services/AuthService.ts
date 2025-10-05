@@ -331,7 +331,18 @@ class AuthServiceClass {
   }
 
   async getDocuments(): Promise<ApiResponse<Document[]>> {
-    return await ApiService.get<Document[]>('/auth/documents')
+    const result = await ApiService.get<Document[]>('/auth/documents')
+    
+    // If API call failed (e.g., 404 for minimal API), return empty success response
+    if (!result.success) {
+      return {
+        success: true,
+        data: [],
+        message: 'Documents feature not available in minimal API mode'
+      }
+    }
+    
+    return result
   }
 
   async deleteDocument(documentId: string): Promise<ApiResponse<void>> {

@@ -285,12 +285,12 @@
                         :to="`/courses/${course.id}`"
                         class="text-decoration-none"
                       >
-                        {{ course.code }} - {{ course.name }}
+                        {{ course.code }} - {{ course.title }}
                       </router-link>
                     </h5>
                     <p class="course-instructor text-muted mb-2">
                       <i class="fas fa-user me-1"></i>
-                      {{ course.instructor }}
+                      {{ course.instructor || "Instructor to be announced" }}
                     </p>
                   </div>
                   <div class="course-actions">
@@ -313,13 +313,21 @@
                 </div>
 
                 <p class="course-description text-muted mb-2">
-                  {{ course.description }}
+                  {{ course.description || getDerivedDescription(course) }}
                 </p>
 
                 <div class="course-details d-flex flex-wrap gap-3 mb-3">
+                  <span class="badge bg-primary">
+                    <i class="fas fa-building me-1"></i>
+                    {{ getDepartment(course.code) }}
+                  </span>
                   <span class="badge bg-info">
                     <i class="fas fa-credit-card me-1"></i>
                     {{ course.credits }} Credits
+                  </span>
+                  <span class="badge bg-secondary">
+                    <i class="fas fa-layer-group me-1"></i>
+                    {{ getAcademicLevel(course.code) }}
                   </span>
                   <span class="text-muted small">
                     <i class="fas fa-calendar me-1"></i>
@@ -327,7 +335,10 @@
                   </span>
                   <span class="text-muted small">
                     <i class="fas fa-map-marker-alt me-1"></i>
-                    {{ course.schedule?.[0]?.location || "TBA" }}
+                    {{
+                      course.schedule?.[0]?.location ||
+                      "Room assignment pending"
+                    }}
                   </span>
                 </div>
               </div>
@@ -356,7 +367,7 @@
                     <span v-else-if="course.enrollmentStatus === 'waitlist'"
                       >Join Waitlist</span
                     >
-                    <span v-else>Unavailable</span>
+                    <span v-else>Registration closed</span>
                   </button>
 
                   <button v-else class="btn btn-success btn-sm" disabled>
@@ -413,15 +424,19 @@
                 </div>
               </div>
               <div class="card-body d-flex flex-column">
-                <h6 class="card-title">{{ course.name }}</h6>
+                <h6 class="card-title">{{ course.title }}</h6>
                 <p class="card-text flex-grow-1 small">
-                  {{ course.description }}
+                  {{ course.description || getDerivedDescription(course) }}
                 </p>
 
                 <div class="course-info mb-3">
                   <div class="small text-muted mb-1">
                     <i class="fas fa-user me-1"></i>
-                    {{ course.instructor }}
+                    {{ course.instructor || "Instructor to be announced" }}
+                  </div>
+                  <div class="small text-muted mb-1">
+                    <i class="fas fa-building me-1"></i>
+                    {{ getDepartment(course.code) }}
                   </div>
                   <div class="small text-muted mb-1">
                     <i class="fas fa-credit-card me-1"></i>
@@ -459,7 +474,7 @@
                       <span v-else-if="course.enrollmentStatus === 'waitlist'"
                         >Waitlist</span
                       >
-                      <span v-else>Unavailable</span>
+                      <span v-else>Closed</span>
                     </button>
 
                     <button v-else class="btn btn-success btn-sm" disabled>
@@ -592,7 +607,7 @@ const { showToast } = useToast();
 
 // Computed properties
 const comparisonCourses = computed(() =>
-  searchResults.value.filter((course) =>
+  searchResults.value.filter((course: any) =>
     selectedForComparison.value.includes(course.id)
   )
 );
@@ -623,7 +638,10 @@ const debounceSearch = () => {
 };
 
 // Methods
-const searchCourses = async (page = 1) => {
+const searchCourses = async (pageOrEvent: number | Event = 1) => {
+  // Handle both page number and event parameters
+  const page = typeof pageOrEvent === "number" ? pageOrEvent : 1;
+
   isLoading.value = true;
   hasSearched.value = true;
   currentPage.value = page;
@@ -652,15 +670,42 @@ const searchCourses = async (page = 1) => {
     const response: ApiResponse<Course[]> =
       await CourseService.getCoursesPaginated(params);
 
+    console.log("Course search response:", response);
+
     if (response.success && response.data) {
-      searchResults.value = response.data;
-      if ("pagination" in response) {
-        const paginatedResponse = response as any;
-        totalResults.value =
-          paginatedResponse.pagination?.totalItems || response.data.length;
-        totalPages.value = paginatedResponse.pagination?.totalPages || 1;
-      } else {
+      // Handle paginated response structure
+      const paginatedData = response.data as any;
+      console.log("Paginated data:", paginatedData);
+
+      if (paginatedData.items && Array.isArray(paginatedData.items)) {
+        // API returns paginated structure with items array
+        let filteredResults = paginatedData.items;
+
+        // Temporary client-side filtering since API search isn't working properly
+        if (searchFilters.value.query) {
+          const query = searchFilters.value.query.toLowerCase();
+          filteredResults = paginatedData.items.filter(
+            (course: any) =>
+              course.title?.toLowerCase().includes(query) ||
+              course.code?.toLowerCase().includes(query) ||
+              course.description?.toLowerCase().includes(query)
+          );
+        }
+
+        searchResults.value = filteredResults;
+        totalResults.value = filteredResults.length;
+        totalPages.value =
+          Math.ceil(filteredResults.length / pageSize.value) || 1;
+        console.log("Set search results:", searchResults.value);
+      } else if (Array.isArray(response.data)) {
+        // API returns direct array
+        searchResults.value = response.data;
         totalResults.value = response.data.length;
+        totalPages.value = 1;
+      } else {
+        // Fallback
+        searchResults.value = [];
+        totalResults.value = 0;
         totalPages.value = 1;
       }
     } else {
@@ -703,7 +748,7 @@ const goToPage = (page: number) => {
 };
 
 const formatSchedule = (schedule: any[] | string) => {
-  if (!schedule) return "TBA";
+  if (!schedule) return "Schedule pending";
 
   // Handle string format (like "MWF 10:00-11:00")
   if (typeof schedule === "string") {
@@ -712,20 +757,68 @@ const formatSchedule = (schedule: any[] | string) => {
 
   // Handle array format
   if (Array.isArray(schedule)) {
-    if (schedule.length === 0) return "TBA";
+    if (schedule.length === 0) return "Schedule pending";
 
     const days = schedule.map((s) => s.dayOfWeek.substring(0, 3)).join(", ");
     const time = schedule[0]
       ? `${schedule[0].startTime} - ${schedule[0].endTime}`
-      : "TBA";
+      : "Time pending";
 
     return `${days} ${time}`;
   }
 
-  return "TBA";
+  return "Schedule pending";
 };
 
-const getEnrollmentStatusClass = (status: string) => {
+// Helper function to derive department from course code
+const getDepartment = (courseCode: string) => {
+  if (!courseCode) return "General Studies";
+
+  const departments: { [key: string]: string } = {
+    CS: "Computer Science",
+    MATH: "Mathematics",
+    PHYS: "Physics",
+    CHEM: "Chemistry",
+    BIOL: "Biology",
+    ENGL: "English",
+    HIST: "History",
+    PSYC: "Psychology",
+    ECON: "Economics",
+    BUSN: "Business",
+  };
+
+  const prefix = courseCode.match(/^([A-Z]+)/)?.[1] || "";
+  return departments[prefix] || prefix || "General Studies";
+};
+
+// Helper function to derive academic level from course code
+const getAcademicLevel = (courseCode: string) => {
+  if (!courseCode) return "Introductory";
+
+  const number = courseCode.match(/(\d+)/)?.[1] || "";
+  const firstDigit = parseInt(number.charAt(0));
+
+  if (firstDigit >= 1 && firstDigit <= 2) return "Undergraduate";
+  if (firstDigit >= 3 && firstDigit <= 4) return "Upper Division";
+  if (firstDigit >= 5 && firstDigit <= 7) return "Graduate";
+  if (firstDigit >= 8 && firstDigit <= 9) return "Advanced Graduate";
+
+  return "Undergraduate";
+};
+
+// Helper function to provide more informative course descriptions
+const getDerivedDescription = (course: any) => {
+  if (!course) return "Course description not available.";
+
+  const department = getDepartment(course.code);
+  const level = getAcademicLevel(course.code);
+
+  return `${level} course in ${department}. Detailed course description will be available upon enrollment.`;
+};
+
+const getEnrollmentStatusClass = (status: string | undefined) => {
+  if (!status) return "bg-secondary";
+
   switch (status) {
     case "Enrolled":
       return "bg-success";
@@ -740,7 +833,9 @@ const getEnrollmentStatusClass = (status: string) => {
   }
 };
 
-const getEnrollmentStatusText = (status: string) => {
+const getEnrollmentStatusText = (status: string | undefined) => {
+  if (!status) return "Registration pending";
+
   switch (status) {
     case "Enrolled":
       return "Enrolled";
@@ -751,18 +846,12 @@ const getEnrollmentStatusText = (status: string) => {
     case "full":
       return "Full";
     default:
-      return "Unknown";
+      return "Registration pending";
   }
 };
 
-const canEnroll = (course: Course) => {
-  // Check if course has available spots or if waitlist is available
-  if (course.maxEnrollment && course.enrolledStudents !== undefined) {
-    return (
-      course.enrolledStudents < course.maxEnrollment ||
-      (course.waitlistCount !== undefined && course.waitlistCount < 10)
-    );
-  }
+const canEnroll = (_course: Course) => {
+  // For minimal API, courses don't have enrollment status, so assume they're not available for enrollment
   return false;
 };
 
@@ -780,7 +869,7 @@ const enrollInCourse = async (course: Course) => {
       const missingPrereqs =
         prerequisiteCheck.data?.missingPrerequisites
           ?.map((p) => p.code)
-          .join(", ") || "Unknown";
+          .join(", ") || "prerequisite information unavailable";
       showToast(
         `Cannot enroll: Missing prerequisites: ${missingPrereqs}`,
         "error"

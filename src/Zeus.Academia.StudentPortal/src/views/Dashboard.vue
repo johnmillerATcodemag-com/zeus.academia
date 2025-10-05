@@ -125,7 +125,10 @@
                         <h6 class="mb-1">
                           {{ course.code }} - {{ course.name }}
                         </h6>
-                        <p class="text-muted mb-2">{{ course.instructor }}</p>
+                        <p class="text-muted mb-2">
+                          <i class="bi bi-person me-1"></i>
+                          {{ getInstructorDisplay(course.instructor) }}
+                        </p>
                         <small class="text-muted"
                           >{{ course.credits }} credits</small
                         >
@@ -257,6 +260,18 @@ const getStatusBadgeClass = (status: string) => {
     default:
       return "bg-secondary";
   }
+};
+
+// Helper function to display instructor information with fallbacks
+const getInstructorDisplay = (instructor: string | undefined) => {
+  if (
+    !instructor ||
+    instructor === "TBA" ||
+    instructor === "Instructor to be announced"
+  ) {
+    return "Instructor to be announced";
+  }
+  return instructor;
 };
 </script>
 

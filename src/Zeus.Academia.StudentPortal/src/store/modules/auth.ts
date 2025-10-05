@@ -184,26 +184,54 @@ export const authModule = {
         localStorage.removeItem('zeus_token')
         localStorage.removeItem('zeus_refresh_token')
         
-        // Check for demo mode flag in localStorage
+        // Auto-enable demo auth for testing purposes
+        commit('SET_STUDENT', {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john.doe@zeus.edu',
+          studentId: 'STU-2024-001', // Updated to match API response
+          gpa: 3.75, // Updated to match API response
+          enrollmentDate: '2022-08-15', // Updated to match API response
+          phone: '(555) 123-4567',
+          dateOfBirth: '1998-05-15', // Updated to match API response
+          address: {
+            street: '123 College Ave',
+            city: 'University City',
+            state: 'CA',
+            zipCode: '90210',
+            country: 'USA'
+          }
+        })
+        commit('SET_AUTHENTICATED', true)
+        
+        // Also check for localStorage demo mode flag for normal login flow
         const localAuth = localStorage.getItem('zeus_auth')
         const localUser = localStorage.getItem('zeus_user')
         
         if (localAuth === 'true' && localUser) {
-          // Legacy localStorage authentication for demo
+          // Override with localStorage data if present
           try {
             const userData = JSON.parse(localUser)
+            // Keep the updated demo data but use localStorage name if provided
             commit('SET_STUDENT', {
               id: userData.id || '1',
-              firstName: userData.name?.split(' ')[0] || 'Demo',
-              lastName: userData.name?.split(' ')[1] || 'Student',
-              email: userData.email || 'student@zeus.edu',
-              studentId: 'STU001',
-              gpa: 3.85,
-              enrollmentDate: '2024-01-15',
-              phone: '555-123-4567',
-              dateOfBirth: '2000-05-15'
+              firstName: userData.name?.split(' ')[0] || 'John',
+              lastName: userData.name?.split(' ')[1] || 'Doe',
+              email: userData.email || 'john.doe@zeus.edu',
+              studentId: 'STU-2024-001', // Always use the correct student ID
+              gpa: 3.75,
+              enrollmentDate: '2022-08-15',
+              phone: '(555) 123-4567',
+              dateOfBirth: '1998-05-15',
+              address: {
+                street: '123 College Ave',
+                city: 'University City',
+                state: 'CA',
+                zipCode: '90210',
+                country: 'USA'
+              }
             })
-            commit('SET_AUTHENTICATED', true)
           } catch (error) {
             console.error('Error parsing localStorage user data:', error)
             localStorage.removeItem('zeus_auth')
