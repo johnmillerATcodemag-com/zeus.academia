@@ -1,0 +1,51 @@
+{
+  "name": "zeus-academia-faculty-dashboard",
+  "version": "1.0.0",
+  "description": "Zeus Academia Faculty Dashboard - Vue.js application for faculty course management, gradebook, and teaching tools",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "type-check": "vue-tsc --noEmit",
+    "serve": "npm run build && npm run preview"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bootstrap": "^5.3.0",
+    "bootstrap-vue-next": "^0.15.0",
+    "vue": "^3.4.0",
+    "vue-router": "^4.5.1",
+    "pinia": "^2.1.7",
+    "chart.js": "^4.4.0",
+    "vue-chartjs": "^5.3.0",
+    "date-fns": "^2.30.0",
+    "@vueuse/core": "^10.9.0",
+    "lodash-es": "^4.17.21"
+  },
+  "devDependencies": {
+    "@testing-library/vue": "^8.0.0",
+    "@types/node": "^20.0.0",
+    "@types/lodash-es": "^4.17.12",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-vue": "^4.5.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "@vue/test-utils": "^2.4.0",
+    "@vue/tsconfig": "^0.5.0",
+    "eslint": "^8.0.0",
+    "eslint-plugin-vue": "^9.0.0",
+    "jsdom": "^23.0.0",
+    "sass": "^1.70.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0",
+    "vue-tsc": "^1.8.0"
+  }
+}

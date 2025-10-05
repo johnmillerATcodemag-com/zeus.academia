@@ -1,10 +1,12 @@
-# Zeus Academia Student Portal - Startup Script
-# This script starts both the backend API and frontend application
+# Zeus Academia - Startup Script
+# This script starts the backend API, Student Portal, and Faculty Dashboard
 
 param(
     [switch]$WaitForExit,
     [switch]$SkipHealthCheck,
-    [int]$HealthCheckTimeout = 30
+    [int]$HealthCheckTimeout = 30,
+    [switch]$StudentOnly,
+    [switch]$FacultyOnly
 )
 
 # Ensure we're running from the correct directory
@@ -12,18 +14,21 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = $scriptDir
 Set-Location $projectRoot
 
-Write-Host "🏛️ ZEUS ACADEMIA STUDENT PORTAL - STARTUP SCRIPT" -ForegroundColor Yellow
-Write-Host "=================================================" -ForegroundColor Yellow
+Write-Host "🏛️ ZEUS ACADEMIA - STARTUP SCRIPT" -ForegroundColor Yellow
+Write-Host "=================================" -ForegroundColor Yellow
 Write-Host "📂 Working Directory: $projectRoot" -ForegroundColor Gray
 Write-Host ""
 
 # Configuration
 $apiPath = "C:\git\zeus.academia\src\Zeus.Academia.Api"
 $frontendPath = "C:\git\zeus.academia\src\Zeus.Academia.StudentPortal"
+$facultyDashboardPath = "C:\git\zeus.academia\src\Zeus.Academia.FacultyDashboard"
 $apiPort = 5000
 $frontendPort = 5173
+$facultyDashboardPort = 5174
 $apiUrl = "http://localhost:$apiPort"
 $frontendUrl = "http://localhost:$frontendPort"
+$facultyDashboardUrl = "http://localhost:$facultyDashboardPort"
 
 # Function to check if a port is in use
 function Test-PortInUse {
@@ -94,13 +99,19 @@ if (-not (Test-Path $apiPath)) {
     exit 1
 }
 
-if (-not (Test-Path $frontendPath)) {
-    Write-Host "❌ Frontend directory not found: $frontendPath" -ForegroundColor Red
+if (-not $FacultyOnly -and -not (Test-Path $frontendPath)) {
+    Write-Host "❌ Student Portal directory not found: $frontendPath" -ForegroundColor Red
+    exit 1
+}
+
+if (-not $StudentOnly -and -not (Test-Path $facultyDashboardPath)) {
+    Write-Host "❌ Faculty Dashboard directory not found: $facultyDashboardPath" -ForegroundColor Red
     exit 1
 }
 
 Write-Host "✅ API directory found: $apiPath" -ForegroundColor Green
-Write-Host "✅ Frontend directory found: $frontendPath" -ForegroundColor Green
+if (-not $FacultyOnly) { Write-Host "✅ Student Portal directory found: $frontendPath" -ForegroundColor Green }
+if (-not $StudentOnly) { Write-Host "✅ Faculty Dashboard directory found: $facultyDashboardPath" -ForegroundColor Green }
 
 # Check required tools
 try {
@@ -137,7 +148,8 @@ Write-Host "🧹 PORT CLEANUP" -ForegroundColor Cyan
 Write-Host "===============" -ForegroundColor Cyan
 
 Stop-ProcessOnPort -Port $apiPort
-Stop-ProcessOnPort -Port $frontendPort
+if (-not $FacultyOnly) { Stop-ProcessOnPort -Port $frontendPort }
+if (-not $StudentOnly) { Stop-ProcessOnPort -Port $facultyDashboardPort }
 
 Write-Host "✅ Ports cleared" -ForegroundColor Green
 Write-Host ""
@@ -190,52 +202,108 @@ catch {
 
 Write-Host ""
 
-# Start Frontend
-Write-Host "🌐 STARTING FRONTEND" -ForegroundColor Cyan
-Write-Host "====================" -ForegroundColor Cyan
+# Start Student Portal
+if (-not $FacultyOnly) {
+    Write-Host "� STARTING STUDENT PORTAL" -ForegroundColor Cyan
+    Write-Host "==========================" -ForegroundColor Cyan
 
-try {
-    Write-Host "📂 Navigating to frontend directory..." -ForegroundColor Gray
-    Push-Location $frontendPath
-    
-    # Check if node_modules exists
-    if (-not (Test-Path "node_modules")) {
-        Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
-        npm install --silent
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Frontend dependency installation failed" -ForegroundColor Red
-            Pop-Location
-            exit 1
+    try {
+        Write-Host "📂 Navigating to student portal directory..." -ForegroundColor Gray
+        Push-Location $frontendPath
+        
+        # Check if node_modules exists
+        if (-not (Test-Path "node_modules")) {
+            Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
+            npm install --silent
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "❌ Student Portal dependency installation failed" -ForegroundColor Red
+                Pop-Location
+                exit 1
+            }
+            Write-Host "✅ Dependencies installed" -ForegroundColor Green
         }
-        Write-Host "✅ Dependencies installed" -ForegroundColor Green
+        else {
+            Write-Host "✅ Dependencies already installed" -ForegroundColor Green
+        }
+        
+        Write-Host "▶️ Starting student portal server..." -ForegroundColor Yellow
+        
+        # Start Student Portal in background
+        $frontendJob = Start-Job -ScriptBlock {
+            param($path)
+            Set-Location $path
+            npm run dev
+        } -ArgumentList $frontendPath
+        
+        Pop-Location
+        
+        Write-Host "🔄 Student Portal Job ID: $($frontendJob.Id)" -ForegroundColor Gray
+        
+        if (-not $SkipHealthCheck) {
+            # Wait a bit for Vite to start
+            Start-Sleep -Seconds 5
+            Write-Host "✅ Student Portal starting (Vite typically takes 2-5 seconds)" -ForegroundColor Green
+        }
     }
-    else {
-        Write-Host "✅ Dependencies already installed" -ForegroundColor Green
+    catch {
+        Write-Host "❌ Error starting Student Portal: $($_.Exception.Message)" -ForegroundColor Red
+        Pop-Location
+        exit 1
     }
-    
-    Write-Host "▶️ Starting frontend server..." -ForegroundColor Yellow
-    
-    # Start Frontend in background
-    $frontendJob = Start-Job -ScriptBlock {
-        param($path)
-        Set-Location $path
-        npm run dev
-    } -ArgumentList $frontendPath
-    
-    Pop-Location
-    
-    Write-Host "🔄 Frontend Job ID: $($frontendJob.Id)" -ForegroundColor Gray
-    
-    if (-not $SkipHealthCheck) {
-        # Wait a bit for Vite to start
-        Start-Sleep -Seconds 5
-        Write-Host "✅ Frontend starting (Vite typically takes 2-5 seconds)" -ForegroundColor Green
-    }
+
+    Write-Host ""
 }
-catch {
-    Write-Host "❌ Error starting Frontend: $($_.Exception.Message)" -ForegroundColor Red
-    Pop-Location
-    exit 1
+
+# Start Faculty Dashboard
+if (-not $StudentOnly) {
+    Write-Host "👨‍🏫 STARTING FACULTY DASHBOARD" -ForegroundColor Cyan
+    Write-Host "===============================" -ForegroundColor Cyan
+
+    try {
+        Write-Host "📂 Navigating to faculty dashboard directory..." -ForegroundColor Gray
+        Push-Location $facultyDashboardPath
+        
+        # Check if node_modules exists
+        if (-not (Test-Path "node_modules")) {
+            Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
+            npm install --silent
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "❌ Faculty Dashboard dependency installation failed" -ForegroundColor Red
+                Pop-Location
+                exit 1
+            }
+            Write-Host "✅ Dependencies installed" -ForegroundColor Green
+        }
+        else {
+            Write-Host "✅ Dependencies already installed" -ForegroundColor Green
+        }
+        
+        Write-Host "▶️ Starting faculty dashboard server..." -ForegroundColor Yellow
+        
+        # Start Faculty Dashboard in background
+        $facultyJob = Start-Job -ScriptBlock {
+            param($path)
+            Set-Location $path
+            npm run dev
+        } -ArgumentList $facultyDashboardPath
+        
+        Pop-Location
+        
+        Write-Host "🔄 Faculty Dashboard Job ID: $($facultyJob.Id)" -ForegroundColor Gray
+        
+        if (-not $SkipHealthCheck) {
+            # Wait a bit for Vite to start
+            Start-Sleep -Seconds 5
+            Write-Host "✅ Faculty Dashboard starting (Vite typically takes 2-5 seconds)" -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Host "❌ Error starting Faculty Dashboard: $($_.Exception.Message)" -ForegroundColor Red
+        Pop-Location
+        exit 1
+    }
+
+    Write-Host ""
 }
 
 Write-Host ""
@@ -268,39 +336,75 @@ catch {
 
 Write-Host ""
 
-# Check if frontend port is in use (indicates it's probably running)
-if (Test-PortInUse -Port $frontendPort) {
-    Write-Host "✅ Frontend: RUNNING" -ForegroundColor Green
-    Write-Host "   🌐 Application: $frontendUrl/" -ForegroundColor Cyan
-    Write-Host "   🔑 Demo Login:" -ForegroundColor Cyan
-    Write-Host "      • Email: john.smith@academia.edu" -ForegroundColor White
-    Write-Host "      • Password: password123" -ForegroundColor White
-}
-else {
-    Write-Host "⚠️ Frontend: STARTING (Vite typically takes 2-10 seconds)" -ForegroundColor Yellow
-    Write-Host "   🌐 Expected URL: $frontendUrl/" -ForegroundColor Cyan
+# Check Student Portal status
+if (-not $FacultyOnly) {
+    if (Test-PortInUse -Port $frontendPort) {
+        Write-Host "✅ Student Portal: RUNNING" -ForegroundColor Green
+        Write-Host "   🌐 Application: $frontendUrl/" -ForegroundColor Cyan
+        Write-Host "   🔑 Demo Login:" -ForegroundColor Cyan
+        Write-Host "      • Email: john.smith@academia.edu" -ForegroundColor White
+        Write-Host "      • Password: password123" -ForegroundColor White
+    }
+    else {
+        Write-Host "⚠️ Student Portal: STARTING (Vite typically takes 2-10 seconds)" -ForegroundColor Yellow
+        Write-Host "   🌐 Expected URL: $frontendUrl/" -ForegroundColor Cyan
+    }
+    Write-Host ""
 }
 
-Write-Host ""
+# Check Faculty Dashboard status
+if (-not $StudentOnly) {
+    if (Test-PortInUse -Port $facultyDashboardPort) {
+        Write-Host "✅ Faculty Dashboard: RUNNING" -ForegroundColor Green
+        Write-Host "   🌐 Application: $facultyDashboardUrl/" -ForegroundColor Cyan
+        Write-Host "   🔑 Demo Login:" -ForegroundColor Cyan
+        Write-Host "      • Email: professor@zeus.academia" -ForegroundColor White
+        Write-Host "      • Password: FacultyDemo2024!" -ForegroundColor White
+    }
+    else {
+        Write-Host "⚠️ Faculty Dashboard: STARTING (Vite typically takes 2-10 seconds)" -ForegroundColor Yellow
+        Write-Host "   🌐 Expected URL: $facultyDashboardUrl/" -ForegroundColor Cyan
+    }
+    Write-Host ""
+}
+
 Write-Host "🏁 STARTUP COMPLETE" -ForegroundColor Green
 Write-Host "===================" -ForegroundColor Green
 Write-Host "🎯 Next Steps:" -ForegroundColor Yellow
-Write-Host "   1. Open browser to: $frontendUrl" -ForegroundColor White
-Write-Host "   2. Login with demo credentials above" -ForegroundColor White
-Write-Host "   3. Explore the Zeus Academia Student Portal!" -ForegroundColor White
+
+if (-not $FacultyOnly) {
+    Write-Host "   📚 Student Portal: $frontendUrl" -ForegroundColor White
+}
+if (-not $StudentOnly) {
+    Write-Host "   👨‍🏫 Faculty Dashboard: $facultyDashboardUrl" -ForegroundColor White
+}
+
+Write-Host "   🔧 API Health Check: $apiUrl/health" -ForegroundColor White
 Write-Host ""
 Write-Host "📋 Management Commands:" -ForegroundColor Yellow
 Write-Host "   • View API health: Invoke-RestMethod $apiUrl/health" -ForegroundColor White
 Write-Host "   • Stop services: Get-Job | Stop-Job; Get-Job | Remove-Job" -ForegroundColor White
-Write-Host "   • Check ports: netstat -ano | findstr ':$apiPort :$frontendPort'" -ForegroundColor White
+
+$portList = "$apiPort"
+if (-not $FacultyOnly) { $portList += " :$frontendPort" }
+if (-not $StudentOnly) { $portList += " :$facultyDashboardPort" }
+Write-Host "   • Check ports: netstat -ano | findstr ':$portList'" -ForegroundColor White
 Write-Host ""
 
 # Store job information for cleanup
-$Global:ZeusJobs = @{
+$jobsHash = @{
     API       = $apiJob
-    Frontend  = $frontendJob
     StartTime = Get-Date
 }
+
+if (-not $FacultyOnly) {
+    $jobsHash.StudentPortal = $frontendJob
+}
+if (-not $StudentOnly) {
+    $jobsHash.FacultyDashboard = $facultyJob
+}
+
+$Global:ZeusJobs = $jobsHash
 
 if ($WaitForExit) {
     Write-Host "⏸️ Press Ctrl+C to stop services..." -ForegroundColor Yellow
@@ -309,9 +413,10 @@ if ($WaitForExit) {
         while ($true) {
             Start-Sleep -Seconds 1
             
-            # Check if jobs are still running
-            if ($apiJob.State -ne 'Running' -and $frontendJob.State -ne 'Running') {
-                Write-Host "⚠️ Both services have stopped" -ForegroundColor Yellow
+            # Check if any jobs are still running
+            $runningJobs = $jobsHash.Values | Where-Object { $_ -is [System.Management.Automation.Job] -and $_.State -eq 'Running' }
+            if ($runningJobs.Count -eq 0) {
+                Write-Host "⚠️ All services have stopped" -ForegroundColor Yellow
                 break
             }
         }
@@ -322,8 +427,9 @@ if ($WaitForExit) {
     finally {
         # Cleanup jobs
         Write-Host "🧹 Cleaning up background jobs..." -ForegroundColor Gray
-        Stop-Job $apiJob, $frontendJob -ErrorAction SilentlyContinue
-        Remove-Job $apiJob, $frontendJob -ErrorAction SilentlyContinue
+        $jobsToClean = $jobsHash.Values | Where-Object { $_ -is [System.Management.Automation.Job] }
+        Stop-Job $jobsToClean -ErrorAction SilentlyContinue
+        Remove-Job $jobsToClean -ErrorAction SilentlyContinue
         Write-Host "✅ Cleanup complete" -ForegroundColor Green
     }
 }
@@ -334,4 +440,10 @@ else {
 }
 
 Write-Host ""
-Write-Host "🎉 Zeus Academia Student Portal is ready!" -ForegroundColor Green
+$serviceNames = @()
+if (-not $FacultyOnly) { $serviceNames += "Student Portal" }
+if (-not $StudentOnly) { $serviceNames += "Faculty Dashboard" }
+$serviceText = if ($serviceNames.Count -eq 2) { "Student Portal and Faculty Dashboard are" } 
+elseif ($serviceNames -contains "Student Portal") { "Student Portal is" }
+else { "Faculty Dashboard is" }
+Write-Host "🎉 Zeus Academia $serviceText ready!" -ForegroundColor Green

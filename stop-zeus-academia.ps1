@@ -1,19 +1,20 @@
-# Zeus Academia Student Portal - Stop Script
-# This script stops both the backend API and frontend application
+# Zeus Academia - Stop Script
+# This script stops the backend API, Student Portal, and Faculty Dashboard
 
 # Ensure we're running from the correct directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = $scriptDir
 Set-Location $projectRoot
 
-Write-Host "🛑 ZEUS ACADEMIA STUDENT PORTAL - STOP SCRIPT" -ForegroundColor Red
-Write-Host "=============================================" -ForegroundColor Red
+Write-Host "🛑 ZEUS ACADEMIA - STOP SCRIPT" -ForegroundColor Red
+Write-Host "==============================" -ForegroundColor Red
 Write-Host "📂 Working Directory: $projectRoot" -ForegroundColor Gray
 Write-Host ""
 
 # Configuration
 $apiPort = 5000
 $frontendPort = 5173
+$facultyDashboardPort = 5174
 
 # Function to kill processes using a specific port
 function Stop-ProcessOnPort {
@@ -94,14 +95,16 @@ Write-Host "🔌 STOPPING PORT-BASED PROCESSES" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 
 Stop-ProcessOnPort -Port $apiPort -ServiceName "Backend API"
-Stop-ProcessOnPort -Port $frontendPort -ServiceName "Frontend"
+Stop-ProcessOnPort -Port $frontendPort -ServiceName "Student Portal"
+Stop-ProcessOnPort -Port $facultyDashboardPort -ServiceName "Faculty Dashboard"
 
 # Verify cleanup
 Write-Host "✅ CLEANUP VERIFICATION" -ForegroundColor Green
 Write-Host "=======================" -ForegroundColor Green
 
 $apiCheck = netstat -ano | Select-String ":$apiPort\s"
-$frontendCheck = netstat -ano | Select-String ":$frontendPort\s"
+$studentPortalCheck = netstat -ano | Select-String ":$frontendPort\s"
+$facultyDashboardCheck = netstat -ano | Select-String ":$facultyDashboardPort\s"
 
 if (-not $apiCheck) {
     Write-Host "✅ Port $apiPort (Backend API): Clean" -ForegroundColor Green
@@ -110,11 +113,18 @@ else {
     Write-Host "⚠️ Port $apiPort (Backend API): Still in use" -ForegroundColor Yellow
 }
 
-if (-not $frontendCheck) {
-    Write-Host "✅ Port $frontendPort (Frontend): Clean" -ForegroundColor Green
+if (-not $studentPortalCheck) {
+    Write-Host "✅ Port $frontendPort (Student Portal): Clean" -ForegroundColor Green
 }
 else {
-    Write-Host "⚠️ Port $frontendPort (Frontend): Still in use" -ForegroundColor Yellow
+    Write-Host "⚠️ Port $frontendPort (Student Portal): Still in use" -ForegroundColor Yellow
+}
+
+if (-not $facultyDashboardCheck) {
+    Write-Host "✅ Port $facultyDashboardPort (Faculty Dashboard): Clean" -ForegroundColor Green
+}
+else {
+    Write-Host "⚠️ Port $facultyDashboardPort (Faculty Dashboard): Still in use" -ForegroundColor Yellow
 }
 
 # Check for any remaining jobs
@@ -129,7 +139,7 @@ else {
 Write-Host ""
 Write-Host "🏁 SHUTDOWN COMPLETE" -ForegroundColor Green
 Write-Host "====================" -ForegroundColor Green
-Write-Host "✅ Zeus Academia Student Portal services have been stopped" -ForegroundColor Green
+Write-Host "✅ Zeus Academia services have been stopped" -ForegroundColor Green
 Write-Host ""
 Write-Host "🔄 To restart services, run:" -ForegroundColor Yellow
 Write-Host "   .\start-zeus-academia.ps1" -ForegroundColor White

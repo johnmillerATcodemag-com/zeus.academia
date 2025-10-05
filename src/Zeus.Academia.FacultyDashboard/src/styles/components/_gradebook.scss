@@ -1,0 +1,230 @@
+// Gradebook-specific styles optimized for faculty workflows
+
+.gradebook-container {
+  .gradebook-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: $faculty-bg-secondary;
+    border-radius: $border-radius;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  }
+  
+  .gradebook-table-container {
+    position: relative;
+    overflow-x: auto;
+    border-radius: $border-radius;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .gradebook-table {
+    min-width: 1200px;
+    background: white;
+    
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: $faculty-primary;
+      color: white;
+      
+      th {
+        border: none;
+        padding: 1rem 0.5rem;
+        font-weight: 600;
+        text-align: center;
+        
+        &.student-name-header {
+          text-align: left;
+          padding-left: 1rem;
+        }
+      }
+    }
+    
+    tbody {
+      tr {
+        &:hover {
+          background-color: rgba($faculty-accent, 0.1);
+        }
+        
+        &.bulk-edit-selected {
+          background-color: rgba($faculty-warning, 0.2);
+        }
+      }
+      
+      td {
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+        
+        &.student-name-cell {
+          position: sticky;
+          left: 0;
+          background: white;
+          z-index: 10;
+          border-right: 2px solid $faculty-primary;
+          padding-left: 1rem;
+          min-width: 200px;
+          
+          .student-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            
+            .student-avatar {
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              background: $faculty-accent;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: bold;
+              font-size: 0.8rem;
+            }
+            
+            .student-details {
+              .student-name {
+                font-weight: 600;
+                color: $faculty-text-primary;
+                margin: 0;
+              }
+              
+              .student-id {
+                font-size: 0.85rem;
+                color: $faculty-text-secondary;
+                margin: 0;
+              }
+            }
+          }
+        }
+        
+        &.grade-cell {
+          text-align: center;
+          min-width: 80px;
+          
+          .grade-input {
+            width: 70px;
+            border: 1px solid #ccc;
+            border-radius: $border-radius-sm;
+            padding: 0.4rem 0.2rem;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            
+            &:focus {
+              border-color: $faculty-primary;
+              box-shadow: 0 0 0 0.2rem rgba($faculty-primary, 0.25);
+              outline: none;
+            }
+            
+            &.grade-changed {
+              border-color: $faculty-warning;
+              background-color: rgba($faculty-warning, 0.1);
+            }
+            
+            &.grade-error {
+              border-color: $faculty-danger;
+              background-color: rgba($faculty-danger, 0.1);
+            }
+            
+            &.grade-saved {
+              border-color: $faculty-success;
+              background-color: rgba($faculty-success, 0.1);
+            }
+          }
+          
+          .grade-status {
+            margin-top: 0.25rem;
+            font-size: 0.75rem;
+            
+            &.missing {
+              color: $faculty-danger;
+            }
+            
+            &.late {
+              color: $faculty-warning;
+            }
+            
+            &.on-time {
+              color: $faculty-success;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .gradebook-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    
+    .stat-card {
+      background: $faculty-bg-secondary;
+      padding: 1rem;
+      border-radius: $border-radius;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: $faculty-primary;
+        display: block;
+      }
+      
+      .stat-label {
+        color: $faculty-text-secondary;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+      }
+    }
+  }
+}
+
+// Touch optimizations for tablets
+@media (max-width: 1024px) and (pointer: coarse) {
+  .gradebook-table {
+    .grade-input {
+      min-height: 44px;
+      min-width: 60px;
+      font-size: 16px; // Prevent zoom on iOS
+    }
+  }
+}
+
+// Bulk edit mode styles
+.bulk-edit-mode {
+  .gradebook-table {
+    tbody tr {
+      cursor: pointer;
+      
+      &:hover {
+        background-color: rgba($faculty-warning, 0.1);
+      }
+    }
+  }
+  
+  .bulk-edit-toolbar {
+    position: sticky;
+    bottom: 0;
+    background: $faculty-warning;
+    color: white;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: $border-radius $border-radius 0 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+}

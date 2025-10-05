@@ -1,0 +1,282 @@
+// Navigation components for faculty dashboard
+
+.faculty-nav {
+  .navbar {
+    background: linear-gradient(135deg, $faculty-primary, $faculty-secondary);
+    padding: 0.5rem 1rem;
+    
+    .navbar-brand {
+      color: white !important;
+      font-weight: bold;
+      font-size: 1.25rem;
+      
+      .brand-icon {
+        margin-right: 0.5rem;
+        font-size: 1.5rem;
+      }
+    }
+    
+    .navbar-nav {
+      .nav-link {
+        color: rgba(255, 255, 255, 0.8) !important;
+        padding: 0.5rem 1rem;
+        border-radius: $border-radius-sm;
+        transition: all 0.2s ease;
+        
+        &:hover,
+        &.active {
+          color: white !important;
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+    }
+    
+    .navbar-toggler {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      
+      .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+      }
+    }
+  }
+}
+
+.faculty-sidebar-nav {
+  padding: 1rem 0;
+  
+  .nav-section {
+    margin-bottom: 2rem;
+    
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: $faculty-text-muted;
+      padding: 0 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      
+      .nav-item {
+        .nav-link {
+          display: flex;
+          align-items: center;
+          padding: 0.75rem 1rem;
+          color: $faculty-text-primary;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          border-left: 3px solid transparent;
+          
+          .nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: $faculty-text-secondary;
+            transition: color 0.2s ease;
+          }
+          
+          .nav-text {
+            flex: 1;
+            font-weight: 500;
+          }
+          
+          .nav-badge {
+            background: $faculty-accent;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: $border-radius-sm;
+            font-size: 0.75rem;
+            font-weight: 600;
+          }
+          
+          &:hover {
+            background: rgba($faculty-accent, 0.1);
+            border-left-color: $faculty-accent;
+            
+            .nav-icon {
+              color: $faculty-accent;
+            }
+          }
+          
+          &.active {
+            background: rgba($faculty-primary, 0.1);
+            border-left-color: $faculty-primary;
+            color: $faculty-primary;
+            font-weight: 600;
+            
+            .nav-icon {
+              color: $faculty-primary;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .user-profile {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: $faculty-bg-accent;
+    border-top: 1px solid #e0e0e0;
+    padding: 1rem;
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: $faculty-primary;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+      
+      .user-details {
+        flex: 1;
+        min-width: 0;
+        
+        .user-name {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: $faculty-text-primary;
+          margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .user-role {
+          font-size: 0.8rem;
+          color: $faculty-text-secondary;
+          margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+      
+      .user-actions {
+        .dropdown-toggle {
+          background: none;
+          border: none;
+          color: $faculty-text-secondary;
+          padding: 0.25rem;
+          
+          &:hover {
+            color: $faculty-text-primary;
+          }
+          
+          &::after {
+            display: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Breadcrumb navigation
+.faculty-breadcrumb {
+  background: $faculty-bg-secondary;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 1rem;
+  
+  .breadcrumb {
+    margin: 0;
+    background: none;
+    padding: 0;
+    
+    .breadcrumb-item {
+      color: $faculty-text-secondary;
+      
+      &.active {
+        color: $faculty-text-primary;
+        font-weight: 500;
+      }
+      
+      a {
+        color: $faculty-secondary;
+        text-decoration: none;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+      
+      &::before {
+        color: $faculty-text-muted;
+      }
+    }
+  }
+}
+
+// Tab navigation
+.faculty-tabs {
+  .nav-tabs {
+    border-bottom: 2px solid #e0e0e0;
+    
+    .nav-link {
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      color: $faculty-text-secondary;
+      padding: 1rem 1.5rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        border-bottom-color: $faculty-accent;
+        color: $faculty-accent;
+      }
+      
+      &.active {
+        border-bottom-color: $faculty-primary;
+        color: $faculty-primary;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .tab-content {
+    padding: 1.5rem 0;
+  }
+}
+
+// Mobile navigation overlay
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    
+    &.show {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}

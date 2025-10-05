@@ -1,0 +1,322 @@
+// Card components for faculty dashboard
+
+.faculty-card {
+  background: $faculty-bg-secondary;
+  border: 1px solid #e0e0e0;
+  border-radius: $border-radius;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  .card-header {
+    background: $faculty-bg-accent;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    
+    .card-title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: $faculty-text-primary;
+    }
+    
+    .card-subtitle {
+      margin: 0.25rem 0 0;
+      font-size: 0.9rem;
+      color: $faculty-text-secondary;
+    }
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .card-footer {
+    background: $faculty-bg-accent;
+    border-top: 1px solid #e0e0e0;
+    padding: 1rem 1.5rem;
+    
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      @media (max-width: 576px) {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+  }
+}
+
+// Course cards
+.course-card {
+  @extend .faculty-card;
+  
+  .course-header {
+    background: linear-gradient(135deg, $faculty-primary, $faculty-secondary);
+    color: white;
+    padding: 1.5rem;
+    
+    .course-code {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .course-name {
+      font-size: 1rem;
+      margin: 0.5rem 0 0;
+      opacity: 0.9;
+    }
+    
+    .course-term {
+      font-size: 0.9rem;
+      margin: 0.5rem 0 0;
+      opacity: 0.8;
+    }
+  }
+  
+  .course-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba($faculty-accent, 0.1);
+    
+    .stat-item {
+      text-align: center;
+      
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: $faculty-primary;
+        display: block;
+      }
+      
+      .stat-label {
+        font-size: 0.8rem;
+        color: $faculty-text-secondary;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+}
+
+// Dashboard summary cards
+.summary-card {
+  @extend .faculty-card;
+  text-align: center;
+  
+  .summary-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, $faculty-primary, $faculty-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+  }
+  
+  .summary-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: $faculty-primary;
+    margin: 0;
+  }
+  
+  .summary-label {
+    font-size: 1rem;
+    color: $faculty-text-secondary;
+    margin: 0.5rem 0 0;
+  }
+  
+  .summary-change {
+    font-size: 0.9rem;
+    margin: 0.5rem 0 0;
+    
+    &.positive {
+      color: $faculty-success;
+      
+      &::before {
+        content: "↗ ";
+      }
+    }
+    
+    &.negative {
+      color: $faculty-danger;
+      
+      &::before {
+        content: "↘ ";
+      }
+    }
+    
+    &.neutral {
+      color: $faculty-text-secondary;
+      
+      &::before {
+        content: "→ ";
+      }
+    }
+  }
+}
+
+// Student cards
+.student-card {
+  @extend .faculty-card;
+  
+  .student-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    
+    .student-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: $faculty-accent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    
+    .student-info {
+      flex: 1;
+      
+      .student-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: $faculty-text-primary;
+        margin: 0;
+      }
+      
+      .student-id {
+        font-size: 0.9rem;
+        color: $faculty-text-secondary;
+        margin: 0.25rem 0 0;
+      }
+      
+      .student-email {
+        font-size: 0.85rem;
+        color: $faculty-text-muted;
+        margin: 0.25rem 0 0;
+      }
+    }
+    
+    .student-grade {
+      text-align: right;
+      
+      .grade-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: $faculty-primary;
+        margin: 0;
+      }
+      
+      .grade-letter {
+        font-size: 0.9rem;
+        color: $faculty-text-secondary;
+        margin: 0.25rem 0 0;
+      }
+    }
+  }
+}
+
+// Assignment cards
+.assignment-card {
+  @extend .faculty-card;
+  
+  .assignment-header {
+    .assignment-type {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: $border-radius-sm;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+      
+      &.homework {
+        background: rgba($faculty-info, 0.1);
+        color: $faculty-info;
+      }
+      
+      &.quiz {
+        background: rgba($faculty-warning, 0.1);
+        color: $faculty-warning;
+      }
+      
+      &.exam {
+        background: rgba($faculty-danger, 0.1);
+        color: $faculty-danger;
+      }
+      
+      &.project {
+        background: rgba($faculty-success, 0.1);
+        color: $faculty-success;
+      }
+    }
+    
+    .assignment-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: $faculty-text-primary;
+      margin: 0;
+    }
+    
+    .assignment-due {
+      font-size: 0.9rem;
+      color: $faculty-text-secondary;
+      margin: 0.5rem 0 0;
+      
+      &.overdue {
+        color: $faculty-danger;
+        font-weight: 600;
+      }
+      
+      &.due-soon {
+        color: $faculty-warning;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .assignment-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+    
+    .stat {
+      text-align: center;
+      
+      .stat-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: $faculty-primary;
+        display: block;
+      }
+      
+      .stat-label {
+        font-size: 0.8rem;
+        color: $faculty-text-secondary;
+      }
+    }
+  }
+}

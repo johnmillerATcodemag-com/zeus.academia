@@ -1,0 +1,249 @@
+// Main SCSS file for Faculty Dashboard
+// Faculty-specific design system optimized for desktop and tablet use
+
+// Import Bootstrap functions and variables first
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+
+// Faculty Theme Variables
+$faculty-primary: #0d47a1;
+$faculty-secondary: #1976d2;
+$faculty-accent: #42a5f5;
+$faculty-success: #2e7d32;
+$faculty-warning: #f57c00;
+$faculty-danger: #d32f2f;
+$faculty-info: #0288d1;
+
+// Background colors
+$faculty-bg-primary: #fafafa;
+$faculty-bg-secondary: #ffffff;
+$faculty-bg-accent: #f5f5f5;
+
+// Text colors
+$faculty-text-primary: #212121;
+$faculty-text-secondary: #757575;
+$faculty-text-muted: #9e9e9e;
+
+// Override Bootstrap theme colors
+$primary: $faculty-primary;
+$secondary: $faculty-secondary;
+$success: $faculty-success;
+$info: $faculty-info;
+$warning: $faculty-warning;
+$danger: $faculty-danger;
+
+// Custom Bootstrap variable overrides
+$body-bg: $faculty-bg-primary;
+$body-color: $faculty-text-primary;
+$font-family-sans-serif: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+$border-radius: 0.5rem;
+$border-radius-sm: 0.25rem;
+$border-radius-lg: 0.75rem;
+
+// Responsive breakpoints optimized for faculty workflows
+$grid-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,   // Tablet landscape
+  lg: 1024px,  // Desktop
+  xl: 1200px,  // Large desktop
+  xxl: 1400px  // Extra large desktop
+);
+
+// Container max widths
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px,
+  xxl: 1320px
+);
+
+// Import Bootstrap
+@import "bootstrap/scss/bootstrap";
+
+// Faculty-specific component styles
+@import "components/layout";
+@import "components/gradebook";
+@import "components/forms";
+@import "components/cards";
+@import "components/navigation";
+
+// Global styles
+body {
+  font-family: $font-family-sans-serif;
+  background-color: $faculty-bg-primary;
+  color: $faculty-text-primary;
+  line-height: 1.6;
+}
+
+// Faculty-specific utility classes
+.faculty-card {
+  background: $faculty-bg-secondary;
+  border: 1px solid #e0e0e0;
+  border-radius: $border-radius;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease-in-out;
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.faculty-header {
+  background: linear-gradient(135deg, $faculty-primary, $faculty-secondary);
+  color: white;
+  padding: 1rem 0;
+}
+
+.faculty-sidebar {
+  background: $faculty-bg-secondary;
+  border-right: 1px solid #e0e0e0;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  z-index: 1000;
+  overflow-y: auto;
+  
+  @media (max-width: 768px) {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    
+    &.show {
+      transform: translateX(0);
+    }
+  }
+}
+
+.faculty-main-content {
+  margin-left: 280px;
+  min-height: 100vh;
+  padding: 2rem;
+  
+  @media (max-width: 768px) {
+    margin-left: 0;
+    padding: 1rem;
+  }
+}
+
+// Gradebook-specific styles
+.gradebook-container {
+  .gradebook-table {
+    min-width: 1200px;
+    
+    .student-name-column {
+      min-width: 200px;
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 10;
+      border-right: 2px solid $faculty-primary;
+    }
+    
+    .grade-column {
+      min-width: 80px;
+      text-align: center;
+    }
+    
+    .grade-input {
+      width: 70px;
+      border: 1px solid #ccc;
+      border-radius: $border-radius-sm;
+      padding: 0.25rem;
+      text-align: center;
+      
+      &:focus {
+        border-color: $faculty-primary;
+        box-shadow: 0 0 0 0.2rem rgba($faculty-primary, 0.25);
+      }
+      
+      &.has-error {
+        border-color: $faculty-danger;
+      }
+    }
+  }
+}
+
+// Touch-optimized styles for tablets
+@media (max-width: 1024px) and (pointer: coarse) {
+  .gradebook-table {
+    .grade-input {
+      min-height: 44px; // WCAG AAA touch target size
+      min-width: 60px;
+      font-size: 16px; // Prevent zoom on iOS
+    }
+  }
+  
+  .btn {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+  
+  .form-control {
+    min-height: 44px;
+    font-size: 16px; // Prevent zoom on iOS
+  }
+}
+
+// Performance optimizations
+.table-responsive {
+  -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
+}
+
+// Loading states
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.skeleton-loader {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+// Dark mode considerations (future enhancement)
+@media (prefers-color-scheme: dark) {
+  // Dark mode styles would go here
+  // Currently maintaining light theme for faculty preference
+}
+
+// Print styles for gradebooks
+@media print {
+  .faculty-sidebar,
+  .no-print {
+    display: none !important;
+  }
+  
+  .faculty-main-content {
+    margin-left: 0;
+  }
+  
+  .gradebook-table {
+    font-size: 12px;
+    
+    .grade-input {
+      border: none;
+      background: transparent;
+    }
+  }
+}
