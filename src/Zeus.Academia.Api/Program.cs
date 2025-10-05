@@ -79,11 +79,21 @@ try
     // Authentication endpoints (mock responses for testing)
     app.MapPost("/api/auth/login", ([FromBody] dynamic loginData) => new
     {
-        Success = true,
-        Token = "mock-jwt-token-for-testing",
-        User = new { Id = 1, Username = "testuser", Role = "Student" },
-        ExpiresAt = DateTime.UtcNow.AddHours(1),
-        Message = "Mock login successful"
+        user = new
+        {
+            id = "1",
+            email = "prof@university.edu",
+            firstName = "Jane",
+            lastName = "Smith",
+            role = "professor",
+            department = "Computer Science",
+            title = "Professor",
+            permissions = new[] { "view_courses", "manage_course_content", "manage_grades" },
+            officeLocation = "Engineering 301"
+        },
+        token = "mock-jwt-token-for-testing",
+        refreshToken = "mock-refresh-token-for-testing",
+        expiresIn = 3600
     });
 
     app.MapPost("/api/auth/register", ([FromBody] dynamic registerData) => new
@@ -296,6 +306,280 @@ try
         DropDate = DateTime.UtcNow.ToString("yyyy-MM-dd"),
         CourseId = courseId
     });
+
+    // Faculty-specific course endpoints
+    app.MapGet("/api/faculty/{facultyId}/courses", ([FromRoute] string facultyId) => Results.Ok(new
+    {
+        success = true,
+        data = new[]
+        {
+            new {
+                id = "1",
+                name = "Introduction to Computer Science",
+                title = "Introduction to Computer Science",
+                code = "CS-101",
+                section = "001",
+                semester = "Fall 2025",
+                year = 2025,
+                credits = 3,
+                description = "Fundamental concepts of computer science and programming.",
+                enrollmentCount = 28,
+                maxEnrollment = 30,
+                status = "active",
+                facultyId = facultyId,
+                sections = new[] {
+                    new {
+                        id = "1-1",
+                        courseId = "1",
+                        sectionNumber = "001",
+                        meetingTimes = new[] { "MWF 10:00-10:50" },
+                        location = "Engineering 101",
+                        capacity = 30,
+                        enrolled = 28,
+                        waitlist = 2,
+                        status = "active"
+                    }
+                },
+                assignments = new[] {
+                    new {
+                        id = "assign-1",
+                        courseId = "1",
+                        title = "Programming Fundamentals",
+                        description = "Basic programming concepts and problem solving",
+                        dueDate = DateTime.Now.AddDays(7).ToString("yyyy-MM-ddTHH:mm:ss"),
+                        points = 100,
+                        type = "programming",
+                        status = "active"
+                    }
+                },
+                students = new[] {
+                    new {
+                        id = "stud-1",
+                        firstName = "John",
+                        lastName = "Doe",
+                        email = "john.doe@student.edu",
+                        gpa = 3.5,
+                        year = "Sophomore",
+                        major = "Computer Science"
+                    },
+                    new {
+                        id = "stud-2",
+                        firstName = "Jane",
+                        lastName = "Smith",
+                        email = "jane.smith@student.edu",
+                        gpa = 3.8,
+                        year = "Junior",
+                        major = "Computer Science"
+                    }
+                },
+                materials = new[] {
+                    new {
+                        id = "mat-1",
+                        courseId = "1",
+                        title = "Course Syllabus",
+                        type = "document",
+                        url = "/content/1/syllabus.pdf",
+                        uploadedAt = DateTime.Now.AddDays(-30).ToString("yyyy-MM-ddTHH:mm:ss")
+                    }
+                },
+                announcements = new[] {
+                    new {
+                        id = "ann-1",
+                        courseId = "1",
+                        title = "Welcome to CS-101",
+                        content = "Welcome to Introduction to Computer Science!",
+                        priority = "normal",
+                        publishedAt = DateTime.Now.AddDays(-5).ToString("yyyy-MM-ddTHH:mm:ss")
+                    }
+                },
+                metrics = new {
+                    totalEnrolled = 28,
+                    totalCapacity = 30,
+                    waitlistCount = 2,
+                    enrollmentPercentage = 93.3,
+                    averageGPA = 3.4,
+                    completionRate = 94.0,
+                    lastUpdated = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
+                }
+            },
+            new {
+                id = "2",
+                name = "Data Structures and Algorithms",
+                title = "Data Structures and Algorithms",
+                code = "CS-201",
+                section = "001",
+                semester = "Fall 2025",
+                year = 2025,
+                credits = 4,
+                description = "Advanced programming concepts, data structures, and algorithm design.",
+                enrollmentCount = 24,
+                maxEnrollment = 25,
+                status = "active",
+                facultyId = facultyId,
+                sections = new[] {
+                    new {
+                        id = "2-1",
+                        courseId = "2",
+                        sectionNumber = "001",
+                        meetingTimes = new[] { "TTH 14:00-15:30" },
+                        location = "Engineering 102",
+                        capacity = 25,
+                        enrolled = 24,
+                        waitlist = 1,
+                        status = "active"
+                    }
+                },
+                assignments = new[] {
+                    new {
+                        id = "assign-2",
+                        courseId = "2",
+                        title = "Binary Tree Implementation",
+                        description = "Implement a binary search tree with insert, delete, and search operations",
+                        dueDate = DateTime.Now.AddDays(10).ToString("yyyy-MM-ddTHH:mm:ss"),
+                        points = 150,
+                        type = "programming",
+                        status = "active"
+                    }
+                },
+                students = new[] {
+                    new {
+                        id = "stud-3",
+                        firstName = "Mike",
+                        lastName = "Johnson",
+                        email = "mike.johnson@student.edu",
+                        gpa = 3.2,
+                        year = "Senior",
+                        major = "Computer Science"
+                    }
+                },
+                materials = new[] {
+                    new {
+                        id = "mat-2",
+                        courseId = "2",
+                        title = "Algorithm Analysis Notes",
+                        type = "document",
+                        url = "/content/2/algorithms.pdf",
+                        uploadedAt = DateTime.Now.AddDays(-20).ToString("yyyy-MM-ddTHH:mm:ss")
+                    }
+                },
+                announcements = new[] {
+                    new {
+                        id = "ann-2",
+                        courseId = "2",
+                        title = "Midterm Exam Schedule",
+                        content = "Midterm exam will be held next Friday in the regular classroom.",
+                        priority = "high",
+                        publishedAt = DateTime.Now.AddDays(-2).ToString("yyyy-MM-ddTHH:mm:ss")
+                    }
+                },
+                metrics = new {
+                    totalEnrolled = 24,
+                    totalCapacity = 25,
+                    waitlistCount = 1,
+                    enrollmentPercentage = 96.0,
+                    averageGPA = 3.1,
+                    completionRate = 88.0,
+                    lastUpdated = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
+                }
+            },
+            new {
+                id = "3",
+                name = "Software Engineering Principles",
+                title = "Software Engineering Principles",
+                code = "CS-301",
+                section = "001",
+                semester = "Fall 2025",
+                year = 2025,
+                credits = 3,
+                description = "Software development methodologies, project management, and team collaboration.",
+                enrollmentCount = 20,
+                maxEnrollment = 22,
+                status = "active",
+                facultyId = facultyId,
+                sections = new[] {
+                    new {
+                        id = "3-1",
+                        courseId = "3",
+                        sectionNumber = "001",
+                        meetingTimes = new[] { "MW 16:00-17:30" },
+                        location = "Engineering 201",
+                        capacity = 22,
+                        enrolled = 20,
+                        waitlist = 0,
+                        status = "active"
+                    }
+                },
+                assignments = new[] {
+                    new {
+                        id = "assign-3",
+                        courseId = "3",
+                        title = "Team Project Proposal",
+                        description = "Submit a proposal for your semester-long team project",
+                        dueDate = DateTime.Now.AddDays(14).ToString("yyyy-MM-ddTHH:mm:ss"),
+                        points = 75,
+                        type = "project",
+                        status = "active"
+                    }
+                },
+                students = new[] {
+                    new {
+                        id = "stud-4",
+                        firstName = "Sarah",
+                        lastName = "Wilson",
+                        email = "sarah.wilson@student.edu",
+                        gpa = 3.9,
+                        year = "Senior",
+                        major = "Computer Science"
+                    }
+                },
+                materials = new[] {
+                    new {
+                        id = "mat-3",
+                        courseId = "3",
+                        title = "Agile Development Guide",
+                        type = "document",
+                        url = "/content/3/agile-guide.pdf",
+                        uploadedAt = DateTime.Now.AddDays(-15).ToString("yyyy-MM-ddTHH:mm:ss")
+                    }
+                },
+                announcements = new[] {
+                    new {
+                        id = "ann-3",
+                        courseId = "3",
+                        title = "Guest Speaker Next Week",
+                        content = "Industry professional will speak about software development practices.",
+                        priority = "normal",
+                        publishedAt = DateTime.Now.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ss")
+                    }
+                },
+                metrics = new {
+                    totalEnrolled = 20,
+                    totalCapacity = 22,
+                    waitlistCount = 0,
+                    enrollmentPercentage = 90.9,
+                    averageGPA = 3.6,
+                    completionRate = 95.0,
+                    lastUpdated = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
+                }
+            }
+        }
+    }));
+
+    // Course metrics endpoint
+    app.MapGet("/api/courses/{courseId}/metrics", ([FromRoute] string courseId) => Results.Ok(new
+    {
+        success = true,
+        data = new
+        {
+            totalEnrolled = courseId == "1" ? 28 : courseId == "2" ? 24 : 20,
+            totalCapacity = courseId == "1" ? 30 : courseId == "2" ? 25 : 22,
+            waitlistCount = courseId == "1" ? 2 : courseId == "2" ? 1 : 0,
+            enrollmentPercentage = courseId == "1" ? 93.3 : courseId == "2" ? 96.0 : 90.9,
+            averageGPA = courseId == "1" ? 3.4 : courseId == "2" ? 3.1 : 3.6,
+            completionRate = courseId == "1" ? 94.0 : courseId == "2" ? 88.0 : 95.0,
+            lastUpdated = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
+        }
+    }));
 
     // Additional auth endpoint for token refresh
     app.MapPost("/api/auth/refresh", ([FromBody] dynamic refreshData) => new

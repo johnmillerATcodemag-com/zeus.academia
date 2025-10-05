@@ -63,6 +63,13 @@
                 </div>
               </div>
 
+              <div v-else-if="error" class="text-center py-4">
+                <div class="alert alert-danger" role="alert">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  {{ error }}
+                </div>
+              </div>
+
               <div v-else-if="courses.length === 0" class="text-center py-4">
                 <p class="text-muted">
                   No courses found. Contact administration to set up your
@@ -196,11 +203,11 @@ import FacultyHeader from "@/components/FacultyHeader.vue";
 const authStore = useAuthStore();
 const gradebookStore = useGradebookStore();
 
-const loading = ref(true);
-
 // Computed properties
 const userFullName = computed(() => authStore.userFullName);
 const courses = computed(() => gradebookStore.courses);
+const loading = computed(() => gradebookStore.loading);
+const error = computed(() => gradebookStore.error);
 
 // Dashboard statistics (mock data for now)
 const dashboardStats = ref({
@@ -226,7 +233,7 @@ onMounted(async () => {
   try {
     await gradebookStore.loadCourses();
 
-    // Calculate real statistics
+    // Calculate real statistics after courses are loaded
     dashboardStats.value = {
       totalCourses: courses.value.length,
       totalStudents: courses.value.reduce(
@@ -238,8 +245,6 @@ onMounted(async () => {
     };
   } catch (error) {
     console.error("Failed to load dashboard data:", error);
-  } finally {
-    loading.value = false;
   }
 });
 </script>

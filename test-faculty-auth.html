@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Faculty Authentication</title>
+</head>
+<body>
+    <h1>Faculty Dashboard Authentication Test</h1>
+    
+    <div id="status"></div>
+    
+    <button onclick="setupMockAuth()">Setup Mock Authentication</button>
+    <button onclick="clearAuth()">Clear Authentication</button>
+    <button onclick="testAPI()">Test API Call</button>
+    <button onclick="checkLocalStorage()">Check Auth Status</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function setupMockAuth() {
+            // Set up mock authentication like a logged-in faculty user
+            const mockUser = {
+                id: "123",
+                firstName: "Dr. John",
+                lastName: "Doe", 
+                email: "john.doe@faculty.edu",
+                role: "faculty",
+                permissions: ["manage_grades", "manage_courses", "view_students"]
+            };
+            
+            const mockToken = "mock-jwt-token-123";
+            
+            localStorage.setItem('zeus_faculty_auth', 'true');
+            localStorage.setItem('zeus_faculty_token', mockToken);
+            localStorage.setItem('zeus_faculty_role', 'faculty');
+            localStorage.setItem('zeus_faculty_user', JSON.stringify(mockUser));
+            
+            document.getElementById('status').innerHTML = 
+                '<div style="color: green;">✅ Mock authentication set up successfully!</div>';
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('zeus_faculty_auth');
+            localStorage.removeItem('zeus_faculty_token');
+            localStorage.removeItem('zeus_faculty_role');
+            localStorage.removeItem('zeus_faculty_user');
+            
+            document.getElementById('status').innerHTML = 
+                '<div style="color: red;">❌ Authentication cleared</div>';
+        }
+        
+        function checkLocalStorage() {
+            const auth = localStorage.getItem('zeus_faculty_auth');
+            const user = localStorage.getItem('zeus_faculty_user');
+            const token = localStorage.getItem('zeus_faculty_token');
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h3>Current Auth Status:</h3>
+                <pre>
+Auth: ${auth}
+Token: ${token}
+User: ${user}
+                </pre>
+            `;
+        }
+        
+        async function testAPI() {
+            try {
+                const response = await fetch('http://localhost:5000/api/faculty/123/courses');
+                const data = await response.json();
+                
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `
+                    <h3>API Test Results:</h3>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Success:</strong> ${data.success}</p>
+                    <p><strong>Courses found:</strong> ${data.data ? data.data.length : 0}</p>
+                    <details>
+                        <summary>Full Response</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <h3>API Test Error:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            }
+        }
+        
+        // Check status on load
+        checkLocalStorage();
+    </script>
+</body>
+</html>

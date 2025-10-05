@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeus Academia API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .loading { background-color: #fff3cd; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Zeus Academia API Test Tool</h1>
+    
+    <div class="test-section">
+        <h3>API Server Health Check</h3>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="health-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>General Courses Endpoint</h3>
+        <button onclick="testCourses()">Test /api/courses</button>
+        <div id="courses-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Faculty Courses Endpoint (The one failing)</h3>
+        <button onclick="testFacultyCourses()">Test /api/faculty/123/courses</button>
+        <div id="faculty-courses-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Faculty Dashboard Test</h3>
+        <button onclick="testDashboardDataFetch()">Simulate Faculty Dashboard Data Fetch</button>
+        <div id="dashboard-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                const data = await response.json();
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+        
+        function showResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            element.className = 'test-section ' + (result.success ? 'success' : 'error');
+            element.innerHTML = `
+                <h4>${result.success ? '✅ Success' : '❌ Failed'}</h4>
+                <p><strong>Status:</strong> ${result.status || 'N/A'}</p>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+        }
+        
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.className = 'test-section loading';
+            element.innerHTML = '<h4>🔄 Loading...</h4>';
+        }
+        
+        async function testHealth() {
+            showLoading('health-result');
+            const result = await makeRequest(`${API_BASE}/health`);
+            showResult('health-result', result);
+        }
+        
+        async function testCourses() {
+            showLoading('courses-result');
+            const result = await makeRequest(`${API_BASE}/api/courses`);
+            showResult('courses-result', result);
+        }
+        
+        async function testFacultyCourses() {
+            showLoading('faculty-courses-result');
+            const result = await makeRequest(`${API_BASE}/api/faculty/123/courses`);
+            showResult('faculty-courses-result', result);
+        }
+        
+        async function testDashboardDataFetch() {
+            showLoading('dashboard-result');
+            
+            // Simulate what the faculty dashboard does
+            const facultyId = '123'; // Mock faculty ID
+            
+            try {
+                // This simulates the GradebookService.getCourses call
+                const response = await fetch(`${API_BASE}/api/faculty/${facultyId}/courses`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // In real app, this would include Bearer token
+                        // 'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                showResult('dashboard-result', {
+                    success: true,
+                    status: response.status,
+                    message: 'Faculty dashboard data fetch successful',
+                    data: data
+                });
+                
+            } catch (error) {
+                showResult('dashboard-result', {
+                    success: false,
+                    error: error.message,
+                    message: 'This is likely what the faculty dashboard is experiencing'
+                });
+            }
+        }
+    </script>
+</body>
+</html>

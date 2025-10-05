@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Course, Student, Assignment, Grade, GradebookState, GradebookFilters } from '@/types'
 import { GradebookService } from '@/services/GradebookService'
+import { useAuthStore } from '@/stores/auth'
 
 export const useGradebookStore = defineStore('gradebook', () => {
   // State
@@ -88,8 +89,13 @@ export const useGradebookStore = defineStore('gradebook', () => {
     loading.value = true
     error.value = null
     
+    const authStore = useAuthStore()
+    
+    // For testing purposes, use default faculty ID if no user is authenticated
+    const facultyId = authStore.user?.id || '123'
+    
     try {
-      const response = await GradebookService.getCourses()
+      const response = await GradebookService.getCourses(facultyId)
       if (response.success) {
         courses.value = response.data
       } else {

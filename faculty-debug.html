@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard Debug Helper</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { margin: 10px; padding: 10px 15px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .loading { color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>🏛️ Faculty Dashboard Debug Helper</h1>
+    
+    <div class="test-section">
+        <h3>🧪 API Connectivity Tests</h3>
+        <button onclick="testHealth()">Test API Health</button>
+        <button onclick="testFacultyCourses()">Test Faculty Courses</button>
+        <button onclick="testCORS()">Test CORS Headers</button>
+        <div id="api-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔍 Frontend Integration Tests</h3>
+        <button onclick="testFrontendCall()">Test Frontend API Call</button>
+        <button onclick="simulateGradebookService()">Simulate GradebookService</button>
+        <div id="frontend-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🌐 Quick Links</h3>
+        <a href="http://localhost:5174" target="_blank" style="margin-right: 15px;">Faculty Dashboard</a>
+        <a href="http://localhost:5000/health" target="_blank" style="margin-right: 15px;">API Health</a>
+        <a href="http://localhost:5000/api/faculty/123/courses" target="_blank">Faculty Courses API</a>
+    </div>
+
+    <div id="log" style="margin-top: 20px;"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            logDiv.innerHTML += `<div class="test-section ${className}"><strong>[${timestamp}]</strong> ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function testHealth() {
+            log('🏥 Testing API Health...', 'loading');
+            try {
+                const response = await fetch('http://localhost:5000/health');
+                const data = await response.json();
+                log(`✅ API Health: ${data.status} - ${data.service} v${data.version}`, 'success');
+                document.getElementById('api-results').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                log(`❌ API Health failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFacultyCourses() {
+            log('📚 Testing Faculty Courses API...', 'loading');
+            try {
+                const response = await fetch('http://localhost:5000/api/faculty/123/courses');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    log(`✅ Faculty Courses: Found ${data.data.length} courses`, 'success');
+                    const courseNames = data.data.map(c => `${c.code}: ${c.name}`);
+                    document.getElementById('api-results').innerHTML = 
+                        `<pre>Courses loaded:\n${courseNames.join('\n')}</pre>`;
+                } else {
+                    log(`❌ Faculty Courses: ${data.error || 'No data'}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Faculty Courses failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCORS() {
+            log('🌐 Testing CORS Headers...', 'loading');
+            try {
+                const response = await fetch('http://localhost:5000/api/faculty/123/courses', {
+                    method: 'GET',
+                    headers: { 'Origin': 'http://localhost:5174' }
+                });
+                
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                if (corsHeader) {
+                    log(`✅ CORS: Allow-Origin = ${corsHeader}`, 'success');
+                } else {
+                    log(`⚠️ CORS: No Allow-Origin header found`, 'error');
+                }
+                
+                document.getElementById('api-results').innerHTML = 
+                    `<pre>CORS Headers:\n${[...response.headers.entries()].map(([k,v]) => `${k}: ${v}`).join('\n')}</pre>`;
+                    
+            } catch (error) {
+                log(`❌ CORS Test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFrontendCall() {
+            log('🎯 Testing Frontend API Call (like Vue app would do)...', 'loading');
+            
+            try {
+                // Simulate exactly what the frontend does
+                const response = await fetch('http://localhost:5000/api/faculty/123/courses', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 15000
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Simulate the response structure check
+                if (data.success) {
+                    log(`✅ Frontend Call: SUCCESS - ${data.data.length} courses loaded`, 'success');
+                    document.getElementById('frontend-results').innerHTML = 
+                        `<pre>Frontend API Response:\n${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>`;
+                } else {
+                    log(`❌ Frontend Call: API returned success=false - ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Frontend Call failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function simulateGradebookService() {
+            log('🏪 Simulating GradebookService.getCourses()...', 'loading');
+            
+            try {
+                // Create an axios-like client simulation  
+                const apiClient = {
+                    baseURL: 'http://localhost:5000/api',
+                    async get(endpoint) {
+                        const url = this.baseURL + endpoint;
+                        const response = await fetch(url, {
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        return { data: await response.json() };
+                    }
+                };
+                
+                // Simulate the getCourses method
+                const facultyId = '123';
+                const response = await apiClient.get(`/faculty/${facultyId}/courses`);
+                
+                // Simulate the service response format
+                const serviceResponse = {
+                    success: true,
+                    data: response.data,
+                };
+                
+                log(`✅ GradebookService Simulation: SUCCESS`, 'success');
+                document.getElementById('frontend-results').innerHTML = 
+                    `<pre>GradebookService Response:\nSuccess: ${serviceResponse.success}\nCourses: ${serviceResponse.data.data?.length || 0}</pre>`;
+                    
+            } catch (error) {
+                log(`❌ GradebookService Simulation failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run basic tests on load
+        window.onload = function() {
+            log('🚀 Faculty Dashboard Debug Helper loaded');
+            log('💡 Click buttons above to test various components');
+            setTimeout(testHealth, 1000);
+        };
+    </script>
+</body>
+</html>

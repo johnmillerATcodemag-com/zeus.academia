@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct API Test</title>
+</head>
+<body>
+    <h1>Direct API Test from Frontend</h1>
+    
+    <div id="status">Ready to test...</div>
+    <button onclick="testDirectAPI()" style="margin: 10px; padding: 10px;">Test Direct API Call</button>
+    <button onclick="testWithFetch()" style="margin: 10px; padding: 10px;">Test with Fetch</button>
+    <button onclick="testCORS()" style="margin: 10px; padding: 10px;">Test CORS</button>
+    
+    <div id="results" style="margin-top: 20px; padding: 20px; border: 1px solid #ccc; max-height: 400px; overflow-y: auto;"></div>
+
+    <script>
+        function log(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function setStatus(message) {
+            document.getElementById('status').innerHTML = message;
+        }
+        
+        async function testDirectAPI() {
+            setStatus('Testing direct API call...');
+            log('🧪 Starting direct API test');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/faculty/123/courses');
+                log(`✅ Response status: ${response.status}`);
+                log(`✅ Response headers: ${JSON.stringify([...response.headers.entries()])}`);
+                
+                const data = await response.json();
+                log(`✅ Response success: ${data.success}`);
+                log(`✅ Courses found: ${data.data ? data.data.length : 0}`);
+                
+                if (data.success && data.data.length > 0) {
+                    log(`✅ First course: ${data.data[0].name} (${data.data[0].code})`);
+                    setStatus('✅ API call successful!');
+                } else {
+                    log('❌ No courses in response');
+                    setStatus('❌ No course data');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                setStatus('❌ API call failed');
+            }
+        }
+        
+        async function testWithFetch() {
+            setStatus('Testing with fetch and proper headers...');
+            log('🧪 Testing with fetch and headers');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/faculty/123/courses', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+                
+                log(`✅ Status: ${response.status}`);
+                const data = await response.json();
+                log(`✅ Data received: ${JSON.stringify(data, null, 2).substring(0, 200)}...`);
+                setStatus('✅ Fetch test successful!');
+                
+            } catch (error) {
+                log(`❌ Fetch error: ${error.message}`);
+                setStatus('❌ Fetch test failed');
+            }
+        }
+        
+        async function testCORS() {
+            setStatus('Testing CORS preflight...');
+            log('🧪 Testing CORS preflight');
+            
+            try {
+                // First test OPTIONS request
+                const optionsResponse = await fetch('http://localhost:5000/api/faculty/123/courses', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'http://localhost:5174',
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                log(`✅ OPTIONS status: ${optionsResponse.status}`);
+                log(`✅ CORS headers: ${JSON.stringify([...optionsResponse.headers.entries()])}`);
+                setStatus('✅ CORS test completed!');
+                
+            } catch (error) {
+                log(`❌ CORS error: ${error.message}`);
+                setStatus('❌ CORS test failed');
+            }
+        }
+        
+        log('Page loaded, ready to test API connectivity');
+    </script>
+</body>
+</html>

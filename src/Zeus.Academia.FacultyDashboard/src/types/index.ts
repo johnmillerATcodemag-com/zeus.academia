@@ -342,3 +342,246 @@ export interface FacultyProfileState {
   loading: boolean
   error: string | null
 }
+
+/**
+ * Task 3: Course and Section Management Types - Extensions to existing types
+ */
+
+// Extended Course interface for Task 3 functionality
+export interface ExtendedCourse extends Course {
+  title: string
+  facultyId: string
+  sections: CourseSection[]
+  metrics?: CourseMetrics
+}
+
+export interface CourseSection {
+  id: string
+  courseId: string
+  sectionNumber: string
+  meetingTimes: string[]
+  location: string
+  capacity: number
+  enrolled: number
+  waitlist: number
+  status: 'active' | 'cancelled' | 'completed'
+}
+
+export interface CourseMetrics {
+  totalEnrolled: number
+  totalCapacity: number
+  waitlistCount: number
+  enrollmentPercentage: number
+  averageGPA: number
+  completionRate: number
+  lastUpdated: Date
+}
+
+export interface ExtendedAssignment {
+  id: string
+  courseId: string
+  title: string
+  description?: string
+  instructions?: string
+  type: 'exam' | 'homework' | 'quiz' | 'project' | 'participation' | 'programming' | 'essay'
+  maxPoints: number
+  dueDate: Date
+  submissionTypes: ('file_upload' | 'text_entry' | 'online_quiz' | 'url_submission')[]
+  allowedFileTypes?: string[]
+  maxFileSize?: number
+  allowLateSubmissions?: boolean
+  latePenalty?: number
+  maxLateDays?: number
+  timeLimit?: number
+  attempts?: number
+  isGroupAssignment?: boolean
+  maxGroupSize?: number
+  rubric?: Rubric
+  isPublished: boolean
+  publishedAt?: Date
+  createdBy: string
+  createdAt: Date
+  submissions: AssignmentSubmission[]
+  statistics: AssignmentStatistics
+}
+
+export interface Rubric {
+  id: string
+  name: string
+  criteria: RubricCriterion[]
+  totalPoints: number
+  createdBy: string
+  createdAt: Date
+}
+
+export interface RubricCriterion {
+  id: string
+  name: string
+  description: string
+  maxPoints: number
+  levels: RubricLevel[]
+}
+
+export interface RubricLevel {
+  name: string
+  points: number
+  description: string
+}
+
+export interface AssignmentSubmission {
+  id: string
+  assignmentId: string
+  studentId: string
+  submittedAt?: Date
+  status: 'not_submitted' | 'submitted' | 'graded' | 'late'
+  content?: string
+  attachments?: FileAttachment[]
+  grade?: number
+  feedback?: string
+  rubricGrades?: RubricGrade[]
+}
+
+export interface RubricGrade {
+  criterionId: string
+  levelName: string
+  points: number
+  comments?: string
+}
+
+export interface AssignmentStatistics {
+  submitted: number
+  graded: number
+  averageScore: number
+  highestScore: number
+  lowestScore: number
+}
+
+export interface CourseContent {
+  id: string
+  courseId: string
+  type: 'syllabus' | 'lecture' | 'reading' | 'resource' | 'announcement'
+  title: string
+  description?: string
+  content?: string
+  attachments?: FileAttachment[]
+  isPublished: boolean
+  publishedAt?: Date
+  lastModified: Date
+  createdBy: string
+}
+
+export interface FileAttachment {
+  id: string
+  filename: string
+  size: number
+  type: string
+  uploadedAt: Date
+  url: string
+}
+
+export interface CourseAnnouncement {
+  id: string
+  courseId: string
+  title: string
+  content: string
+  type: 'general' | 'assignment' | 'exam' | 'schedule_change' | 'reminder'
+  priority: 'low' | 'medium' | 'high'
+  publishDate: Date
+  expiryDate?: Date
+  isPublished: boolean
+  deliveryStatus?: {
+    sent: number
+    delivered: number
+    read: number
+  }
+  createdBy: string
+  createdAt: Date
+}
+
+export interface StudentRoster {
+  courseId: string
+  sectionId: string
+  students: RosterStudent[]
+  totalEnrolled: number
+  lastUpdated: Date
+}
+
+export interface RosterStudent {
+  id: string
+  studentId: string
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  profilePhoto?: string
+  academicInfo: StudentAcademicInfo
+  enrollmentInfo: StudentEnrollmentInfo
+  grades: StudentCourseGrades
+}
+
+export interface StudentAcademicInfo {
+  major: string
+  year: string
+  gpa: number
+  creditHours: number
+  enrollmentStatus: 'full-time' | 'part-time' | 'audit'
+  advisorId: string
+}
+
+export interface StudentEnrollmentInfo {
+  enrolledDate: Date
+  status: 'enrolled' | 'dropped' | 'withdrawn' | 'incomplete'
+  attendanceRate: number
+  participationScore: number
+}
+
+export interface StudentCourseGrades {
+  currentGrade: string
+  currentPercentage: number
+  assignments: StudentAssignmentGrade[]
+}
+
+export interface StudentAssignmentGrade {
+  assignmentId: string
+  score: number
+  maxPoints: number
+  submittedAt?: Date
+  feedback?: string
+}
+
+export interface CourseCalendarEvent {
+  id: string
+  courseId: string
+  title: string
+  description?: string
+  type: 'assignment_due' | 'exam' | 'lecture' | 'holiday' | 'registration' | 'meeting'
+  startDate: Date
+  endDate: Date
+  location?: string
+  isAllDay: boolean
+  priority: 'low' | 'medium' | 'high'
+  color: string
+  reminders: EventReminder[]
+}
+
+export interface EventReminder {
+  type: 'email' | 'notification' | 'sms'
+  timeBeforeEvent: number // minutes before event
+}
+
+/**
+ * Course Management Store State
+ */
+export interface CourseManagementState {
+  courses: Course[]
+  currentCourse: Course | null
+  assignments: Assignment[]
+  courseContent: CourseContent[]
+  announcements: CourseAnnouncement[]
+  roster: StudentRoster | null
+  calendarEvents: CourseCalendarEvent[]
+  campusEvents: CourseCalendarEvent[]
+  enrollmentAlerts: string[]
+  loading: boolean
+  error: string | null
+}

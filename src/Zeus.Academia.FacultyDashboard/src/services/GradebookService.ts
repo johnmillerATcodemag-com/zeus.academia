@@ -26,12 +26,22 @@ class GradebookServiceClass {
     )
   }
 
-  async getCourses(): Promise<ApiResponse<Course[]>> {
+  async getCourses(facultyId: string): Promise<ApiResponse<Course[]>> {
     try {
-      const response: AxiosResponse<Course[]> = await this.apiClient.get('/faculty/courses')
-      return {
-        success: true,
-        data: response.data,
+      const response: AxiosResponse<any> = await this.apiClient.get(`/faculty/${facultyId}/courses`)
+      
+      // Handle nested API response structure
+      if (response.data.success && response.data.data) {
+        return {
+          success: true,
+          data: response.data.data, // Extract the actual courses array
+        }
+      } else {
+        return {
+          success: false,
+          data: [],
+          error: response.data.error || 'API returned success=false',
+        }
       }
     } catch (error: any) {
       return {

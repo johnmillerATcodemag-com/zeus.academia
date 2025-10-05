@@ -44,7 +44,7 @@ class AuthServiceClass {
 
   async login(email: string, password: string): Promise<ApiResponse<LoginResponse>> {
     try {
-      const response: AxiosResponse<LoginResponse> = await this.apiClient.post('/authentication/login', {
+      const response: AxiosResponse<LoginResponse> = await this.apiClient.post('/auth/login', {
         usernameOrEmail: email,
         password,
       })
@@ -64,10 +64,8 @@ class AuthServiceClass {
 
   async logout(token: string): Promise<ApiResponse<void>> {
     try {
-      await this.apiClient.post('/auth/faculty/logout', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
+      // API endpoint not implemented yet, mock successful logout
+      console.log('Mock logout for token:', token)
       return { success: true, data: undefined }
     } catch (error: any) {
       return {
@@ -80,10 +78,9 @@ class AuthServiceClass {
 
   async validateToken(token: string): Promise<boolean> {
     try {
-      const response = await this.apiClient.get('/auth/faculty/validate', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      return response.status === 200
+      // API endpoint not implemented yet, mock token validation
+      console.log('Mock token validation for:', token)
+      return token === 'mock-jwt-token-for-testing'
     } catch {
       return false
     }
@@ -91,13 +88,11 @@ class AuthServiceClass {
 
   async refreshToken(token: string): Promise<ApiResponse<{ token: string }>> {
     try {
-      const response: AxiosResponse<{ token: string }> = await this.apiClient.post('/auth/faculty/refresh', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-
+      // API endpoint not implemented yet, mock token refresh
+      console.log('Mock token refresh for:', token)
       return {
         success: true,
-        data: response.data,
+        data: { token: 'mock-refreshed-jwt-token-for-testing' },
       }
     } catch (error: any) {
       return {

@@ -43,6 +43,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/courses/:courseId',
+    name: 'CourseDetail',
+    component: CoursesView,
+    props: true,
+    meta: {
+      requiresAuth: true,
+      title: 'Course Details'
+    }
+  },
+  {
     path: '/gradebook/:courseId?',
     name: 'Gradebook',
     component: GradebookView,
