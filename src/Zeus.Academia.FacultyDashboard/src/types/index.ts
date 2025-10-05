@@ -164,3 +164,181 @@ export interface PerformanceMetrics {
   cacheHits: number
   cacheMisses: number
 }
+
+/**
+ * Task 2: Faculty Profile and Authentication Types
+ */
+export interface FacultyProfile {
+  id: string
+  userId: string
+  bio?: string
+  education: Education[]
+  researchAreas: string[]
+  publications: Publication[]
+  awards: Award[]
+  professionalExperience: ProfessionalExperience[]
+  cvUrl?: string
+  website?: string
+  linkedinUrl?: string
+  orcidId?: string
+  googleScholarId?: string
+  contactPreferences: ContactPreferences
+  lastUpdated: Date
+}
+
+export interface Education {
+  degree: string
+  institution: string
+  year: number
+  fieldOfStudy: string
+  gpa?: number
+  honors?: string
+}
+
+export interface Publication {
+  id: string
+  title: string
+  authors: string[]
+  year: number
+  type: 'journal' | 'conference' | 'book' | 'chapter' | 'preprint'
+  journal?: string
+  conference?: string
+  book?: string
+  volume?: string
+  issue?: string
+  pages?: string
+  doi?: string
+  url?: string
+  abstract?: string
+  keywords?: string[]
+  citationCount: number
+  impactFactor?: number
+}
+
+export interface Award {
+  name: string
+  institution: string
+  year: number
+  description?: string
+  amount?: number
+  category?: string
+}
+
+export interface ProfessionalExperience {
+  position: string
+  institution: string
+  startDate: Date
+  endDate: Date | null
+  description?: string
+  responsibilities?: string[]
+}
+
+export interface ContactPreferences {
+  email: boolean
+  phone: boolean
+  officeVisit: boolean
+  preferredContactMethod: 'email' | 'phone' | 'office'
+}
+
+/**
+ * Office Hours and Appointment Types
+ */
+export interface OfficeHours {
+  id: string
+  facultyId: string
+  dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+  startTime: string // HH:MM format
+  endTime: string // HH:MM format
+  location: string
+  type: 'office_hours' | 'virtual_hours' | 'by_appointment'
+  isRecurring: boolean
+  maxAppointments: number
+  appointmentDuration: number // minutes
+  meetingUrl?: string // for virtual hours
+  notes?: string
+}
+
+export interface Appointment {
+  id: string
+  officeHoursId: string
+  studentId: string
+  studentName: string
+  studentEmail: string
+  appointmentDate: Date
+  startTime: string
+  endTime: string
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
+  purpose: string
+  notes?: string
+  meetingUrl?: string
+  reminderSent?: boolean
+}
+
+/**
+ * Committee and Administrative Types
+ */
+export interface Committee {
+  id: string
+  facultyId: string
+  name: string
+  type: 'academic' | 'administrative' | 'search' | 'curriculum' | 'student_affairs' | 'research' | 'external' | 'other'
+  role: 'member' | 'chair' | 'vice_chair' | 'secretary'
+  status: 'active' | 'completed' | 'on_hold'
+  startDate: Date
+  endDate?: Date
+  description?: string
+  meetingSchedule?: string
+  responsibilities?: string[]
+  achievements?: string[]
+}
+
+export interface ProfessionalMembership {
+  organization: string
+  membershipType: string
+  startDate: Date
+  endDate: Date | null
+  membershipId?: string
+  status?: 'active' | 'inactive' | 'expired'
+}
+
+export interface ProfessionalAffiliation {
+  institution: string
+  role: string
+  startDate: Date
+  endDate: Date | null
+  description?: string
+}
+
+export interface Certification {
+  name: string
+  issuingOrganization: string
+  issueDate: Date
+  expiryDate?: Date
+  credentialId?: string
+  verificationUrl?: string
+}
+
+/**
+ * Enhanced Auth Store State for Task 2
+ */
+export interface EnhancedAuthState extends AuthState {
+  roleHierarchy: Record<FacultyRole, number>
+  permissionHierarchy: Record<Permission, FacultyRole[]>
+}
+
+/**
+ * Faculty Profile Store State
+ */
+export interface FacultyProfileState {
+  profile: FacultyProfile | null
+  officeHours: OfficeHours[]
+  appointments: Appointment[]
+  upcomingAppointments: Appointment[]
+  committees: Committee[]
+  professionalMemberships: ProfessionalMembership[]
+  professionalAffiliations: ProfessionalAffiliation[]
+  certifications: Certification[]
+  publications: Publication[]
+  loading: boolean
+  error: string | null
+}

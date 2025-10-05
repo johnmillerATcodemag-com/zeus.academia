@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { FacultyUser, AuthState } from '@/types'
+import type { FacultyUser, AuthState, FacultyRole, Permission } from '@/types'
 import { AuthService } from '@/services/AuthService'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -124,6 +124,126 @@ export const useAuthStore = defineStore('auth', () => {
     return false
   }
 
+  // Task 2: Enhanced Auth Methods for Hierarchical Permissions and Role Management
+  const roleHierarchy: Record<FacultyRole, number> = {
+    'lecturer': 0,
+    'assistant_professor': 1,
+    'associate_professor': 2,
+    'professor': 3,
+    'chair': 4,
+    'dean': 5,
+    'admin': 6
+  }
+
+  const setUser = (newUser: FacultyUser) => {
+    user.value = newUser
+  }
+
+  const setRole = (role: FacultyRole) => {
+    if (!user.value) return
+    
+    const validRoles: FacultyRole[] = ['lecturer', 'assistant_professor', 'associate_professor', 'professor', 'chair', 'dean', 'admin']
+    if (!validRoles.includes(role)) {
+      throw new Error('Invalid faculty role')
+    }
+    
+    user.value.role = role
+  }
+
+  const addPermission = (permission: Permission) => {
+    if (!user.value) return
+    
+    const validPermissions: Permission[] = [
+      'view_courses', 'manage_grades', 'view_students', 'manage_students',
+      'create_assignments', 'manage_course_content', 'view_analytics',
+      'manage_faculty', 'view_department', 'manage_department',
+      'view_college', 'manage_college', 'system_admin'
+    ]
+    
+    if (!validPermissions.includes(permission)) {
+      throw new Error('Invalid permission')
+    }
+    
+    if (!user.value.permissions.includes(permission)) {
+      user.value.permissions.push(permission)
+    }
+  }
+
+  const getRoleHierarchy = (): FacultyRole => {
+    return userRole.value || 'lecturer'
+  }
+
+  const getRoleLevel = (role: FacultyRole): number => {
+    return roleHierarchy[role] || 0
+  }
+
+  const canAccessRole = (currentRole: FacultyRole, targetRole: FacultyRole): boolean => {
+    return getRoleLevel(currentRole) >= getRoleLevel(targetRole)
+  }
+
+  const getRoleDisplayName = (role: FacultyRole): string => {
+    const displayNames: Record<FacultyRole, string> = {
+      'lecturer': 'Lecturer',
+      'assistant_professor': 'Assistant Professor',
+      'associate_professor': 'Associate Professor',
+      'professor': 'Professor',
+      'chair': 'Department Chair',
+      'dean': 'Dean',
+      'admin': 'Administrator'
+    }
+    return displayNames[role] || role
+  }
+
+  const isAdministrativeRole = (role: FacultyRole): boolean => {
+    return ['chair', 'dean', 'admin'].includes(role)
+  }
+
+  const getRoleColor = (role: FacultyRole): string => {
+    const colors: Record<FacultyRole, string> = {
+      'lecturer': 'secondary',
+      'assistant_professor': 'info',
+      'associate_professor': 'info',
+      'professor': 'primary',
+      'chair': 'warning',
+      'dean': 'danger',
+      'admin': 'dark'
+    }
+    return colors[role] || 'secondary'
+  }
+
+  const canManageFaculty = (): boolean => {
+    return hasPermission('manage_faculty')
+  }
+
+  const canManageDepartment = (): boolean => {
+    return hasPermission('manage_department')
+  }
+
+  const canManageCollege = (): boolean => {
+    return hasPermission('manage_college')
+  }
+
+  const canAccessSubordinate = (subordinateRole: FacultyRole): boolean => {
+    if (!userRole.value) return false
+    return canAccessRole(userRole.value, subordinateRole)
+  }
+
+  const canInitiateWorkflow = (workflowType: string): boolean => {
+    const workflowPermissions: Record<string, Permission[]> = {
+      'faculty_hiring': ['manage_faculty'],
+      'promotion_review': ['manage_faculty', 'manage_department'],
+      'tenure_review': ['manage_faculty', 'manage_department'],
+      'budget_approval': ['manage_college'],
+      'course_approval': ['manage_department'],
+      'student_discipline': ['manage_college']
+    }
+
+    const requiredPermissions = workflowPermissions[workflowType]
+    if (!requiredPermissions) return false
+
+    return requiredPermissions.some(permission => hasPermission(permission))
+  }
+
   return {
     // State
     user,
@@ -144,6 +264,22 @@ export const useAuthStore = defineStore('auth', () => {
     hasPermission,
     hasRole,
     hasAnyRole,
-    refreshToken
+    refreshToken,
+
+    // Task 2: Enhanced Auth Methods
+    setUser,
+    setRole,
+    addPermission,
+    getRoleHierarchy,
+    getRoleLevel,
+    canAccessRole,
+    getRoleDisplayName,
+    isAdministrativeRole,
+    getRoleColor,
+    canManageFaculty,
+    canManageDepartment,
+    canManageCollege,
+    canAccessSubordinate,
+    canInitiateWorkflow
   }
 })

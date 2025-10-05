@@ -6,6 +6,7 @@ import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import GradebookView from '@/views/GradebookView.vue'
 import CoursesView from '@/views/CoursesView.vue'
+import FacultyProfileView from '@/views/FacultyProfileView.vue'
 import UnauthorizedView from '@/views/UnauthorizedView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
@@ -50,6 +51,15 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
       requiresPermission: 'manage_grades',
       title: 'Gradebook'
+    }
+  },
+  {
+    path: '/profile',
+    name: 'FacultyProfile',
+    component: FacultyProfileView,
+    meta: {
+      requiresAuth: true,
+      title: 'Faculty Profile'
     }
   },
   {
