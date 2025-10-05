@@ -6,7 +6,8 @@ param(
     [switch]$SkipHealthCheck,
     [int]$HealthCheckTimeout = 30,
     [switch]$StudentOnly,
-    [switch]$FacultyOnly
+    [switch]$FacultyOnly,
+    [switch]$AdminOnly
 )
 
 # Ensure we're running from the correct directory
@@ -23,12 +24,15 @@ Write-Host ""
 $apiPath = "C:\git\zeus.academia\src\Zeus.Academia.Api"
 $frontendPath = "C:\git\zeus.academia\src\Zeus.Academia.StudentPortal"
 $facultyDashboardPath = "C:\git\zeus.academia\src\Zeus.Academia.FacultyDashboard"
+$adminInterfacePath = "C:\git\zeus.academia\src\Zeus.Academia.AdminInterface"
 $apiPort = 5000
 $frontendPort = 5173
 $facultyDashboardPort = 5174
+$adminInterfacePort = 5175
 $apiUrl = "http://localhost:$apiPort"
 $frontendUrl = "http://localhost:$frontendPort"
 $facultyDashboardUrl = "http://localhost:$facultyDashboardPort"
+$adminInterfaceUrl = "http://localhost:$adminInterfacePort"
 
 # Function to check if a port is in use
 function Test-PortInUse {
@@ -109,9 +113,15 @@ if (-not $StudentOnly -and -not (Test-Path $facultyDashboardPath)) {
     exit 1
 }
 
+if ($AdminOnly -and -not (Test-Path $adminInterfacePath)) {
+    Write-Host "❌ Admin Interface directory not found: $adminInterfacePath" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "✅ API directory found: $apiPath" -ForegroundColor Green
 if (-not $FacultyOnly) { Write-Host "✅ Student Portal directory found: $frontendPath" -ForegroundColor Green }
 if (-not $StudentOnly) { Write-Host "✅ Faculty Dashboard directory found: $facultyDashboardPath" -ForegroundColor Green }
+if ($AdminOnly) { Write-Host "✅ Admin Interface directory found: $adminInterfacePath" -ForegroundColor Green }
 
 # Check required tools
 try {
@@ -148,8 +158,9 @@ Write-Host "🧹 PORT CLEANUP" -ForegroundColor Cyan
 Write-Host "===============" -ForegroundColor Cyan
 
 Stop-ProcessOnPort -Port $apiPort
-if (-not $FacultyOnly) { Stop-ProcessOnPort -Port $frontendPort }
-if (-not $StudentOnly) { Stop-ProcessOnPort -Port $facultyDashboardPort }
+if (-not $FacultyOnly -and -not $AdminOnly) { Stop-ProcessOnPort -Port $frontendPort }
+if (-not $StudentOnly -and -not $AdminOnly) { Stop-ProcessOnPort -Port $facultyDashboardPort }
+if ($AdminOnly) { Stop-ProcessOnPort -Port $adminInterfacePort }
 
 Write-Host "✅ Ports cleared" -ForegroundColor Green
 Write-Host ""
@@ -203,7 +214,7 @@ catch {
 Write-Host ""
 
 # Start Student Portal
-if (-not $FacultyOnly) {
+if (-not $FacultyOnly -and -not $AdminOnly) {
     Write-Host "� STARTING STUDENT PORTAL" -ForegroundColor Cyan
     Write-Host "==========================" -ForegroundColor Cyan
 
@@ -255,7 +266,7 @@ if (-not $FacultyOnly) {
 }
 
 # Start Faculty Dashboard
-if (-not $StudentOnly) {
+if (-not $StudentOnly -and -not $AdminOnly) {
     Write-Host "👨‍🏫 STARTING FACULTY DASHBOARD" -ForegroundColor Cyan
     Write-Host "===============================" -ForegroundColor Cyan
 
@@ -306,6 +317,58 @@ if (-not $StudentOnly) {
     Write-Host ""
 }
 
+# Start Admin Interface
+if ($AdminOnly) {
+    Write-Host "🔐 STARTING ADMIN INTERFACE" -ForegroundColor Cyan
+    Write-Host "============================" -ForegroundColor Cyan
+
+    try {
+        Write-Host "📂 Navigating to admin interface directory..." -ForegroundColor Gray
+        Push-Location $adminInterfacePath
+        
+        # Check if node_modules exists
+        if (-not (Test-Path "node_modules")) {
+            Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
+            npm install --silent
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "❌ Admin Interface dependency installation failed" -ForegroundColor Red
+                Pop-Location
+                exit 1
+            }
+            Write-Host "✅ Dependencies installed" -ForegroundColor Green
+        }
+        else {
+            Write-Host "✅ Dependencies already installed" -ForegroundColor Green
+        }
+        
+        Write-Host "▶️ Starting admin interface server..." -ForegroundColor Yellow
+        
+        # Start Admin Interface in background
+        $adminJob = Start-Job -ScriptBlock {
+            param($path)
+            Set-Location $path
+            npm run dev
+        } -ArgumentList $adminInterfacePath
+        
+        Pop-Location
+        
+        Write-Host "🔄 Admin Interface Job ID: $($adminJob.Id)" -ForegroundColor Gray
+        
+        if (-not $SkipHealthCheck) {
+            # Wait a bit for Vite to start
+            Start-Sleep -Seconds 5
+            Write-Host "✅ Admin Interface starting (Vite typically takes 2-5 seconds)" -ForegroundColor Green
+        }
+    }
+    catch {
+        Write-Host "❌ Error starting Admin Interface: $($_.Exception.Message)" -ForegroundColor Red
+        Pop-Location
+        exit 1
+    }
+
+    Write-Host ""
+}
+
 Write-Host ""
 
 # Report endpoints and status
@@ -337,7 +400,7 @@ catch {
 Write-Host ""
 
 # Check Student Portal status
-if (-not $FacultyOnly) {
+if (-not $FacultyOnly -and -not $AdminOnly) {
     if (Test-PortInUse -Port $frontendPort) {
         Write-Host "✅ Student Portal: RUNNING" -ForegroundColor Green
         Write-Host "   🌐 Application: $frontendUrl/" -ForegroundColor Cyan
@@ -353,7 +416,7 @@ if (-not $FacultyOnly) {
 }
 
 # Check Faculty Dashboard status
-if (-not $StudentOnly) {
+if (-not $StudentOnly -and -not $AdminOnly) {
     if (Test-PortInUse -Port $facultyDashboardPort) {
         Write-Host "✅ Faculty Dashboard: RUNNING" -ForegroundColor Green
         Write-Host "   🌐 Application: $facultyDashboardUrl/" -ForegroundColor Cyan
@@ -368,15 +431,34 @@ if (-not $StudentOnly) {
     Write-Host ""
 }
 
+# Check Admin Interface status
+if ($AdminOnly) {
+    if (Test-PortInUse -Port $adminInterfacePort) {
+        Write-Host "✅ Admin Interface: RUNNING" -ForegroundColor Green
+        Write-Host "   🌐 Application: $adminInterfaceUrl/" -ForegroundColor Cyan
+        Write-Host "   🔑 Demo Login:" -ForegroundColor Cyan
+        Write-Host "      • Email: admin@zeus.academia" -ForegroundColor White
+        Write-Host "      • Password: AdminDemo2024!" -ForegroundColor White
+    }
+    else {
+        Write-Host "⚠️ Admin Interface: STARTING (Vite typically takes 2-10 seconds)" -ForegroundColor Yellow
+        Write-Host "   🌐 Expected URL: $adminInterfaceUrl/" -ForegroundColor Cyan
+    }
+    Write-Host ""
+}
+
 Write-Host "🏁 STARTUP COMPLETE" -ForegroundColor Green
 Write-Host "===================" -ForegroundColor Green
 Write-Host "🎯 Next Steps:" -ForegroundColor Yellow
 
-if (-not $FacultyOnly) {
+if (-not $FacultyOnly -and -not $AdminOnly) {
     Write-Host "   📚 Student Portal: $frontendUrl" -ForegroundColor White
 }
-if (-not $StudentOnly) {
+if (-not $StudentOnly -and -not $AdminOnly) {
     Write-Host "   👨‍🏫 Faculty Dashboard: $facultyDashboardUrl" -ForegroundColor White
+}
+if ($AdminOnly) {
+    Write-Host "   🔐 Admin Interface: $adminInterfaceUrl" -ForegroundColor White
 }
 
 Write-Host "   🔧 API Health Check: $apiUrl/health" -ForegroundColor White
@@ -397,11 +479,14 @@ $jobsHash = @{
     StartTime = Get-Date
 }
 
-if (-not $FacultyOnly) {
+if (-not $FacultyOnly -and -not $AdminOnly) {
     $jobsHash.StudentPortal = $frontendJob
 }
-if (-not $StudentOnly) {
+if (-not $StudentOnly -and -not $AdminOnly) {
     $jobsHash.FacultyDashboard = $facultyJob
+}
+if ($AdminOnly) {
+    $jobsHash.AdminInterface = $adminJob
 }
 
 $Global:ZeusJobs = $jobsHash
@@ -441,9 +526,11 @@ else {
 
 Write-Host ""
 $serviceNames = @()
-if (-not $FacultyOnly) { $serviceNames += "Student Portal" }
-if (-not $StudentOnly) { $serviceNames += "Faculty Dashboard" }
-$serviceText = if ($serviceNames.Count -eq 2) { "Student Portal and Faculty Dashboard are" } 
-elseif ($serviceNames -contains "Student Portal") { "Student Portal is" }
-else { "Faculty Dashboard is" }
+if (-not $FacultyOnly -and -not $AdminOnly) { $serviceNames += "Student Portal" }
+if (-not $StudentOnly -and -not $AdminOnly) { $serviceNames += "Faculty Dashboard" }
+if ($AdminOnly) { $serviceNames += "Admin Interface" }
+
+$serviceText = if ($serviceNames.Count -eq 2) { "$($serviceNames[0]) and $($serviceNames[1]) are" } 
+elseif ($serviceNames.Count -eq 1) { "$($serviceNames[0]) is" }
+else { "services are" }
 Write-Host "🎉 Zeus Academia $serviceText ready!" -ForegroundColor Green

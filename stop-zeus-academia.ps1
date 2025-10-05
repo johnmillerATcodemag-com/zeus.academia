@@ -15,6 +15,7 @@ Write-Host ""
 $apiPort = 5000
 $frontendPort = 5173
 $facultyDashboardPort = 5174
+$adminInterfacePort = 5175
 
 # Function to kill processes using a specific port
 function Stop-ProcessOnPort {
@@ -97,6 +98,7 @@ Write-Host "=================================" -ForegroundColor Cyan
 Stop-ProcessOnPort -Port $apiPort -ServiceName "Backend API"
 Stop-ProcessOnPort -Port $frontendPort -ServiceName "Student Portal"
 Stop-ProcessOnPort -Port $facultyDashboardPort -ServiceName "Faculty Dashboard"
+Stop-ProcessOnPort -Port $adminInterfacePort -ServiceName "Admin Interface"
 
 # Verify cleanup
 Write-Host "✅ CLEANUP VERIFICATION" -ForegroundColor Green
@@ -105,6 +107,7 @@ Write-Host "=======================" -ForegroundColor Green
 $apiCheck = netstat -ano | Select-String ":$apiPort\s"
 $studentPortalCheck = netstat -ano | Select-String ":$frontendPort\s"
 $facultyDashboardCheck = netstat -ano | Select-String ":$facultyDashboardPort\s"
+$adminInterfaceCheck = netstat -ano | Select-String ":$adminInterfacePort\s"
 
 if (-not $apiCheck) {
     Write-Host "✅ Port $apiPort (Backend API): Clean" -ForegroundColor Green
@@ -125,6 +128,13 @@ if (-not $facultyDashboardCheck) {
 }
 else {
     Write-Host "⚠️ Port $facultyDashboardPort (Faculty Dashboard): Still in use" -ForegroundColor Yellow
+}
+
+if (-not $adminInterfaceCheck) {
+    Write-Host "✅ Port $adminInterfacePort (Admin Interface): Clean" -ForegroundColor Green
+}
+else {
+    Write-Host "⚠️ Port $adminInterfacePort (Admin Interface): Still in use" -ForegroundColor Yellow
 }
 
 # Check for any remaining jobs
