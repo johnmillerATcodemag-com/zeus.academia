@@ -2,6 +2,8 @@ using Serilog;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Zeus.Academia.Infrastructure.Data;
 
 // Minimal API for smoke testing - includes essential endpoints
 var builder = WebApplication.CreateBuilder(args);
@@ -27,7 +29,7 @@ try
         options.AddPolicy("AllowAll", policy =>
         {
             policy.SetIsOriginAllowed(origin => true)
-                  .WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:3000")
+                  .WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://127.0.0.1:3000")
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -40,6 +42,8 @@ try
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         });
+
+    // DbContext registration removed - controllers modified to not depend on it for minimal testing
 
     // Add basic API versioning support
     builder.Services.AddApiVersioning(options =>
@@ -76,24 +80,50 @@ try
         Uptime = TimeSpan.FromMilliseconds(Environment.TickCount64).ToString()
     });
 
-    // Authentication endpoints (mock responses for testing)
-    app.MapPost("/api/auth/login", ([FromBody] dynamic loginData) => new
+    app.MapGet("/api/health-minimal", () => new
     {
-        user = new
+        Status = "Healthy",
+        Service = "Zeus Academia API",
+        Version = "1.0-minimal",
+        Timestamp = DateTime.UtcNow,
+        Uptime = TimeSpan.FromMilliseconds(Environment.TickCount64).ToString()
+    });
+
+    // Authentication endpoints (mock responses for testing)
+    app.MapPost("/api/auth/login", (HttpContext context) =>
+    {
+        try
         {
-            id = "1",
-            email = "prof@university.edu",
-            firstName = "Jane",
-            lastName = "Smith",
-            role = "professor",
-            department = "Computer Science",
-            title = "Professor",
-            permissions = new[] { "view_courses", "manage_course_content", "manage_grades" },
-            officeLocation = "Engineering 301"
-        },
-        token = "mock-jwt-token-for-testing",
-        refreshToken = "mock-refresh-token-for-testing",
-        expiresIn = 3600
+            Log.Information("Login endpoint called");
+
+            // Simple admin response for testing
+            var response = new
+            {
+                user = new
+                {
+                    id = "1",
+                    email = "admin@zeus.academia",
+                    firstName = "Jane",
+                    lastName = "Smith",
+                    role = "system_admin",
+                    department = "Administration",
+                    title = "System Administrator",
+                    permissions = new[] { "user_management", "system_configuration", "security_management", "system_monitoring", "audit_access" },
+                    officeLocation = "Admin Building 101"
+                },
+                token = "mock-jwt-admin-token-for-testing",
+                refreshToken = "mock-refresh-admin-token-for-testing",
+                expiresIn = 3600
+            };
+
+            Log.Information("Returning admin credentials");
+            return Results.Ok(response);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error in login endpoint");
+            return Results.Problem("Internal server error during login");
+        }
     });
 
     app.MapPost("/api/auth/register", ([FromBody] dynamic registerData) => new
@@ -635,6 +665,7 @@ try
     Log.Information("Available endpoints:");
     Log.Information("  GET  /              - API information");
     Log.Information("  GET  /health        - Health check");
+    Log.Information("  GET  /api/health-minimal - Health check (minimal API route)");
     Log.Information("  POST /api/auth/login - Authentication");
     Log.Information("  GET  /api/courses   - Course listings");
     Log.Information("  GET  /api/version   - API versioning");

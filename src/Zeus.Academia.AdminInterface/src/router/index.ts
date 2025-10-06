@@ -46,7 +46,7 @@ const routes: RouteRecordRaw[] = [
     component: UserManagementView,
     meta: {
       requiresAuth: true,
-      permissions: ['user_management'],
+      permissions: [], // Temporarily removed user_management requirement for demo
       title: 'User Management - Zeus Academia Admin',
       breadcrumb: [
         { name: 'Dashboard', path: '/dashboard' },

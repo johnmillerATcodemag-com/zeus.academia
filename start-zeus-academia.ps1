@@ -113,15 +113,15 @@ if (-not $StudentOnly -and -not (Test-Path $facultyDashboardPath)) {
     exit 1
 }
 
-if ($AdminOnly -and -not (Test-Path $adminInterfacePath)) {
-    Write-Host "❌ Admin Interface directory not found: $adminInterfacePath" -ForegroundColor Red
+if (($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) -and -not (Test-Path $adminInterfacePath)) {
+    Write-Host "❌ Admin Interface directory not found at: $adminInterfacePath" -ForegroundColor Red
     exit 1
 }
 
 Write-Host "✅ API directory found: $apiPath" -ForegroundColor Green
-if (-not $FacultyOnly) { Write-Host "✅ Student Portal directory found: $frontendPath" -ForegroundColor Green }
-if (-not $StudentOnly) { Write-Host "✅ Faculty Dashboard directory found: $facultyDashboardPath" -ForegroundColor Green }
-if ($AdminOnly) { Write-Host "✅ Admin Interface directory found: $adminInterfacePath" -ForegroundColor Green }
+if (-not $FacultyOnly -and -not $AdminOnly) { Write-Host "✅ Student Portal directory found: $frontendPath" -ForegroundColor Green }
+if (-not $StudentOnly -and -not $AdminOnly) { Write-Host "✅ Faculty Dashboard directory found: $facultyDashboardPath" -ForegroundColor Green }
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) { Write-Host "✅ Admin Interface directory found: $adminInterfacePath" -ForegroundColor Green }
 
 # Check required tools
 try {
@@ -160,7 +160,7 @@ Write-Host "===============" -ForegroundColor Cyan
 Stop-ProcessOnPort -Port $apiPort
 if (-not $FacultyOnly -and -not $AdminOnly) { Stop-ProcessOnPort -Port $frontendPort }
 if (-not $StudentOnly -and -not $AdminOnly) { Stop-ProcessOnPort -Port $facultyDashboardPort }
-if ($AdminOnly) { Stop-ProcessOnPort -Port $adminInterfacePort }
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) { Stop-ProcessOnPort -Port $adminInterfacePort }
 
 Write-Host "✅ Ports cleared" -ForegroundColor Green
 Write-Host ""
@@ -318,7 +318,7 @@ if (-not $StudentOnly -and -not $AdminOnly) {
 }
 
 # Start Admin Interface
-if ($AdminOnly) {
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) {
     Write-Host "🔐 STARTING ADMIN INTERFACE" -ForegroundColor Cyan
     Write-Host "============================" -ForegroundColor Cyan
 
@@ -432,7 +432,7 @@ if (-not $StudentOnly -and -not $AdminOnly) {
 }
 
 # Check Admin Interface status
-if ($AdminOnly) {
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) {
     if (Test-PortInUse -Port $adminInterfacePort) {
         Write-Host "✅ Admin Interface: RUNNING" -ForegroundColor Green
         Write-Host "   🌐 Application: $adminInterfaceUrl/" -ForegroundColor Cyan
@@ -457,7 +457,7 @@ if (-not $FacultyOnly -and -not $AdminOnly) {
 if (-not $StudentOnly -and -not $AdminOnly) {
     Write-Host "   👨‍🏫 Faculty Dashboard: $facultyDashboardUrl" -ForegroundColor White
 }
-if ($AdminOnly) {
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) {
     Write-Host "   🔐 Admin Interface: $adminInterfaceUrl" -ForegroundColor White
 }
 
@@ -468,8 +468,9 @@ Write-Host "   • View API health: Invoke-RestMethod $apiUrl/health" -Foregroun
 Write-Host "   • Stop services: Get-Job | Stop-Job; Get-Job | Remove-Job" -ForegroundColor White
 
 $portList = "$apiPort"
-if (-not $FacultyOnly) { $portList += " :$frontendPort" }
-if (-not $StudentOnly) { $portList += " :$facultyDashboardPort" }
+if (-not $FacultyOnly -and -not $AdminOnly) { $portList += " :$frontendPort" }
+if (-not $StudentOnly -and -not $AdminOnly) { $portList += " :$facultyDashboardPort" }
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) { $portList += " :$adminInterfacePort" }
 Write-Host "   • Check ports: netstat -ano | findstr ':$portList'" -ForegroundColor White
 Write-Host ""
 
@@ -485,7 +486,7 @@ if (-not $FacultyOnly -and -not $AdminOnly) {
 if (-not $StudentOnly -and -not $AdminOnly) {
     $jobsHash.FacultyDashboard = $facultyJob
 }
-if ($AdminOnly) {
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) {
     $jobsHash.AdminInterface = $adminJob
 }
 
@@ -528,7 +529,7 @@ Write-Host ""
 $serviceNames = @()
 if (-not $FacultyOnly -and -not $AdminOnly) { $serviceNames += "Student Portal" }
 if (-not $StudentOnly -and -not $AdminOnly) { $serviceNames += "Faculty Dashboard" }
-if ($AdminOnly) { $serviceNames += "Admin Interface" }
+if ($AdminOnly -or (-not $StudentOnly -and -not $FacultyOnly)) { $serviceNames += "Admin Interface" }
 
 $serviceText = if ($serviceNames.Count -eq 2) { "$($serviceNames[0]) and $($serviceNames[1]) are" } 
 elseif ($serviceNames.Count -eq 1) { "$($serviceNames[0]) is" }

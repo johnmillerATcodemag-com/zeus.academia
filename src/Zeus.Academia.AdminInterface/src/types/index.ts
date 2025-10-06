@@ -393,4 +393,55 @@ export interface ValidationRule {
   validator?: (value: any) => boolean
 }
 
+// User Management Types for Task 2
+export interface BulkUserCreationData {
+  users: {
+    email: string
+    firstName: string
+    lastName: string
+    role: string
+    department: string
+    title?: string
+  }[]
+  options: {
+    sendWelcomeEmail: boolean
+    requirePasswordReset: boolean
+    defaultPassword: string
+  }
+}
+
+export interface UserRoleAssignment {
+  userId: string
+  role: AdminRoleType
+  permissions: AdminPermission[]
+  effectiveDate: Date
+  assignedBy: string
+  reason?: string
+}
+
+export interface UserLifecycleAction {
+  userId: string
+  action: 'suspend' | 'reactivate' | 'delete' | 'archive'
+  reason: string
+  effectiveDate: Date
+  performedBy: string
+  notifyUser: boolean
+  retainData: boolean
+  expirationDate?: Date
+}
+
+export interface PasswordResetRequest {
+  userId: string
+  resetType: 'admin_reset' | 'security_incident' | 'forgot_password'
+  temporaryPassword?: string
+  requirePasswordChange: boolean
+  notifyUser: boolean
+  resetBy: string
+  reason: string
+  expirationHours?: number
+}
+
+// Alias for AuditEntry to match test expectations
+export type AuditTrailEntry = AuditEntry
+
 // All types are already exported individually above
