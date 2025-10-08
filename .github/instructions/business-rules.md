@@ -1,6 +1,6 @@
 # Business Rules for Academic Management System
 
-These business are partially defined in Academic-Model.png which is an Object Role Model (ORM) diagram. This model is described in the white paper https://orm.net/pdf/ORMwhitePaper.pdf.
+These business are partially defined in academia.orm which is an Object Role Model (ORM) diagram. This model is described in the white paper https://orm.net/pdf/ORMwhitePaper.pdf.
 
 This document outlines the business rules implemented in the Academic Management System, ensuring compliance with the specified requirements.
 These rules govern the relationships and constraints between various entities such as Academics, Departments, Rooms, Extensions, and more.
@@ -17,233 +17,245 @@ These rules govern the relationships and constraints between various entities su
 - **Committee**: Represents committees served by teaching professors.
 - **Subject**: Represents subjects taught by academics.
 
+## Conceptual Model
+
+<img src="https://epsenterprise.blob.core.windows.net/permanent-files/FileAttachments/829ed7ac_880b_45a9_b642_0fb5f6a885a6/Academic_Model.png" alt="Academic-Model.png" />
+
 ## Facts and Constraints
 Academic is an entity type.
 Reference Scheme: Academic has empNr.
 Reference Mode: empNr.
 Data Type: Text: Fixed Length (6).
-
-Fact Types:
 Academic has empNr.
-Academic has EmpName.
-Academic works for Dept.
-Academic is tenured.
-Academic is contracted until Date.
-Each Professor is an instance of Academic.
-Academic has Rank.
-Academic obtained Degree from University.
-Academic teaches Subject.
-Each Teacher is an instance of Academic.
-Academic uses Extension.
-Academic occupies Room.
 
+Academic has EmpName.
+
+Academic works for Dept.
+
+Academic is tenured.
+
+Academic is contracted until Date.
+
+Each Professor is an instance of Academic.
+
+Academic has Rank.
+
+Academic obtained Degree from University.
+
+Academic teaches Subject.
+
+Each Teacher is an instance of Academic.
+
+Academic uses Extension.
+
+Academic occupies Room.
 Examples: '715', '430', '139', '544', '721'
+
 EmpName is a value type.
 Data Type: Text: Variable Length (15).
 
-Fact Types:
 Academic has EmpName.
-
 Examples: 'Adams A', 'Codd EF', 'Rankin B', 'Thompson S', 'Zack Z'
+
 Dept is an entity type.
 Reference Scheme: Dept has Dept_name.
 Reference Mode: .name.
 Data Type: Text: Variable Length (15).
 
-Fact Types:
 Dept has Dept_name.
-Academic works for Dept.
-Dept has head with home PhoneNr.
-Dept has teaching budget of MoneyAmt.
-Dept has research budget of MoneyAmt.
-Professor heads Dept.
 
+Academic works for Dept.
+
+Dept has head with home PhoneNr.
+
+Dept has teaching budget of MoneyAmt.
+
+Dept has research budget of MoneyAmt.
+
+Professor heads Dept.
 Examples: 'Computer Science', 'Genetics'
+
 Date is an entity type.
 Reference Scheme: Date has mdy.
 Reference Mode: mdy.
 Data Type: Temporal: Date.
 
-Fact Types:
 Date has mdy.
-Academic is contracted until Date.
 
+Academic is contracted until Date.
 Examples: 01/3/2028, 01/31/2028
+
 Professor is an entity type.
 Reference Scheme: Academic has empNr.
 Reference Mode: empNr.
 Data Type: Text: Fixed Length (6).
 
-Fact Types:
 Each Professor is an instance of Academic.
-Professor heads Dept.
-Professor holds Chair.
-Each Teaching Prof is an instance of Professor.
 
+Professor heads Dept.
+
+Professor holds Chair.
+
+Each Teaching Prof is an instance of Professor.
 Examples: '430'
+
 Rank is an entity type.
 Reference Scheme: Rank has Rank_code.
 Reference Mode: .code.
 Data Type: Text: Fixed Length (0).
-
-Fact Types:
-Rank has Rank_code.
-Academic has Rank.
-Rank ensures AccessLevel.
 The possible values of Rank are 'P', 'SL', 'L'.
 
-Examples: 'P', 'SL', 'L'
+Rank has Rank_code.
+
+Academic has Rank.
+
+Rank ensures AccessLevel.
+
 Degree is an entity type.
 Reference Scheme: Degree has Degree_code.
 Reference Mode: .code.
 Data Type: Text: Fixed Length (0).
 
-Fact Types:
 Degree has Degree_code.
-Academic obtained Degree from University.
 
+Academic obtained Degree from University.
 Examples: 'PHD', 'MCS', 'BSc'
+
 University is an entity type.
 Reference Scheme: University has University_code.
 Reference Mode: .code.
 Data Type: Text: Fixed Length (0).
-
-Fact Types:
 University has University_code.
-Academic obtained Degree from University.
 
+Academic obtained Degree from University.
 Examples: 'UCSD', 'MIT', 'USW', 'UQ'
+
 Subject is an entity type.
 Reference Scheme: Subject has Subject_code.
 Reference Mode: .code.
 Data Type: Text: Fixed Length (0).
 
-Fact Types:
 Subject has Subject_code.
+
 Academic teaches Subject.
+
 Rating is an entity type.
 Reference Scheme: Rating has Rating_nr.
 Reference Mode: .nr.
 Data Type: Numeric: Signed Integer.
-
-Fact Types:
 Rating has Rating_nr.
-Teaching gets Rating.
 The possible values of Rating are at least 1 to at most 7.
+
+Teaching gets Rating.
+
 PhoneNr is a value type.
 Data Type: Numeric: Decimal.
 
-Fact Types:
 Dept has head with home PhoneNr.
-
 Examples: 5551212, 6661212
+
 MoneyAmt is an entity type.
 Reference Scheme: MoneyAmt has usd.
 Reference Mode: usd.
 Data Type: Numeric: Money.
-
-Fact Types:
 MoneyAmt has usd.
-Dept has teaching budget of MoneyAmt.
-Dept has research budget of MoneyAmt.
 
+Dept has teaching budget of MoneyAmt.
+
+Dept has research budget of MoneyAmt.
 Examples: 150000, 200000, 305000, 450000
+
 Chair is an entity type.
 Reference Scheme: Chair has Chair_name.
 Reference Mode: .name.
 Data Type: Text: Variable Length (0).
-
-Fact Types:
 Chair has Chair_name.
-Professor holds Chair.
 
+Professor holds Chair.
 Examples: 'Databases'
+
 Teacher is an entity type.
 Reference Scheme: Academic has empNr.
 Reference Mode: empNr.
 Data Type: Text: Fixed Length (6).
 
-Fact Types:
 Teacher is audited by Teacher.
 Each Teacher is an instance of Academic.
 Each Teaching Prof is an instance of Teacher.
+
 Commitee is an entity type.
 Reference Scheme: Commitee has Commitee_name.
 Reference Mode: .name.
 Data Type: Text: Variable Length (0).
-
-Fact Types:
 Commitee has Commitee_name.
+
 Teaching Prof serves on Commitee.
+
 Teaching Prof is an entity type.
 Reference Scheme: Academic has empNr.
 Reference Mode: empNr.
 Data Type: Text: Fixed Length (6).
 
-Fact Types:
 Teaching Prof serves on Commitee.
+
 Each Teaching Prof is an instance of Teacher.
+
 Each Teaching Prof is an instance of Professor.
+
 AccessLevel is an entity type.
 Reference Scheme: AccessLevel has AccessLevel_code.
 Reference Mode: .code.
 Data Type: Text: Fixed Length (0).
 
-Fact Types:
 Rank ensures AccessLevel.
 AccessLevel has AccessLevel_code.
 The possible values of AccessLevel are 'INT', 'NAT', 'LOC'.
 
-Examples: 'INT', 'NAT', 'LOC'
 Extension is an entity type.
 Reference Scheme: Extension has extNr.
 Reference Mode: extNr.
 Data Type: Numeric: Decimal.
-
-Fact Types:
 Extension has extNr.
-Academic uses Extension.
 
+Academic uses Extension.
 Examples: 2345, 3456, 4567, 5678, 6789
+
 Room is an entity type.
 Reference Scheme: Room is in Building; Room has RoomNr.
-
-Fact Types:
-Academic occupies Room.
 Room has RoomNr.
-Room is in Building.
 
+Academic occupies Room.
+
+Room is in Building.
 Examples: (211, 301), (101, 132), (211, 331), (512, 434), (512, 222)
+
 RoomNr is a value type.
 Data Type: Numeric: Decimal.
 
-Fact Types:
 Room has RoomNr.
-
 Examples: 301, 331, 132, 434, 222
+
 Building is an entity type.
 Reference Scheme: Building has bldgNr.
 Reference Mode: bldgNr.
 Data Type: Numeric: Decimal.
 
-Fact Types:
 Building has bldgNr.
 Room is in Building.
 Building has BldgName.
-
 Examples: 101, 211, 312, 512, 435
+
 BldgName is a value type.
 Data Type: Text: Variable Length (15).
 
-Fact Types:
 Building has BldgName.
-
 Examples: 'Ada Hall', 'Dermink Hall', 'Merlin Hall', 'Minnow Hall', 'Patterson Tower'
+
 Academic has EmpName.
+
 Each Academic has exactly one EmpName.
 It is possible that more than one Academic has the same EmpName.
-
-Examples: 
+Examples:
 Academic '715' has EmpName 'Adams A'.
 Academic '430' has EmpName 'Codd EF'.
 Academic '139' has EmpName 'Rankin B'.
@@ -253,8 +265,7 @@ Academic '721' has EmpName 'Zack Z'.
 Academic works for Dept.
 Each Academic works for exactly one Dept.
 It is possible that more than one Academic works for the same Dept.
-
-Examples: 
+Examples:
 Academic '715' works for Dept 'Computer Science'.
 Academic '430' works for Dept 'Computer Science'.
 Academic '139' works for Dept 'Genetics'.
@@ -263,23 +274,20 @@ Academic '721' works for Dept 'Computer Science'.
 
 Academic is tenured.
 In each population of Academic is tenured, each Academic occurs at most once.
-
-Examples: 
+Examples:
 Academic '139' is tenured.
 
 Academic is contracted until Date.
 Each Academic is contracted until at most one Date.
 It is possible that more than one Academic is contracted until the same Date.
-
-Examples: 
+Examples:
 Academic '715' is contracted until Date 01/31/2028.
 Academic '430' is contracted until Date 01/3/2028.
 
 Academic has Rank.
 Each Academic has exactly one Rank.
 It is possible that more than one Academic has the same Rank.
-
-Examples: 
+Examples:
 Academic '715' has Rank 'P'.
 Academic '139' has Rank 'SL'.
 Academic '430' has Rank 'L'.
@@ -291,8 +299,7 @@ For each Academic and Degree,
 that Academic obtained that Degree from at most one University.
 This association with Academic, Degree provides the preferred identification scheme for AcademicObtainedDegreeFromUniversity.
 Each Academic obtained some Degree from some University.
-
-Examples: 
+Examples:
 Academic '139' obtained Degree 'PHD' from University 'UCSD'.
 Academic '430' obtained Degree 'BSc' from University 'UQ'.
 Academic '715' obtained Degree 'PHD' from University 'USW'.
@@ -310,39 +317,34 @@ It is possible that more than one Teaching gets the same Rating.
 Dept has head with home PhoneNr.
 Each Dept has head with home exactly one PhoneNr.
 It is possible that more than one Dept has head with home the same PhoneNr.
-
-Examples: 
+Examples:
 Dept 'Genetics' has head with home PhoneNr 5551212.
 Dept 'Computer Science' has head with home PhoneNr 6661212.
 
 Dept has teaching budget of MoneyAmt.
 Each Dept has teaching budget of exactly one MoneyAmt.
 It is possible that more than one Dept has teaching budget of the same MoneyAmt.
-
-Examples: 
+Examples:
 Dept 'Genetics' has teaching budget of MoneyAmt 200000.
 Dept 'Computer Science' has teaching budget of MoneyAmt 305000.
 
 Dept has research budget of MoneyAmt.
 Each Dept has research budget of exactly one MoneyAmt.
 It is possible that more than one Dept has research budget of the same MoneyAmt.
-
-Examples: 
+Examples:
 Dept 'Computer Science' has research budget of MoneyAmt 150000.
 Dept 'Genetics' has research budget of MoneyAmt 450000.
 
 Professor heads Dept.
 Each Professor heads at most one Dept.
 For each Dept, at most one Professor heads that Dept.
-
-Examples: 
+Examples:
 Professor '430' heads Dept 'Computer Science'.
 
 Professor holds Chair.
 Each Professor holds exactly one Chair.
 For each Chair, at most one Professor holds that Chair.
-
-Examples: 
+Examples:
 Professor '430' holds Chair 'Databases'.
 
 Teacher is audited by Teacher.
@@ -354,11 +356,11 @@ It is possible that some Teaching Prof serves on more than one Commitee
 and that for some Commitee, more than one Teaching Prof serves on that Commitee.
 In each population of Teaching Prof serves on Commitee, each Teaching Prof, Commitee combination occurs at most once.
 This association with Teaching Prof, Commitee provides the preferred identification scheme for TeachingProfServesOnCommitee.
+
 Rank ensures AccessLevel.
 Each Rank ensures exactly one AccessLevel.
 It is possible that more than one Rank ensures the same AccessLevel.
-
-Examples: 
+Examples:
 Rank 'P' ensures AccessLevel 'INT'.
 Rank 'SL' ensures AccessLevel 'NAT'.
 Rank 'L' ensures AccessLevel 'LOC'.
@@ -366,8 +368,7 @@ Rank 'L' ensures AccessLevel 'LOC'.
 Academic uses Extension.
 Each Academic uses exactly one Extension.
 Each Extension is used by at most one Academic.
-
-Examples: 
+Examples:
 Academic '715' uses Extension 2345.
 Academic '139' uses Extension 3456.
 Academic '430' uses Extension 4567.
@@ -377,8 +378,7 @@ Academic '544' uses Extension 6789.
 Academic occupies Room.
 Each Academic occupies exactly one Room.
 It is possible that more than one Academic occupies the same Room.
-
-Examples: 
+Examples:
 Academic '715' occupies Room (211, 301).
 Academic '139' occupies Room (101, 132).
 Academic '430' occupies Room (211, 331).
@@ -394,23 +394,22 @@ It is possible that more than one Room is in the same Building.
 Building has BldgName.
 Each Building has exactly one BldgName.
 For each BldgName, at most one Building has that BldgName.
-
-Examples: 
+Examples:
 Building 211 has BldgName 'Ada Hall'.
 Building 101 has BldgName 'Dermink Hall'.
 Building 512 has BldgName 'Merlin Hall'.
 Building 435 has BldgName 'Minnow Hall'.
 Building 312 has BldgName 'Patterson Tower'.
 
-For each Dept and EmpName, 
-at most one Academic works for that Dept and 
+For each Dept and EmpName,
+at most one Academic works for that Dept and
 has that EmpName.
 For each Academic, at most one of the following holds:
 that Academic is tenured;
 that Academic is contracted until some Date.
 No Teacher is audited by the same Teacher.
-For each Building and RoomNr, 
-at most one Room is in that Building and 
+For each Building and RoomNr,
+at most one Room is in that Building and
 has that RoomNr.
 This association with Building, RoomNr provides the preferred identification scheme for Room.
 If some Professor heads some Dept then some Academic that is that Professor works for that Dept.
