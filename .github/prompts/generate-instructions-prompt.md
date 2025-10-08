@@ -9,7 +9,7 @@ description: 'Generate comprehensive instruction files for a CQRS-based Academic
 ## AI Generation Directives
 
 ### Your Task
-You are to generate comprehensive instruction files that will guide developers in implementing a CQRS-based Academic Management System that enforces and implements the business rules in business-rules.md. Each file must be complete, actionable, and production-ready.
+You are to generate comprehensive instruction files that will guide developers in implementing a CQRS-based Academic Management System that enforces and implements the business rules in `business-rules.md`. Each file must be complete, actionable, and production-ready.
 
 ### Generation Parameters
 - **Output Format**: Markdown files with specific naming convention
